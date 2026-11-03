@@ -629,6 +629,56 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 @media(prefers-reduced-motion:no-preference){#modal-generico.treatment-drawer:not(.hidden)>.inner{animation:treatment-slide .2s ease-out}@keyframes treatment-slide{from{transform:translateX(100%)}to{transform:translateX(0)}}}
 @media(max-width:640px){.treatment-kpis{gap:8px}.treatment-kpi{padding:12px 8px}.treatment-kpi span{font-size:11px;min-height:44px}.treatment-kpi strong{font-size:24px}.treatment-heading{align-items:flex-start}.treatment-heading h3{font-size:20px}.treatment-heading .btn{font-size:12px}.treatment-card header{gap:4px 12px}.treatment-card header time{width:100%;padding-left:32px}.treatment-status{margin-left:32px}.treatment-timeline{gap:8px;padding:20px 12px}.treatment-timeline strong{font-size:16px}.treatment-card footer>.row{width:100%}.treatment-card footer>.row .btn{flex:1}.treatment-bulk{bottom:calc(80px + env(safe-area-inset-bottom));max-width:calc(100% - 24px);width:calc(100% - 24px);gap:8px;padding:8px}.treatment-bulk .btn{font-size:12px;padding:8px}.treatment-drawer-head{padding:16px}.treatment-drawer-fields{padding:16px}.treatment-drawer-footer{padding-left:16px;padding-right:16px}}
 
+/* Bloco 1 — mini design system (login, RH, cadastro) */
+:root{--ds-bg:#F8FAFC;--ds-brand:#0F3B8C;--ds-accent:#1E62D0;--ds-line:#E2E8F0;--ds-text:#0F172A;--ds-muted:#64748B;--ds-danger:#B91C1C}
+#tela-login,#modal-pin,#gestor-body{font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;font-style:normal}
+#tela-login{background:var(--ds-bg)!important}
+#tela-login .box{background:#fff;border:1px solid var(--ds-line);border-radius:12px;box-shadow:0 8px 30px rgba(15,23,42,.06);color:var(--ds-text)}
+#tela-login h3{color:var(--ds-brand);font-weight:700}
+#tela-login input,#modal-pin input,.fstep input,.fstep select{border:1px solid var(--ds-line);border-radius:8px;min-height:44px;color:var(--ds-text);background:#fff}
+#tela-login input:focus-visible,#modal-pin input:focus-visible,.fstep input:focus-visible,.fstep select:focus-visible,#hr-busca:focus-visible{outline:2px solid var(--ds-accent);outline-offset:1px;border-color:var(--ds-accent)}
+#tela-login label{color:var(--ds-text);font-weight:600;font-style:normal}
+#tela-login .btn.big{background:var(--ds-brand);color:#fff;border-radius:8px}
+#tela-login .link{color:var(--ds-accent);font-style:normal}
+.login-footer{font-size:12px;color:var(--ds-muted)}
+#modal-pin-inner{border-radius:12px;border:1px solid var(--ds-line)}
+#modal-pin-inner h3{color:var(--ds-brand)}
+#modal-pin-inner .btn:not(.ghost){background:var(--ds-brand);border-radius:8px}
+#modal-pin-inner .btn.ghost{border-radius:8px}
+.account-danger{margin-top:24px;border:1px solid var(--ds-line);border-radius:8px}
+.danger-ghost{color:var(--ds-danger)!important;border-color:var(--ds-line)!important}
+.hr-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:8px 0 16px}
+.hr-toolbar h3{margin:0;margin-right:auto}
+#hr-busca{flex:1 1 240px;max-width:360px;border:1px solid var(--ds-line);border-radius:8px;min-height:44px}
+.hr-chips{display:flex;gap:8px}
+.hr-chip{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--ds-line);background:#fff;color:var(--ds-text);font-weight:600;cursor:pointer}
+.hr-chip.on{background:var(--ds-brand);border-color:var(--ds-brand);color:#fff}
+.hr-toolbar .btn{background:var(--ds-brand);border-radius:8px}
+.hr-table .mono{font-variant-numeric:tabular-nums;font-family:ui-monospace,Consolas,monospace}
+.hr-status{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#DCFCE7;color:#166534}
+.hr-status.s-afastamento,.hr-status.s-ferias{background:#FEF3C7;color:#92400E}
+.hr-status.s-desligado{background:#F1F5F9;color:#475569}
+.hr-actions{display:flex;gap:4px;justify-content:flex-end;align-items:center;white-space:nowrap}
+.icon-act{min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:8px;background:transparent;cursor:pointer;font-size:16px;list-style:none}
+.icon-act:hover{background:var(--ds-bg);border-color:var(--ds-line)}
+.hr-more{position:relative}.hr-more summary::-webkit-details-marker{display:none}
+.hr-menu{position:absolute;right:0;top:calc(100% + 4px);z-index:20;background:#fff;border:1px solid var(--ds-line);border-radius:8px;padding:6px;box-shadow:0 8px 24px rgba(15,23,42,.1);min-width:190px}
+.hr-menu .btn{width:100%;color:var(--ds-danger);justify-content:flex-start;border:0}
+#gestor-body .hr-table{max-height:none}
+@media(max-width:640px){.hr-toolbar .btn{width:100%}#hr-busca{max-width:none}
+ #gestor-body .hr-table td{display:block}#gestor-body .hr-table td:nth-child(n){display:none}
+ #gestor-body .hr-table td:nth-child(1),#gestor-body .hr-table td:nth-child(2),#gestor-body .hr-table td:nth-child(6){display:block}
+ #gestor-body .hr-table td:nth-child(8){display:flex;justify-content:flex-start;margin-top:6px}
+ #gestor-body .hr-table tr{position:relative}
+ #gestor-body .hr-table td:nth-child(6){background:transparent;padding:0;margin:4px 0}
+ #gestor-body .hr-table td[colspan]{display:block}}
+.stepper{display:flex;gap:8px;list-style:none;padding:0;margin:8px 0 12px;flex-wrap:wrap}
+.step-pill{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--ds-line);border-radius:8px;background:#fff;color:var(--ds-muted);font-weight:600;cursor:pointer}
+.step-pill span{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--ds-line);color:var(--ds-text);font-size:12px}
+.step-pill.on{border-color:var(--ds-brand);color:var(--ds-brand)}.step-pill.on span{background:var(--ds-brand);color:#fff}
+.step-pill.done span{background:var(--ds-accent);color:#fff}
+.step-nav{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}.step-nav .btn{border-radius:8px;min-width:120px}
+@media(max-width:640px){.stepper li{flex:1}.step-pill{width:100%;font-size:0;justify-content:center}.step-pill span{font-size:12px}.step-nav .btn{flex:1;min-width:0}}
 </style>
 </head>
 <body>
@@ -1738,32 +1788,40 @@ function formFunc(i){
   const opt=(arr,v)=>arr.map(x=>`<option ${v===x?'selected':''}>${esc(x)}</option>`).join('');
   const iv=f.intervalo||{};
   abrirModal(`<div class="row"><h3>${i>=0?'Editar':'Novo'} empregado</h3><button class="btn sm ghost right" onclick="fecharModal()">✕</button></div>
-  <div class="card"><div class="grid g3">
+  <ol class="stepper" aria-label="Etapas do cadastro">${['Dados Pessoais','Contrato e Escala','Quiosque & Configurações'].map((t,k)=>`<li><button type="button" class="step-pill" data-step="${k}" onclick="passoFunc(${k})"><span>${k+1}</span>${t}</button></li>`).join('')}</ol>
+  <div class="card"><div class="grid g3 fstep" data-fstep="0">
     <div><label>Nome *</label><input id="f-nome" value="${esc(f.nome||'')}"/></div>
     <div><label>CPF *</label><input id="f-cpf" value="${esc(f.cpf||'')}"/></div>
-    <div><label>E-mail</label><input id="f-email" value="${esc(f.email||'')}"/></div>
-    <div><label>Cargo</label><select id="f-cargo">${opt(get('cargos',[]),f.cargo)}</select></div>
-    <div><label>Função *</label><select id="f-funcao">${opt(get('cargos',[]),f.funcao)}</select></div>
-    <div><label>Departamento *</label><select id="f-dep">${opt(get('departamentos',[]),f.departamento)}</select></div>
+    <div><label>E-mail</label><input id="f-email" type="email" value="${esc(f.email||'')}"/></div>
+    <div><label>Telefone</label><input id="f-tel" type="tel" inputmode="tel" value="${esc(f.telefone||'')}"/></div>
     <div><label>Rua</label><input id="f-rua" value="${esc(f.rua||'')}"/></div>
     <div><label>Nº</label><input id="f-num" value="${esc(f.numero||'')}"/></div>
     <div><label>Bairro</label><input id="f-bairro" value="${esc(f.bairro||'')}"/></div>
     <div><label>Cidade</label><input id="f-cidade" value="${esc(f.cidade||'')}"/></div>
     <div><label>UF</label><select id="f-uf">${UFS.map(u=>`<option ${f.uf===u?'selected':''}>${u}</option>`).join('')}</select></div>
-    <div><label>PIN (automático, único — visível só ao gestor)</label><input id="f-pin" value="${esc(f.pin)}" readonly/></div>
+  </div><div class="grid g3 fstep hidden" data-fstep="1">
+    <div><label>Cargo</label><select id="f-cargo">${opt(get('cargos',[]),f.cargo)}</select></div>
+    <div><label>Função *</label><select id="f-funcao">${opt(get('cargos',[]),f.funcao)}</select></div>
+    <div><label>Departamento *</label><select id="f-dep">${opt(get('departamentos',[]),f.departamento)}</select></div>
     <div><label>Início vigência banco de horas (opcional)</label><input type="date" id="inicio-vigencia-banco" value="${f.inicioVigenciaBancoHoras||f.bancoInicio||''}"/></div>
     <div><label>Data de admissão *</label><input type="date" id="f-adm" value="${f.admissao||''}"/></div>
     <div><label>Escala MTE *</label><select id="f-escala">${ESCALAS.map(e=>`<option value="${e[0]}" ${f.escala===e[0]?'selected':''}>${e[1]}</option>`).join('')}</select></div>
     <div><label>Status *</label><select id="f-status" onchange="statusCond()">${['Ativo','Desligado','Afastamento','Férias'].map(s=>`<option ${f.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div id="cond" class="grid g2" style="grid-column:1/-1"></div>
   </div>
+  <div class="fstep hidden" data-fstep="2"><div class="grid g2"><div><label>PIN do quiosque (automático, único — visível só ao gestor)</label><input id="f-pin" value="${esc(f.pin)}" readonly/></div></div>
   <div class="card" style="margin-top:10px"><h4>Intervalo</h4>
     <label style="text-transform:none;display:flex;gap:8px;align-items:center;font-size:14px;color:var(--txt)"><input type="checkbox" id="intervalo-pre-func" style="width:auto" ${iv.preAssinalado?'checked':''} onchange="$('pre-campos').classList.toggle('hidden',!this.checked)"/> Pré-assinalado Art. 71 (não bate)</label>
     <div id="pre-campos" class="grid g2 ${iv.preAssinalado?'':'hidden'}"><div><label>Início do intervalo</label><input type="time" id="pre-inicio-func" value="${iv.inicio||'12:00'}"/></div>
-    <div><label>Fim do intervalo</label><input type="time" id="pre-fim-func" value="${iv.fim||'13:00'}"/></div></div></div>
-  <div id="cond" class="grid g4"></div><div id="f-msg"></div>
-  <button class="btn big gold" style="margin-top:10px" onclick="salvarFunc(${i})">SALVAR</button></div>`);
-  window.__fedit=f; statusCond();
+    <div><label>Fim do intervalo</label><input type="time" id="pre-fim-func" value="${iv.fim||'13:00'}"/></div></div></div></div>
+  <div id="f-msg"></div>
+  <div class="step-nav"><button type="button" class="btn ghost" id="f-prev" onclick="passoFunc(FPASSO-1)">Voltar</button><button type="button" class="btn" id="f-next" onclick="passoFunc(FPASSO+1)">Avançar</button><button class="btn gold" id="f-save" onclick="salvarFunc(${i})">Salvar</button></div></div>`);
+  window.__fedit=f; statusCond(); passoFunc(0);
 }
+let FPASSO=0;
+function passoFunc(k){FPASSO=Math.max(0,Math.min(2,k));document.querySelectorAll('.fstep').forEach(e=>e.classList.toggle('hidden',+e.dataset.fstep!==FPASSO));
+  document.querySelectorAll('.step-pill').forEach(b=>{const n=+b.dataset.step;b.classList.toggle('on',n===FPASSO);b.classList.toggle('done',n<FPASSO);b.setAttribute('aria-current',n===FPASSO?'step':'false');});
+  if($('f-prev'))$('f-prev').disabled=FPASSO===0; if($('f-next'))$('f-next').classList.toggle('hidden',FPASSO===2); if($('f-save'))$('f-save').classList.toggle('hidden',FPASSO!==2);}
 function statusCond(){
   const f=window.__fedit||{}, s=$('f-status').value;
   let h='';
@@ -1777,7 +1835,7 @@ function statusCond(){
 }
 function salvarFunc(i){
   const fs=get('funcionarios',[]), v=id=>($(id)?$(id).value.trim():'');
-  const o={nome:v('f-nome'),cpf:v('f-cpf'),email:v('f-email'),cargo:v('f-cargo'),funcao:v('f-funcao'),departamento:v('f-dep'),
+  const o={nome:v('f-nome'),cpf:v('f-cpf'),email:v('f-email'),telefone:v('f-tel'),cargo:v('f-cargo'),funcao:v('f-funcao'),departamento:v('f-dep'),
     rua:v('f-rua'),numero:v('f-num'),bairro:v('f-bairro'),cidade:v('f-cidade'),uf:v('f-uf'),pin:v('f-pin'),
     admissao:v('f-adm'),inicioVigenciaBancoHoras:v('inicio-vigencia-banco'),bancoInicio:v('inicio-vigencia-banco'),escala:v('f-escala'),
     intervalo:{preAssinalado:$('intervalo-pre-func').checked,inicio:v('pre-inicio-func')||'12:00',fim:v('pre-fim-func')||'13:00'},status:v('f-status'),
@@ -1787,8 +1845,8 @@ function salvarFunc(i){
   if(o.status==='Desligado'&&!o.dataDesligamento) err.push('Data de desligamento obrigatória.');
   if(o.status==='Afastamento'&&(!o.afastDe||!o.afastAte||!o.motivoAfast)) err.push('Período e motivo do afastamento obrigatórios.');
   if(o.status==='Férias'&&(!o.feriasIni||!o.feriasFim)) err.push('Início e término das férias obrigatórios.');
-  if(err.length) return $('f-msg').innerHTML=`<div class="alert err">${err.join('<br>')}</div>`;
-  if(i>=0) fs[i]=o; else { if(fs.length>=maxFuncAtual()) return $('f-msg').innerHTML=`<div class="alert err">Seu plano permite até ${maxFuncAtual()} colaboradores e esse limite já foi atingido. Para cadastrar mais pessoas, fale com o suporte e mude de plano.</div>`; fs.push(o); }
+  if(err.length) return passoFunc(!o.nome||!o.cpf?0:1),$('f-msg').innerHTML=`<div class="alert err">${err.join('<br>')}</div>`;
+  if(i>=0) fs[i]={...fs[i],...o}; else { if(fs.length>=maxFuncAtual()) return $('f-msg').innerHTML=`<div class="alert err">Seu plano permite até ${maxFuncAtual()} colaboradores e esse limite já foi atingido. Para cadastrar mais pessoas, fale com o suporte e mude de plano.</div>`; fs.push(o); }
   set('funcionarios',fs); log(`${i>=0?'Editou':'Cadastrou'} empregado ${o.nome} (${statusTexto(o)})`); fecharModal(); abaFunc();
 }
 function delFunc(i){const fs=get('funcionarios',[]);const f=fs[i];if(!f)return;if(!confirm('Excluir o colaborador '+f.nome+'?\n\nA ficha, o PIN e a escala dele saem da lista. As batidas já registradas ficam guardadas no histórico.\n\nEsta ação não pode ser desfeita.'))return;log(`Excluiu empregado ${fs[i].nome}`);fs.splice(i,1);set('funcionarios',fs);abaFunc();}
