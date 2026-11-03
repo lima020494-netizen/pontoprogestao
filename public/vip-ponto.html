@@ -1711,7 +1711,7 @@ function renderListaFunc(){
   });
   const el=$('hr-rows'); if(!el)return;
   el.innerHTML=linhas.map(({f,i})=>`<tr><td><b>${esc(f.nome)}</b></td><td class="mono">${cpfMascarado(f.cpf)}</td><td>${esc(f.funcao||f.cargo)}</td><td>${esc(f.departamento)}</td><td>${esc(f.escala)}</td><td><span class="hr-status s-${(f.status||'Ativo').normalize('NFD').replace(/[^a-z]/gi,'').toLowerCase()}">${esc(statusTexto(f))}</span></td><td class="mono">${esc(f.pin)}</td>
-    <td class="hr-actions"><button class="icon-act" title="Editar" aria-label="Editar ${esc(f.nome)}" onclick="formFunc(${i})">✏️</button><button class="icon-act" title="Configurar escala" aria-label="Escala de ${esc(f.nome)}" onclick="abrirModulo('esc')">⚙️</button>
+    <td class="hr-actions"><button class="icon-act" title="Editar" aria-label="Editar ${esc(f.nome)}" onclick="formFunc(${i})">✏️</button><button class="icon-act" title="Configurar escala" aria-label="Escala de ${esc(f.nome)}" onclick="irAba('esc')">⚙️</button>
     <details class="hr-more"><summary class="icon-act" aria-label="Mais ações">···</summary><div class="hr-menu"><button class="btn ghost" onclick="delFunc(${i})">Excluir colaborador</button></div></details></td></tr>`).join('')
     ||`<tr><td colspan=8 class="muted">${fs.length?'Nenhum colaborador encontrado.':'Nenhum empregado cadastrado.'}</td></tr>`;
 }
