@@ -16,9 +16,10 @@ function declaration(selector: string, file: string) {
 }
 
 function colorOf(decl: string, selector: string) {
-  const color = /color:\s*(#[0-9a-fA-F]{6})/.exec(decl)?.[1];
-  assert.ok(color, `cor não declarada em ${selector}: ${decl}`);
-  return color.toLowerCase();
+  const hex = /color:\s*#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/.exec(decl)?.[1];
+  assert.ok(hex, `cor não declarada em ${selector}: ${decl}`);
+  const full = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex;
+  return full.toLowerCase();
 }
 
 test('department band of the schedule grid keeps white text on the navy row', () => {
