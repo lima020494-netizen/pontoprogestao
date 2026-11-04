@@ -130,12 +130,12 @@ th{background:#eef2f9;font-size:11.5px;text-transform:uppercase;letter-spacing:.
 .assin div{flex:1;border-top:1px solid #333;padding-top:4px}
 /* ===================== COMPROVANTE TÉRMICO ===================== */
 #comprovante{display:none}
-#comprovante .cp{box-sizing:border-box;width:58mm;margin:0;padding:0;font-family:"Arial Narrow","Courier New",monospace;font-size:8.5px;line-height:1.08;color:#000}
+#comprovante .cp{box-sizing:border-box;width:58mm;margin:0;padding:0;font-family:"Arial Narrow","Courier New",monospace;font-size:7.6px;line-height:1.02;color:#000}
 #comprovante .cp .c{text-align:center}
 #comprovante .cp .b{font-weight:bold}
-#comprovante .cp .cp-mark{font-size:12px;font-weight:900;line-height:1.15;margin:.7mm 0}
-#comprovante .cp .cp-feed{height:9mm}
-#comprovante .cp hr{border:0;border-top:1px dashed #000;margin:.8mm 0}
+#comprovante .cp .cp-mark{font-size:9.5px;font-weight:900;line-height:1.05;margin:.25mm 0}
+#comprovante .cp .cp-feed{height:5mm}
+#comprovante .cp hr{border:0;border-top:1px dashed #000;margin:.35mm 0}
 @media print{
   body *{visibility:hidden !important}
   #comprovante,#comprovante *{visibility:visible !important}
@@ -740,7 +740,7 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 .folha-conferencia{margin-top:4px}
 @media(max-width:900px){.folha-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.pacote-acao,.pacote-acao>div,.pacote-acao .btn{width:100%}}
-#comprovante .cp .cp-sep{border-top:1px dashed #000;margin:.8mm 0}
+#comprovante .cp .cp-sep{border-top:1px dashed #000;margin:.35mm 0}
 /* ===================== CONTRASTE EM SUPERFÍCIES ESCURAS =====================
    As regras #gestor-body td/label têm prioridade de id e vencem classes soltas.
    Estas garantem que faixas, cabeçalhos e campos sobre azul-marinho permaneçam claros. */
@@ -1497,26 +1497,28 @@ function qrDataUrl(text){
   if(typeof qrcode!=='function') return '';
   const qr=qrcode(0,'M'); qr.addData(text); qr.make(); return qr.createDataURL(3,2);
 }
+/* Comprovante térmico: 58mm = 32 colunas, quebra por palavra e o mínimo de linhas. */
+const cpDestaque=l=>/^Data:/.test(l);
+const cpNegrito=(l,i)=>i<2||l==='COMPROVANTE DE PONTO'||cpDestaque(l);
 async function comprovanteTexto(b){
   const e=get('empregador',{})||{};
   const endereco=[e.logradouro,e.numero,e.bairro,[e.cidade,e.uf].filter(Boolean).join('/')].filter(Boolean).join(', ');
   const cpf=String(b.cpf||'').replace(/\D/g,'').padStart(11,'0'),cpfProtegido=`***.${cpf.slice(3,6)}.${cpf.slice(6,9)}-**`;
   const hashAss=await sha256Hex([b.nsr,b.data,b.hora,b.cpf,e.doc].join('|'));
   const hashCurto=hashAss.slice(0,32);
-  /* 58mm = 32 colunas: linhas quebradas por palavra para não cortar na impressora. */
   const W=32,SEP='-'.repeat(W),quebra=t=>{const out=[];let l='';String(t||'').split(/\s+/).forEach(w=>{while(w.length>W){if(l){out.push(l);l='';}out.push(w.slice(0,W));w=w.slice(W);}if(!w)return;if((l?l.length+1:0)+w.length>W){out.push(l);l=w;}else l=l?l+' '+w:w;});if(l)out.push(l);return out;};
   return {hashAss,hashCurto,linhas:[
     ...quebra((e.razao||'EMPREGADOR').toUpperCase()),...(e.fantasia&&e.fantasia!==e.razao?quebra(e.fantasia):[]),`${e.tipo||'CNPJ'}: ${e.doc||''}`,...quebra(`Local: ${endereco||'Nao informado'}`),
-    SEP,'COMPROVANTE DE REGISTRO','DE PONTO DO TRABALHADOR',SEP,`NSR: ${String(b.nsr||'').padStart(9,'0')}`,
-    ...quebra(`Colaborador: ${b.nome}`),`CPF: ${cpfProtegido}`,'DATA E HORA DA MARCACAO',`${brOf(b.data)}  ${b.hora}`,SEP,
-    'Codigo de verificacao SHA-256:',hashCurto.slice(0,16),hashCurto.slice(16),SEP,'Ponto Pro Gestao','Portaria MTE 671/2021'
+    SEP,'COMPROVANTE DE PONTO',`NSR: ${String(b.nsr||'').padStart(9,'0')}`,
+    ...quebra(`Colaborador: ${b.nome}`),`CPF: ${cpfProtegido}`,`Data: ${brOf(b.data)} ${b.hora}`,SEP,
+    `SHA-256: ${hashCurto.slice(0,16)}`,hashCurto.slice(16),'Ponto Pro Gestao','Portaria MTE 671/2021'
   ].filter(Boolean)};
 }
 async function imprimirComprovante(b,manual=false){
   ULTIMO_COMPROVANTE=b;
   const {linhas}=await comprovanteTexto(b);
   $('comprovante').innerHTML=`<div class="cp">
-    ${linhas.map((l,i)=>/^-+$/.test(l)?'<div class="cp-sep" aria-hidden="true"></div>':`<div class="c ${i<1||/^COMPROVANTE|^DE PONTO DO/.test(l)?'b':''} ${l==='DATA E HORA DA MARCACAO'||/^\d{2}\/\d{2}\/\d{4}/.test(l)?'cp-mark':''}">${esc(l)}</div>`).join('')}<div class="cp-feed" aria-hidden="true"></div></div>`;
+    ${linhas.map((l,i)=>/^-+$/.test(l)?'<div class="cp-sep" aria-hidden="true"></div>':`<div class="c ${cpNegrito(l,i)?'b':''} ${cpDestaque(l)?'cp-mark':''}">${esc(l)}</div>`).join('')}<div class="cp-feed" aria-hidden="true"></div></div>`;
   /* Cascata: 1 Sunmi nativo · 2 RawBT Android · 3 Bluetooth BLE · 4 manual.
      Batida automática NUNCA abre window.print(); navegador só sob ação explícita (manual=true). */
   const sunmi=sunmiNativo();
@@ -1526,7 +1528,7 @@ async function imprimirComprovante(b,manual=false){
       const metodo=sunmi.printOriginalText?'printOriginalText':sunmi.printText?'printText':sunmi.printString?'printString':null;
       if(!metodo) throw new Error('SDK Sunmi sem método de texto');
       linhas.forEach(l=>sunmi[metodo](l+'\n'));
-      if(sunmi.lineWrap) sunmi.lineWrap(3);
+      if(sunmi.lineWrap) sunmi.lineWrap(2);
       return toast('Comprovante enviado à impressora térmica.',2000);
     }catch(err){ console.warn('Sunmi nativo falhou',err); }
   }
@@ -1589,9 +1591,10 @@ function alternarRawBT(){localStorage.setItem('vip_rawbt',rawbtAtivo()?'0':'1');
   toast(rawbtAtivo()?'Impressão direta ativada neste aparelho.':'Impressão direta desativada — impressão pelo navegador.',3500);}
 function escposComprovante(linhas){
   const B=[],txt=s=>{for(const c of String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,''))B.push(c.charCodeAt(0)<128?c.charCodeAt(0):63);};
-  B.push(0x1B,0x40,0x1B,0x61,1,0x1B,0x4D,1); // centralizado + Font B condensada
-  linhas.forEach((l,i)=>{B.push(0x1B,0x45,i<2||l==='DATA E HORA DA MARCACAO'||/^\d{2}\/\d{2}\/\d{4}/.test(l)?1:0);txt(l);B.push(10);});
-  B.push(0x1B,0x45,0,0x1B,0x64,3); // somente três linhas para corte manual
+  /* Compacto: tamanho 1x1 garantido, fonte B condensada e entrelinha reduzida (28 dots). */
+  B.push(0x1B,0x40,0x1D,0x21,0,0x1B,0x21,1,0x1B,0x4D,1,0x1B,0x33,28,0x1B,0x61,1);
+  linhas.forEach((l,i)=>{B.push(0x1B,0x45,cpNegrito(l,i)?1:0);txt(l);B.push(10);});
+  B.push(0x1B,0x45,0,0x1B,0x32,0x1B,0x64,1); // entrelinha padrão de volta + uma linha de corte
   let s='';B.forEach(x=>s+=String.fromCharCode(x));return btoa(s);
 }
 function imprimirRawBT(linhas){
@@ -1607,9 +1610,9 @@ function reimprimir(nsr){const b=get('batidas',[]).find(x=>x.nsr===nsr);if(b)imp
 async function comprovantePDF(b){
   await garantirLib('pdf');
   const {jsPDF}=window.jspdf,{linhas}=await comprovanteTexto(b),medida=new jsPDF({unit:'mm',format:[58,100]});
-  const rows=linhas.map((l,i)=>{const destaque=l==='DATA E HORA DA MARCACAO'||/^\d{2}\/\d{2}\/\d{4}/.test(l),size=destaque?9:7;medida.setFont('courier',i<2||destaque?'bold':'normal');medida.setFontSize(size);return {text:medida.splitTextToSize(String(l),54),size,bold:i<2||destaque,step:destaque?3.8:2.8};});
-  const altura=Math.max(64,rows.reduce((n,r)=>n+r.text.length*r.step,9)),doc=new jsPDF({unit:'mm',format:[58,altura]});
-  let y=3;rows.forEach(r=>{doc.setFont('courier',r.bold?'bold':'normal');doc.setFontSize(r.size);r.text.forEach(t=>{doc.text(t,29,y,{align:'center'});y+=r.step;});});
+  const rows=linhas.map((l,i)=>{const d=cpDestaque(l),size=d?8:6.5;medida.setFont('courier',cpNegrito(l,i)?'bold':'normal');medida.setFontSize(size);return {text:medida.splitTextToSize(String(l),54),size,bold:cpNegrito(l,i),step:d?3.1:2.3};});
+  const altura=Math.max(50,rows.reduce((n,r)=>n+r.text.length*r.step,7)),doc=new jsPDF({unit:'mm',format:[58,altura]});
+  let y=2.5;rows.forEach(r=>{doc.setFont('courier',r.bold?'bold':'normal');doc.setFontSize(r.size);r.text.forEach(t=>{doc.text(t,29,y,{align:'center'});y+=r.step;});});
   doc.save(`Comprovante_${b.nsr}.pdf`);
 }
 async function emailComprovante(nsr){
