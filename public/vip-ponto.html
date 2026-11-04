@@ -2254,7 +2254,8 @@ function renderGestaoBatidas(){
 const normBusca=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 function baseTratamento(){const bruto=String(window.__tratBusca||''),exato=/— PIN (\S+)$/.exec(bruto),busca=normBusca(bruto);return TRAT_LINHAS.filter(x=>exato?String(x.f.pin)===exato[1]:!busca||normBusca(x.f.nome).includes(busca)||String(x.f.pin).includes(busca));}
 function limparBuscaTratamento(){window.__tratBusca='';const i=$('gb-busca');if(i){i.value='';i.focus();}desenharTratamento();}
-function listaTratamento(){return baseTratamento().filter(x=>TRAT_VISAO==='todos'||x.st.pendente);}
+function colaboradorTratamento(){const exato=/— PIN (\S+)$/.exec(String(window.__tratBusca||''));return exato?exato[1]:'';}
+function listaTratamento(){const base=baseTratamento();if(colaboradorTratamento())return [...base].sort((a,b)=>Number(b.st.pendente)-Number(a.st.pendente)||b.l.data.localeCompare(a.l.data));return base.filter(x=>TRAT_VISAO==='todos'||x.st.pendente);}
 function buscarTratamento(v){window.__tratBusca=v;desenharTratamento();}
 function desenharTratamento(){
  const out=$('gb-conteudo');if(!out)return;
