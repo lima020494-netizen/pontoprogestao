@@ -161,12 +161,14 @@
   --accent: #1c3046;
   --accent-foreground: #ffffff;
   --commercial-success: #7ee4b6;
+  --commercial-eyebrow: #7dd3fc;
   --commercial-overlay: linear-gradient(90deg, #0f172af5 0%, #0f172ad9 42%, #0f172a30 100%);
   font-family: "Manrope", sans-serif;
 }
 .commercial h1,.commercial h2,.commercial h3 { font-family: "Sora", sans-serif; }
 .commercial-hero::after { content:""; position:absolute; inset:0; background:var(--commercial-overlay); }
 .commercial-check { color:var(--commercial-success); }
+.commercial-eyebrow { color: var(--commercial-eyebrow); }
 .commercial button,.commercial nav a,.commercial a[data-slot="button"] { min-height:44px; }
 .commercial nav a { display:inline-flex;align-items:center; }
 @media(max-width:767px) { .commercial { --commercial-overlay: linear-gradient(90deg, #0f172aee, #0f172abf); } }
