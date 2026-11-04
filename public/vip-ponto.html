@@ -719,6 +719,27 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 .emp-savebar{position:sticky;bottom:0;display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap;margin:20px -20px -20px;padding:12px 20px;background:var(--card);border-top:1px solid var(--line);border-radius:0 0 12px 12px}.emp-savebar #e-msg{margin-right:auto}.emp-savebar .btn{min-width:180px}
 .emp-link-card{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid var(--line);border-radius:10px}.emp-link-card>span{font-size:28px}.emp-link-card>div{flex:1}.emp-link-card p{margin:4px 0 0;font-size:13px}
 @media(max-width:760px){.exec-kpis{grid-template-columns:1fr;gap:8px}.exec-kpi strong{font-size:22px}.bh-mini{grid-template-columns:1fr 1fr}.bh-mini>div:nth-child(3){border-left:0}.bh-mini>div:nth-child(n+3){border-top:1px solid var(--line)}.mod-card,.emp-pane{padding:16px}.emp-savebar{margin:16px -16px -16px;padding:12px 16px}.emp-savebar .btn{width:100%}.emp-link-card{flex-wrap:wrap}}
+
+/* Kiosk refinement (presentation only) */
+#tela-ponto .key{transition:transform .08s ease,box-shadow .08s ease,background .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
+#tela-ponto .key:active{transform:translateY(2px);box-shadow:0 1px 0 #020617;background:#273449}
+#tela-ponto .key:focus-visible{outline:3px solid #0ea5e9;outline-offset:2px}
+@media(min-width:640px) and (min-height:700px){#tela-ponto .keys{gap:16px}#tela-ponto .key{border-radius:16px}}
+#ok-ponto{background:radial-gradient(circle at 50% 30%,#0b3b24,#04170e)}
+#ok-ponto .okp-card{display:flex;flex-direction:column;align-items:center;gap:10px;padding:clamp(20px,4vw,40px) clamp(24px,6vw,64px);border-radius:24px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
+#ok-ponto .okp-badge{display:inline-block;padding:6px 16px;border-radius:999px;font-weight:700;font-size:clamp(14px,3vw,18px);border:1px solid}
+.okp-in{background:#dcfce7;color:#14532d;border-color:#86efac}.okp-out{background:#dbeafe;color:#1e3a8a;border-color:#93c5fd}.okp-int{background:#fef3c7;color:#78350f;border-color:#fcd34d}
+@media(prefers-reduced-motion:no-preference){#ok-ponto.show .okp-card{animation:okpCard .28s cubic-bezier(.2,.8,.2,1)}#ok-ponto.show .okp-ico{animation:okpPop .32s cubic-bezier(.2,.8,.2,1)}}
+@keyframes okpCard{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}@keyframes okpPop{from{transform:scale(.6)}to{transform:scale(1)}}
+/* Folha MTE executive layout */
+.pacote-hero{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:20px;margin-bottom:16px;border-radius:12px;background:linear-gradient(135deg,#1E3A8A,#14306f);color:#fff}
+.pacote-ico{display:grid;place-items:center;width:52px;height:52px;border-radius:12px;background:rgba(255,255,255,.12);flex:none}
+.pacote-txt{flex:1;min-width:200px;display:flex;flex-direction:column;gap:4px}.pacote-txt strong{font:600 17px 'Sora',sans-serif}.pacote-txt small{font-size:13px;opacity:.85}
+.pacote-acao{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}.pacote-acao label{color:#dbeafe;font-size:12px}.pacote-acao input{min-height:44px;background:#fff;color:#0f172a}.pacote-acao .btn{min-height:48px;padding:0 24px;font-weight:700}
+.folha-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.folha-kpis:empty{display:none}
+.folha-conferencia{margin-top:4px}
+@media(max-width:900px){.folha-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.pacote-acao,.pacote-acao>div,.pacote-acao .btn{width:100%}}
 </style>
 </head>
 <body>
@@ -1444,8 +1465,9 @@ function confirmacaoRapida(f,b){
   let o=$('ok-ponto');
   if(!o){o=document.createElement('div');o.id='ok-ponto';o.setAttribute('role','alert');o.setAttribute('aria-live','assertive');document.body.appendChild(o);}
   const h=+b.hora.slice(0,2),saud=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite',nome=String(f.nome||'').split(' ')[0];
-  o.innerHTML=`<div class="okp-ico" aria-hidden="true">✓</div><div class="okp-saud">${saud}, ${esc(nome)}!</div>
-    <div class="okp-hora">${esc(b.hora)}</div><div class="okp-tipo">${esc(b.tipo)} registrada · NSR ${esc(b.nsr)}</div>`;
+  const tk=/sa[ií]da/i.test(b.tipo||'')?(/interv/i.test(b.tipo)?'int':'out'):(/interv/i.test(b.tipo||'')?'int':'in');
+  o.innerHTML=`<div class="okp-card"><div class="okp-ico" aria-hidden="true">✓</div><div class="okp-saud">${saud}, ${esc(nome)}!</div>
+    <div class="okp-hora">${esc(b.hora)}</div><span class="okp-badge okp-${tk}">${esc(b.tipo)} registrada</span><div class="okp-tipo">NSR ${esc(b.nsr)} · ${esc(brOf(b.data))}</div></div>`;
   o.classList.add('show'); clearTimeout(o._t);
   o._t=setTimeout(()=>{o.classList.remove('show');pinLimpar();},2000);
 }
@@ -2795,8 +2817,9 @@ function pdfRodapesPadrao(doc,usuario){
 }
 function abaFolha(){
   const fs=get('funcionarios',[]),hoje=hojeISO();
-  $('gestor-body').innerHTML=`<h3>Folha de Ponto — Portaria MTE 671/2021</h3>
-  <div class="row folha-month-controls"><div><label>Mês / Ano</label><input type="month" id="fl-mes" value="${hoje.slice(0,7)}" onchange="periodoMesFolha()"/></div><button id="fl-pacote" class="btn gold right" onclick="pacoteContador()"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>Baixar Pacote do Contador (.ZIP)</button></div>
+  $('gestor-body').innerHTML=`<div class="mod-head"><div><h3>Folha MTE</h3><p class="muted">Confira o espelho do mês e exporte para o contador. Portaria MTE 671/2021.</p></div></div>
+  <section class="pacote-hero"><div class="pacote-ico" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg></div><div class="pacote-txt"><strong>Pacote do Contador em 1 clique</strong><small>Espelhos de ponto em PDF, AFD e planilha analítica do mês selecionado.</small></div><div class="pacote-acao"><div><label for="fl-mes">Mês / Ano</label><input type="month" id="fl-mes" value="${hoje.slice(0,7)}" onchange="periodoMesFolha()"/></div><button id="fl-pacote" class="btn gold" onclick="pacoteContador()">Baixar pacote (.ZIP)</button></div></section>
+  <section class="mod-card"><h4 class="mod-card-t">Conferência individual</h4>
   <div class="grid g4">
     <div><label>Funcionário (inclui desligados)</label><select id="fl-pin">${fs.map(f=>`<option value="${f.pin}">${esc(f.nome)}${f.status==='Desligado'?' (desligado)':''}</option>`).join('')}</select></div>
     <div><label>Período — início</label><input type="date" id="fl-ini" value="${hoje.slice(0,8)}01"/></div>
@@ -2812,8 +2835,9 @@ function abaFolha(){
         <button class="btn sm ghost" onclick="acaoFiscalFolha('atestado')">Atestado Técnico e Termo de Responsabilidade</button>
       </div>
     </details>
-  </div><div id="fl-export-status" class="muted" role="status" aria-live="polite"></div>
-  <div id="fl-out" style="margin-top:12px"></div>`;
+  </div><div id="fl-export-status" class="muted" role="status" aria-live="polite"></div></section>
+  <div id="fl-kpis" class="exec-kpis folha-kpis" aria-live="polite"></div>
+  <div id="fl-out" class="folha-conferencia"></div>`;
   if(fs.length)gerarFolha();
 }
 function periodoMesFolha(){const mes=$('fl-mes').value;if(!/^\d{4}-\d{2}$/.test(mes))return;const [ano,m]=mes.split('-').map(Number);$('fl-ini').value=mes+'-01';$('fl-fim').value=mes+'-'+String(new Date(Date.UTC(ano,m,0)).getUTCDate()).padStart(2,'0');gerarFolha();}
@@ -2823,7 +2847,11 @@ function periodoFolhaValido(){
   if((Date.parse(fim)-Date.parse(ini))/86400000>=366){toast('Selecione um período de até 366 dias.',4000);return null;}
   return {ini,fim};
 }
-async function gerarFolha(){const p=periodoFolhaValido();if(!p)return;try{await garantirHistorico(p.ini);}catch(e){}$('fl-out').innerHTML=htmlFolha($('fl-pin').value,p.ini,p.fim);}
+async function gerarFolha(){const p=periodoFolhaValido();if(!p)return;try{await garantirHistorico(p.ini);}catch(e){}$('fl-out').innerHTML=htmlFolha($('fl-pin').value,p.ini,p.fim);kpisFolha($('fl-pin').value,p.ini,p.fim);}
+/* Presentation only: reads the same dadosFolha/resumoMensalFolha used by screen and PDF. */
+function kpisFolha(pin,ini,fim){const el=$('fl-kpis');if(!el||!pin)return;let d;try{d=dadosFolha(pin,ini,fim);}catch(e){el.innerHTML='';return;}if(!d||!d.tot){el.innerHTML='';return;}
+  const r=resumoMensalFolha(d),bm=d.banco?d.banco.creditos-d.banco.debitos:0;
+  el.innerHTML=[['tone-blue','Horas extras',toHHMM(d.tot.extras),`50%: ${toHHMM(d.tot.extras50||0)} · 100%: ${toHHMM(d.tot.extras100||0)}`],['tone-net','Banco de horas no período',toSaldo(bm),'Movimento do período'],['tone-red','Faltas',String(d.tot.faltas),`${toHHMM(d.tot.faltantes)} faltantes`],['tone-green','DSR e folgas',String(d.tot.folgas||0),`${d.tot.feriados||0} feriado(s)`]].map(([t,a,v,s])=>`<div class="exec-kpi ${t}"><span>${a}</span><strong class="num">${v}</strong><small>${s}</small></div>`).join('');}
 async function baixarPDFFolha(){const p=periodoFolhaValido();if(!p||!$('fl-pin').value)return;try{await garantirHistorico(p.ini);}catch(e){}try{await garantirLib('pdf');}catch(e){return toast('PDF indisponível. Verifique a conexão e tente novamente.',5000);}try{await pdfFolhas([$('fl-pin').value],p.ini,p.fim);}catch(e){toast('Não foi possível gerar o PDF. Tente novamente.',5000);}}
 function acaoFiscalFolha(acao){
   const menu=document.querySelector('.fiscal-menu');if(menu)menu.open=false;
