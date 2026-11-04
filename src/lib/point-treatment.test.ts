@@ -29,3 +29,15 @@ test('batch validates every day before modifying anything',()=>{const existing=[
 test('batch records reason and authorizer on every selected day',()=>{const result=batch(days);assert.equal(result.novos.length,2);for(const o of result.novos){assert.equal(o.autorizadoPor,'Responsável');assert.equal(o.motivo,'Documento válido');assert.equal(o.status,'concluido');}assert.equal(result.novos[1].data,'2026-10-02');});
 test('absence cannot be submitted as an allowance',()=>{assert.match(batch(days,'Gestor','Documento válido',[],'Falta').erro,/não é um abono/);});
 test('attachments reject unsupported files and size over one MiB',()=>{const ctx={};assert.equal(runInNewContext(prepare+';validarAnexoTratamento({type:"application/pdf",size:1048576})',ctx),'');assert.match(runInNewContext(prepare+';validarAnexoTratamento({type:"application/pdf",size:1048577})',ctx),/1 MB/);assert.match(runInNewContext(prepare+';validarAnexoTratamento({type:"text/html",size:1})',ctx),/PDF/);});
+const listRules=html.slice(html.indexOf('const normBusca='),html.indexOf('function buscarTratamento('));
+function tratList(busca:string,linhas:unknown[],visao='pendentes'){
+ return runInNewContext(listRules+';listaTratamento().map(x=>x.key)',{window:{__tratBusca:busca},TRAT_LINHAS:linhas,TRAT_VISAO:visao}) as string[];
+}
+const linhasPeriodo=[
+ {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-03'},st:{pendente:false},key:'1|2026-10-03'},
+ {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-01'},st:{pendente:true},key:'1|2026-10-01'},
+ {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-02'},st:{pendente:false},key:'1|2026-10-02'},
+ {f:{pin:'2',nome:'Beto'},l:{data:'2026-10-01'},st:{pendente:true},key:'2|2026-10-01'},
+];
+test('inbox without a selected collaborator shows only pendencies',()=>{assert.deepEqual([...tratList('',linhasPeriodo)],['1|2026-10-01','2|2026-10-01']);});
+test('selecting a collaborator shows the full period with pendencies on top',()=>{assert.deepEqual([...tratList('Ana — PIN 1',linhasPeriodo)],['1|2026-10-01','1|2026-10-03','1|2026-10-02']);});
