@@ -2015,8 +2015,8 @@ const GRUPOS_OCORRENCIAS=[
  {nome:'Grupo 3 — Compensações e descansos',itens:[['Folga compensatória','Folga Compensatória (Banco de Horas)'],['Férias','Férias (início e fim)'],['Folga de Feriado/DSR Trabalhado','Folga de Feriado / DSR Trabalhado']]},
  {nome:'Grupo 4 — Ajustes operacionais',itens:[['Trabalho Externo / Viagem','Trabalho Externo / Viagem (jornada prevista)'],['Esquecimento de Marcação','Esquecimento de Marcação'],['Suspensão Disciplinar','Suspensão Disciplinar (desconta dia + DSR)'],['Falta','Falta não justificada']]}
 ];
-/* Em massa ficam disponíveis todos os abonos, licenças, compensações e ajustes; falta e batida esquecida exigem um dia por vez. */
-function tiposTratamentoLote(){return GRUPOS_OCORRENCIAS.flatMap(g=>g.itens).map(([v])=>v).filter(v=>v!=='Falta'&&v!=='Esquecimento de Marcação');}
+/* Em massa ficam disponíveis todos os abonos, licenças, compensações e ajustes, incluindo a batida esquecida, que é inserida em cada dia selecionado. */
+function tiposTratamentoLote(){return GRUPOS_OCORRENCIAS.flatMap(g=>g.itens).map(([v])=>v).filter(v=>v!=='Falta');}
 function regraOcorrencia(tipo){
  const t=String(tipo||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
  const afastado=t==='afastamento inss'||t==='licenca maternidade';
@@ -2364,7 +2364,7 @@ function salvarBatidaManual(){
   if(erro)return alert(erro);
   fecharModal();subBatidas();
 }
-function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior=false}){
+function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior=false,simular=false}){
   if(!data||!hora)return 'Informe data e hora.';
   if(!TIPOS.includes(tipo))return 'Selecione um tipo de marcação válido.';
   if(String(motivo||'').trim().length<5)return 'Motivo obrigatório (mín. 5 caracteres).';
@@ -2374,6 +2374,7 @@ function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior
   const madrugada=toMin(hora)<360;anterior=madrugada&&tipo==='Saída'&&anterior;const jornada=anterior?addDias(data,-1):data;
   if(anterior&&!batidasJornada(pin,jornada).some(b=>b.tipo==='Entrada'))return 'Não há entrada na jornada da noite anterior. Confira a data da marcação.';
   if(batidasJornada(pin,jornada).length>=4)return 'Limite de 4 marcações na jornada.';
+  if(simular)return '';                                        // checagem sem gravar: usada quando vários dias são tratados juntos
   const nsrM=proximoNSR();
   all.push({pin,nome:f.nome,cpf:f.cpf,data,hora,tipo,jornada:madrugada?jornada:undefined,jornadaManual:madrugada,tipoManual:madrugada?tipo:undefined,nsr:nsrM,fonte:'MANUAL',sync:false,offset:get('ntpOffset',0),
     autorizadoPor,gerenciador:GERENCIADOR.nome,movimento:`Inserida manualmente - Autorizado por: ${autorizadoPor} - Motivo: ${motivo} - Por: ${GERENCIADOR.nome}`,criadoEm:new Date().toISOString()});
