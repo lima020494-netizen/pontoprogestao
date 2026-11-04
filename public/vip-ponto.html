@@ -2408,7 +2408,18 @@ async function salvarOcorrencia(){
  const alvos=lote?lote.map(x=>({pin:x.pin,ini:x.data,fim:x.data})):[{pin,ini,fim}],extras={};
  const auditoria=validarAuditoriaTratamento(autorizadoPor,motivo);if(auditoria){$('oc-erro').textContent=auditoria;return;}
  if(lote&&regraOcorrencia(tipo).afastado){$('oc-erro').textContent='Afastamento INSS e Licença Maternidade exigem período contínuo com data início e fim. Trate um colaborador de cada vez.';return;}
- if(tipo==='Esquecimento de Marcação'){if(lote){$('oc-erro').textContent='Esquecimento de marcação deve ser tratado um dia por vez.';return;}const erro=registrarBatidaManual({pin,data:ini,hora:$('oc-hora').value,tipo:$('oc-btipo').value,motivo,autorizadoPor,anterior:$('oc-anterior')?.checked});if(erro){$('oc-erro').textContent=erro;return;}fecharModal();TRAT_SELECAO.clear();subBatidas();toast('Batida esquecida registrada.',2000);return;}
+ if(tipo==='Esquecimento de Marcação'){
+  const hora=$('oc-hora').value,tipoBatida=$('oc-btipo').value,anterior=$('oc-anterior')?.checked;
+  if(lote){
+    if(!lote.length){$('oc-erro').textContent='Selecione ao menos um registro.';return;}
+    const inv=lote.map(a=>({a,erro:registrarBatidaManual({pin:a.pin,data:a.data,hora,tipo:tipoBatida,motivo,autorizadoPor,anterior,simular:true})})).find(x=>x.erro);
+    if(inv){$('oc-erro').textContent=brOf(inv.a.data)+': '+inv.erro;return;}   // nenhum dia é gravado quando algum deles está inválido
+    lote.forEach(a=>registrarBatidaManual({pin:a.pin,data:a.data,hora,tipo:tipoBatida,motivo,autorizadoPor,anterior}));
+  }else{
+    const erro=registrarBatidaManual({pin,data:ini,hora,tipo:tipoBatida,motivo,autorizadoPor,anterior});if(erro){$('oc-erro').textContent=erro;return;}
+  }
+  fecharModal();TRAT_SELECAO.clear();subBatidas();toast('Batida esquecida registrada.',2000);return;
+}
  let efetivo=tipo;if(tipo==='Falta Justificada'){const map={Casamento:'Licença Gala',Falecimento:'Licença Nojo',Nascimento:'Licença Paternidade',Sangue:'Doação de Sangue',Eleitoral:'Alistamento Eleitoral'};const legal=$('oc-legal-motivo')?.value||'Empresa';efetivo=map[legal]||tipo;extras.motivoLegal=legal;}
  if(regraOcorrencia(tipo).compensacao&&$('oc-vinculo')?.value){const data=$('oc-vinculo').value,bs=batidasDia(pin,data);if(!bs.length||!(feriadoDe(data)||previstoDia(funcPorPin(pin),data)===0)){ $('oc-erro').textContent='O vínculo deve apontar para um descanso ou feriado trabalhado.';return;}extras.dataDsrTrabalhado=data;}
  const file=$('oc-anexo')?.files?.[0],erroAnexo=validarAnexoTratamento(file);if(erroAnexo){$('oc-erro').textContent=erroAnexo;return;}
