@@ -41,3 +41,34 @@ const linhasPeriodo=[
 ];
 test('inbox without a selected collaborator shows only pendencies',()=>{assert.deepEqual([...tratList('',linhasPeriodo)],['1|2026-10-01','2|2026-10-01']);});
 test('selecting a collaborator shows the full period with pendencies on top',()=>{assert.deepEqual([...tratList('Ana — PIN 1',linhasPeriodo)],['1|2026-10-01','1|2026-10-03','1|2026-10-02']);});
+const drawerRules=html.slice(html.indexOf('function lancarOcorrencia('),html.indexOf('function camposOcorrencia('));
+const saveRules=html.slice(html.indexOf('async function salvarOcorrencia('),html.indexOf("document.addEventListener('keydown'"));
+const LOTE=[{pin:'1',data:'2026-10-02'}];
+function drawer(lote:unknown[]|null){
+ let out='';
+ const modal={classList:{add(){},remove(){},toggle(){},contains:()=>false},setAttribute(){},querySelector:()=>null};
+ const ctx={window:{__tratLote:lote},document:{activeElement:null},get:(k:string,f:unknown)=>k==='funcionarios'?[{pin:'1',nome:'Ana'}]:f,
+  ocorrenciaDia:()=>undefined,batidasJornada:()=>[],funcPorPin:()=>({nome:'Ana'}),esc:(x:unknown)=>String(x),
+  abrirModal:(h:string)=>{out=h},$:((id:string)=>id==='modal-generico'?modal:{value:'',textContent:''}) as unknown as (id:string)=>unknown,
+  camposOcorrencia:()=>{},hojeISO:()=>'2026-11-04',TIPOS:['Entrada','Saída']};
+ runInNewContext(rules+drawerRules+';lancarOcorrencia("1","2026-10-02")',ctx);
+ return out;
+}
+test('batch selector offers every allowance, license, rest day and adjustment',()=>{
+ const tipos=[...runInNewContext(rules+';tiposTratamentoLote()',{}) as string[]];
+ for(const t of ['Atestado médico','Licença Gala','Licença Nojo','Licença Paternidade','Doação de Sangue','Alistamento Eleitoral','Falta Justificada','Folga compensatória','Férias','Folga de Feriado/DSR Trabalhado','Trabalho Externo / Viagem','Suspensão Disciplinar'])assert.ok(tipos.includes(t),t);
+ assert.ok(!tipos.includes('Falta'));assert.ok(!tipos.includes('Esquecimento de Marcação'));
+});
+test('batch drawer lists every reason instead of only two',()=>{
+ const h=drawer(LOTE);
+ for(const t of ['Atestado Médico','Licença Gala','Licença Nojo','Nascimento Filho / Paternidade','Doação de Sangue','Alistamento Eleitoral','Falta Justificada pela Empresa','Folga Compensatória','Férias','Folga de Feriado / DSR Trabalhado','Trabalho Externo / Viagem','Suspensão Disciplinar'])assert.ok(h.includes('>'+t),t);
+ assert.ok(!h.includes('Esquecimento'));assert.ok(!h.includes('value="Falta"'));
+});
+test('single-day drawer keeps the forgotten-punch adjustment available',()=>{assert.ok(drawer(null).includes('>Esquecimento de Marcação<'));});
+test('batch cannot submit a continuous leave, which needs a start and end date',()=>{
+ const values:Record<string,string>={'oc-pin':'1','oc-data':'2026-10-02','oc-fim':'2026-10-02','oc-tipo':'Afastamento INSS','oc-motivo':'Documento apresentado','oc-autorizou':'Gestor'};
+ let erro='',saves=0;
+ const ctx={window:{__tratLote:LOTE,__ocEdit:{}},$:(id:string)=>id==='oc-erro'?{set textContent(v:string){erro=v},get textContent(){return erro}}:{value:values[id]||'',textContent:''},set:()=>{saves++},log:()=>{},fecharModal:()=>{},subBatidas:()=>{},toast:()=>{},TRAT_SELECAO:new Set()};
+ runInNewContext(rules+prepare+saveRules+';salvarOcorrencia()',ctx);
+ assert.match(erro,/per[ií]odo cont[ií]nuo/);assert.equal(saves,0);
+});
