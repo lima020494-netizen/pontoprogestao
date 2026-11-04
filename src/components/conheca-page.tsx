@@ -84,12 +84,12 @@ export function ConhecaPage() {
         </div>
       </section>
       <section id="recursos" className="mx-auto max-w-7xl scroll-mt-8 px-5 py-16 md:px-10">
-        <p className="text-xs font-bold uppercase text-primary">{k.features.eyebrow}</p><h2 className="mt-3 text-2xl font-semibold md:text-3xl">{k.features.title}</h2>
+        <p className="text-xs font-bold uppercase commercial-eyebrow">{k.features.eyebrow}</p><h2 className="mt-3 text-2xl font-semibold md:text-3xl">{k.features.title}</h2>
         <div className="mt-10 grid gap-8 md:grid-cols-3">{k.features.items.map(({title,copy},i)=>{const Icon=icons[i%icons.length] ?? ShieldCheck;return <div key={title+i} className="border-t border-border pt-6"><Icon size={28} className="mb-5 text-primary"/><h3 className="text-lg font-semibold">{title}</h3><p className="mt-3 text-sm leading-7 text-muted-foreground">{copy}</p></div>;})}</div>
       </section>
       <section id="planos" className="scroll-mt-8 border-y border-border bg-secondary/30">
         <div className="mx-auto max-w-7xl px-5 py-16 md:px-10">
-          <div className="mb-10 text-center"><p className="text-xs font-bold uppercase text-primary">Planos</p><h2 className="mt-3 text-2xl font-semibold md:text-3xl">{k.plans_section.title}</h2><p className="mt-4 text-sm text-muted-foreground">{k.plans_section.subtitle}</p></div>
+          <div className="mb-10 text-center"><p className="text-xs font-bold uppercase commercial-eyebrow">Planos</p><h2 className="mt-3 text-2xl font-semibold md:text-3xl">{k.plans_section.title}</h2><p className="mt-4 text-sm text-muted-foreground">{k.plans_section.subtitle}</p></div>
           <div className="grid items-stretch gap-5 md:grid-cols-3">{plans.map(plan=><article key={plan.name} className={`relative flex flex-col rounded-lg border bg-card p-7 ${plan.featured?"border-primary":"border-border"}`}>
             {plan.featured&&<span className="absolute -top-3 left-6 bg-primary px-3 py-1 text-xs font-extrabold text-primary-foreground">{k.plans_section.featured_label}</span>}
             <h3 className="text-xl font-semibold">{plan.name}</h3><p className="mt-2 text-sm text-muted-foreground">{plan.caption}</p>
@@ -99,7 +99,7 @@ export function ConhecaPage() {
           </article>)}</div>
         </div>
       </section>
-      <section id="contato" className="mx-auto flex max-w-7xl scroll-mt-8 flex-col items-start justify-between gap-6 px-5 py-14 md:flex-row md:items-center md:px-10"><div><p className="text-xs font-bold uppercase text-primary">Vamos conversar</p><h2 className="mt-3 text-2xl font-semibold">{k.footer.contact_title}</h2><p className="mt-3 text-sm text-muted-foreground">{k.footer.contact_text}</p></div><Button asChild size="lg"><a href={whatsapp} target="_blank" rel="noopener noreferrer"><MessageCircle/> {k.footer.contact_cta} <ArrowUpRight/></a></Button></section>
+      <section id="contato" className="mx-auto flex max-w-7xl scroll-mt-8 flex-col items-start justify-between gap-6 px-5 py-14 md:flex-row md:items-center md:px-10"><div><p className="text-xs font-bold uppercase commercial-eyebrow">Vamos conversar</p><h2 className="mt-3 text-2xl font-semibold">{k.footer.contact_title}</h2><p className="mt-3 text-sm text-muted-foreground">{k.footer.contact_text}</p></div><Button asChild size="lg"><a href={whatsapp} target="_blank" rel="noopener noreferrer"><MessageCircle/> {k.footer.contact_cta} <ArrowUpRight/></a></Button></section>
     </main>
     <footer className="border-t border-border"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-7 text-xs text-muted-foreground md:px-10"><div><strong className="text-sm text-foreground">Ponto Pro Gestão</strong><p className="mt-2 max-w-xl">{k.footer.footer_text}</p></div><Link to="/gestor" className="flex items-center gap-2 font-semibold hover:text-primary">Acessar o sistema <ArrowUpRight size={15}/></Link></div></footer>
   </div>;
