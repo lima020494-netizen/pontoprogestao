@@ -39,5 +39,5 @@ const linhasPeriodo=[
  {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-02'},st:{pendente:false},key:'1|2026-10-02'},
  {f:{pin:'2',nome:'Beto'},l:{data:'2026-10-01'},st:{pendente:true},key:'2|2026-10-01'},
 ];
-test('inbox without a selected collaborator shows only pendencies',()=>{assert.deepEqual(tratList('',linhasPeriodo),['1|2026-10-01','2|2026-10-01']);});
-test('selecting a collaborator shows the full period with pendencies on top',()=>{assert.deepEqual(tratList('Ana — PIN 1',linhasPeriodo),['1|2026-10-01','1|2026-10-03','1|2026-10-02']);});
+test('inbox without a selected collaborator shows only pendencies',()=>{assert.deepEqual([...tratList('',linhasPeriodo)],['1|2026-10-01','2|2026-10-01']);});
+test('selecting a collaborator shows the full period with pendencies on top',()=>{assert.deepEqual([...tratList('Ana — PIN 1',linhasPeriodo)],['1|2026-10-01','1|2026-10-03','1|2026-10-02']);});
