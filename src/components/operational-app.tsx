@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 export function OperationalApp({ mode }: { mode: "gestor" | "quiosque" }) {
-  const base = `/vip-ponto.html?v=20261102-tratamento&modo=${mode}`;
+  const base = `/vip-ponto.html?v=20261104-revisao&modo=${mode}`;
   const [src, setSrc] = useState(base);
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
