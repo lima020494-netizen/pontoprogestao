@@ -97,8 +97,8 @@ test('batch inserts the forgotten punch on every selected day',async()=>{
  await runInNewContext(rules+prepare+manualRules+saveRules+';salvarOcorrencia()',ctx);
  const bs=data.batidas as {data:string;hora:string;tipo:string;fonte:string;autorizadoPor:string}[];
  assert.equal(bs.length,3);
- assert.deepEqual(bs.slice(2).map(b=>[b.data,b.hora,b.tipo]),[['2026-10-02','12:00','Saída Intervalo'],['2026-10-03','12:00','Saída Intervalo']]);
- assert.ok(bs.slice(2).every(b=>b.fonte==='MANUAL'&&b.autorizadoPor==='Gestor RH'));
+ assert.deepEqual(bs.slice(1).map(b=>[b.data,b.hora,b.tipo]),[['2026-10-02','12:00','Saída Intervalo'],['2026-10-03','12:00','Saída Intervalo']]);
+ assert.ok(bs.slice(1).every(b=>b.fonte==='MANUAL'&&b.autorizadoPor==='Gestor RH'));
 });
 test('batch aborts the whole forgotten-punch insert when one selected day cannot take it',async()=>{
  const cheias=['08:00','12:00','13:00','17:00'].map((h,i)=>({pin:'1',data:'2026-10-02',hora:h,tipo:'Entrada',nsr:String(i+1)}));
