@@ -49,7 +49,7 @@ function drawer(lote:unknown[]|null){
  const modal={classList:{add(){},remove(){},toggle(){},contains:()=>false},setAttribute(){},querySelector:()=>null};
  const ctx={window:{__tratLote:lote},document:{activeElement:null},get:(k:string,f:unknown)=>k==='funcionarios'?[{pin:'1',nome:'Ana'}]:f,
   ocorrenciaDia:()=>undefined,batidasJornada:()=>[],funcPorPin:()=>({nome:'Ana'}),esc:(x:unknown)=>String(x),
-  abreModal:(h:string)=>{out=h},brOf:(d:string)=>d,$:((id:string)=>id==='modal-generico'?modal:{value:'',textContent:''}) as unknown as (id:string)=>unknown,
+  abrirModal:(h:string)=>{out=h},brOf:(d:string)=>d,$:((id:string)=>id==='modal-generico'?modal:{value:'',textContent:''}) as unknown as (id:string)=>unknown,
   camposOcorrencia:()=>{},hojeISO:()=>'2026-11-04',TIPOS:['Entrada','Saída']};
  runInNewContext(rules+drawerRules+';lancarOcorrencia("1","2026-10-02")',ctx);
  return out;
