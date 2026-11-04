@@ -740,6 +740,7 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 .folha-conferencia{margin-top:4px}
 @media(max-width:900px){.folha-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.pacote-acao,.pacote-acao>div,.pacote-acao .btn{width:100%}}
+.cp-sep{border-top:1px dashed currentColor;margin:4px 0}
 </style>
 </head>
 <body>
@@ -1496,18 +1497,20 @@ async function comprovanteTexto(b){
   const cpf=String(b.cpf||'').replace(/\D/g,'').padStart(11,'0'),cpfProtegido=`***.${cpf.slice(3,6)}.${cpf.slice(6,9)}-**`;
   const hashAss=await sha256Hex([b.nsr,b.data,b.hora,b.cpf,e.doc].join('|'));
   const hashCurto=hashAss.slice(0,32);
+  /* 58mm = 32 colunas: linhas quebradas por palavra para não cortar na impressora. */
+  const W=32,SEP='-'.repeat(W),quebra=t=>{const out=[];let l='';String(t||'').split(/\s+/).forEach(w=>{while(w.length>W){if(l){out.push(l);l='';}out.push(w.slice(0,W));w=w.slice(W);}if(!w)return;if((l?l.length+1:0)+w.length>W){out.push(l);l=w;}else l=l?l+' '+w:w;});if(l)out.push(l);return out;};
   return {hashAss,hashCurto,linhas:[
-    (e.razao||'EMPREGADOR').toUpperCase(),e.fantasia||'',`${e.tipo||'CNPJ'}: ${e.doc||''}`,`Local: ${endereco||'Nao informado'}`,
-    '------------------------------------------','Comprovante de Registro de Ponto','Ponto Pro Gestao',`NSR: ${String(b.nsr||'').padStart(9,'0')}`,
-    `Colaborador: ${b.nome}`,`CPF: ${cpfProtegido}`,'DATA E HORA DA MARCACAO',`${brOf(b.data)}  ${b.hora}`,
-    'SHA-256:',hashCurto.slice(0,16),hashCurto.slice(16),'Portaria MTE 671/2021'
+    ...quebra((e.razao||'EMPREGADOR').toUpperCase()),...(e.fantasia&&e.fantasia!==e.razao?quebra(e.fantasia):[]),`${e.tipo||'CNPJ'}: ${e.doc||''}`,...quebra(`Local: ${endereco||'Nao informado'}`),
+    SEP,'COMPROVANTE DE REGISTRO','DE PONTO DO TRABALHADOR',SEP,`NSR: ${String(b.nsr||'').padStart(9,'0')}`,
+    ...quebra(`Colaborador: ${b.nome}`),`CPF: ${cpfProtegido}`,'DATA E HORA DA MARCACAO',`${brOf(b.data)}  ${b.hora}`,SEP,
+    'Codigo de verificacao SHA-256:',hashCurto.slice(0,16),hashCurto.slice(16),SEP,'Ponto Pro Gestao','Portaria MTE 671/2021'
   ].filter(Boolean)};
 }
 async function imprimirComprovante(b,manual=false){
   ULTIMO_COMPROVANTE=b;
   const {linhas}=await comprovanteTexto(b);
   $('comprovante').innerHTML=`<div class="cp">
-    ${linhas.map((l,i)=>`<div class="c ${i<2?'b':''} ${l==='DATA E HORA DA MARCACAO'||/^\d{2}\/\d{2}\/\d{4}/.test(l)?'cp-mark':''}">${esc(l)}</div>`).join('')}<div class="cp-feed" aria-hidden="true"></div></div>`;
+    ${linhas.map((l,i)=>/^-+$/.test(l)?'<div class="cp-sep" aria-hidden="true"></div>':`<div class="c ${i<1||/^COMPROVANTE|^DE PONTO DO/.test(l)?'b':''} ${l==='DATA E HORA DA MARCACAO'||/^\d{2}\/\d{2}\/\d{4}/.test(l)?'cp-mark':''}">${esc(l)}</div>`).join('')}<div class="cp-feed" aria-hidden="true"></div></div>`;
   /* Cascata: 1 Sunmi nativo · 2 RawBT Android · 3 Bluetooth BLE · 4 manual.
      Batida automática NUNCA abre window.print(); navegador só sob ação explícita (manual=true). */
   const sunmi=sunmiNativo();
