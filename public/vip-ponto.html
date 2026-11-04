@@ -740,6 +740,7 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 .folha-conferencia{margin-top:4px}
 @media(max-width:900px){.folha-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.pacote-acao,.pacote-acao>div,.pacote-acao .btn{width:100%}}
+#comprovante .cp .cp-sep{border-top:1px dashed #000;margin:.8mm 0}
 </style>
 </head>
 <body>
@@ -1496,18 +1497,20 @@ async function comprovanteTexto(b){
   const cpf=String(b.cpf||'').replace(/\D/g,'').padStart(11,'0'),cpfProtegido=`***.${cpf.slice(3,6)}.${cpf.slice(6,9)}-**`;
   const hashAss=await sha256Hex([b.nsr,b.data,b.hora,b.cpf,e.doc].join('|'));
   const hashCurto=hashAss.slice(0,32);
+  /* 58mm = 32 colunas: linhas quebradas por palavra para não cortar na impressora. */
+  const W=32,SEP='-'.repeat(W),quebra=t=>{const out=[];let l='';String(t||'').split(/\s+/).forEach(w=>{while(w.length>W){if(l){out.push(l);l='';}out.push(w.slice(0,W));w=w.slice(W);}if(!w)return;if((l?l.length+1:0)+w.length>W){out.push(l);l=w;}else l=l?l+' '+w:w;});if(l)out.push(l);return out;};
   return {hashAss,hashCurto,linhas:[
-    (e.razao||'EMPREGADOR').toUpperCase(),e.fantasia||'',`${e.tipo||'CNPJ'}: ${e.doc||''}`,`Local: ${endereco||'Nao informado'}`,
-    '------------------------------------------','Comprovante de Registro de Ponto','Ponto Pro Gestao',`NSR: ${String(b.nsr||'').padStart(9,'0')}`,
-    `Colaborador: ${b.nome}`,`CPF: ${cpfProtegido}`,'DATA E HORA DA MARCACAO',`${brOf(b.data)}  ${b.hora}`,
-    'SHA-256:',hashCurto.slice(0,16),hashCurto.slice(16),'Portaria MTE 671/2021'
+    ...quebra((e.razao||'EMPREGADOR').toUpperCase()),...(e.fantasia&&e.fantasia!==e.razao?quebra(e.fantasia):[]),`${e.tipo||'CNPJ'}: ${e.doc||''}`,...quebra(`Local: ${endereco||'Nao informado'}`),
+    SEP,'COMPROVANTE DE REGISTRO','DE PONTO DO TRABALHADOR',SEP,`NSR: ${String(b.nsr||'').padStart(9,'0')}`,
+    ...quebra(`Colaborador: ${b.nome}`),`CPF: ${cpfProtegido}`,'DATA E HORA DA MARCACAO',`${brOf(b.data)}  ${b.hora}`,SEP,
+    'Codigo de verificacao SHA-256:',hashCurto.slice(0,16),hashCurto.slice(16),SEP,'Ponto Pro Gestao','Portaria MTE 671/2021'
   ].filter(Boolean)};
 }
 async function imprimirComprovante(b,manual=false){
   ULTIMO_COMPROVANTE=b;
   const {linhas}=await comprovanteTexto(b);
   $('comprovante').innerHTML=`<div class="cp">
-    ${linhas.map((l,i)=>`<div class="c ${i<2?'b':''} ${l==='DATA E HORA DA MARCACAO'||/^\d{2}\/\d{2}\/\d{4}/.test(l)?'cp-mark':''}">${esc(l)}</div>`).join('')}<div class="cp-feed" aria-hidden="true"></div></div>`;
+    ${linhas.map((l,i)=>/^-+$/.test(l)?'<div class="cp-sep" aria-hidden="true"></div>':`<div class="c ${i<1||/^COMPROVANTE|^DE PONTO DO/.test(l)?'b':''} ${l==='DATA E HORA DA MARCACAO'||/^\d{2}\/\d{2}\/\d{4}/.test(l)?'cp-mark':''}">${esc(l)}</div>`).join('')}<div class="cp-feed" aria-hidden="true"></div></div>`;
   /* Cascata: 1 Sunmi nativo · 2 RawBT Android · 3 Bluetooth BLE · 4 manual.
      Batida automática NUNCA abre window.print(); navegador só sob ação explícita (manual=true). */
   const sunmi=sunmiNativo();
@@ -1653,7 +1656,7 @@ function portalEmpregado(f){
     <div id="pe-out"></div>`);
   portalGerar(f.pin);
 }
-function portalGerar(pin){$('pe-out').innerHTML=htmlFolha(pin,$('pe-ini').value,$('pe-fim').value);}
+function portalGerar(pin){const i=$('pe-ini').value,f=$('pe-fim').value;$('pe-out').innerHTML=`<div class="exec-kpis folha-kpis"></div>`+htmlFolha(pin,i,f);kpisFolha(pin,i,f,$('pe-out').firstElementChild);}
 function abrirModal(html){$('modal-generico').classList.remove('treatment-drawer');$('modal-generico').classList.remove('hidden');$('modal-generico-inner').innerHTML=html;}
 function fecharModal(){$('modal-generico').classList.add('hidden');$('modal-generico').classList.remove('treatment-drawer');if(window.__tratFoco){window.__tratFoco.focus();window.__tratFoco=null;}}
 
@@ -2849,7 +2852,7 @@ function periodoFolhaValido(){
 }
 async function gerarFolha(){const p=periodoFolhaValido();if(!p)return;try{await garantirHistorico(p.ini);}catch(e){}$('fl-out').innerHTML=htmlFolha($('fl-pin').value,p.ini,p.fim);kpisFolha($('fl-pin').value,p.ini,p.fim);}
 /* Presentation only: reads the same dadosFolha/resumoMensalFolha used by screen and PDF. */
-function kpisFolha(pin,ini,fim){const el=$('fl-kpis');if(!el||!pin)return;let d;try{d=dadosFolha(pin,ini,fim);}catch(e){el.innerHTML='';return;}if(!d||!d.tot){el.innerHTML='';return;}
+function kpisFolha(pin,ini,fim,el=$('fl-kpis')){if(!el||!pin)return;let d;try{d=dadosFolha(pin,ini,fim);}catch(e){el.innerHTML='';return;}if(!d||!d.tot){el.innerHTML='';return;}
   const r=resumoMensalFolha(d),bm=d.banco?d.banco.creditos-d.banco.debitos:0;
   el.innerHTML=[['tone-blue','Horas extras',toHHMM(d.tot.extras),`50%: ${toHHMM(d.tot.extras50||0)} · 100%: ${toHHMM(d.tot.extras100||0)}`],['tone-net','Banco de horas no período',toSaldo(bm),'Movimento do período'],['tone-red','Faltas',String(d.tot.faltas),`${toHHMM(d.tot.faltantes)} faltantes`],['tone-green','DSR e folgas',String(d.tot.folgas||0),`${d.tot.feriados||0} feriado(s)`]].map(([t,a,v,s])=>`<div class="exec-kpi ${t}"><span>${a}</span><strong class="num">${v}</strong><small>${s}</small></div>`).join('');}
 async function baixarPDFFolha(){const p=periodoFolhaValido();if(!p||!$('fl-pin').value)return;try{await garantirHistorico(p.ini);}catch(e){}try{await garantirLib('pdf');}catch(e){return toast('PDF indisponível. Verifique a conexão e tente novamente.',5000);}try{await pdfFolhas([$('fl-pin').value],p.ini,p.fim);}catch(e){toast('Não foi possível gerar o PDF. Tente novamente.',5000);}}
@@ -3384,7 +3387,7 @@ async function abrirFolhaPorLink(token){
     CONTA='folha-compartilhada';SHARE_DATA={funcionarios:[data.employee],batidas:data.points,empregador:data.employer,escalas:data.schedules,feriados:data.holidays,...(data.misc||{})};
     window.__folhaLink={pin:'self',ini:data.start,fim:data.end,nome:data.employee.nome};
     $('folha-link-status').innerHTML=`<div class="alert ok">Acesso exclusivo à folha de <b>${esc(data.employee.nome)}</b> — ${brOf(data.start)} a ${brOf(data.end)}</div>`;
-    $('folha-link-conteudo').innerHTML=htmlFolha('self',data.start,data.end);$('btn-pdf-link').classList.remove('hidden');
+    $('folha-link-conteudo').innerHTML=`<div class="exec-kpis folha-kpis"></div>`+htmlFolha('self',data.start,data.end);kpisFolha('self',data.start,data.end,$('folha-link-conteudo').firstElementChild);$('btn-pdf-link').classList.remove('hidden');
   }catch(e){$('folha-link-status').innerHTML=`<div class="alert err">${esc(e.message||'Este link é inválido ou expirou.')}</div>`;}
 }
 async function baixarFolhaLink(){const d=window.__folhaLink;if(!d)return;const pdf=await gerarPDFComLogo({folhas:[gerarFolhaMTE(d.pin,d.ini,d.fim)]});pdf.doc.save(`Folha_${String(d.nome||'Funcionario').replace(/\s+/g,'_')}_${d.ini.slice(0,7)}.pdf`);}
