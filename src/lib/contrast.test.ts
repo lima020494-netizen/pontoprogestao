@@ -27,9 +27,8 @@ test('department band of the schedule grid keeps white text on the navy row', ()
 });
 
 test('schedule band stays readable while the row is hovered', () => {
-  const hover = /#gestor-body tr:hover td\.dept-head\s*\{([^}]*)\}/.exec(html);
-  assert.ok(hover, 'regra de hover para a faixa da escala ausente');
-  assert.ok(contrastRatio(colorOf(hover[1], 'tr:hover td.dept-head'), navy) >= 4.5);
+  const decl = declaration('#gestor-body tr:hover td.dept-head', html);
+  assert.ok(contrastRatio(colorOf(decl, 'tr:hover td.dept-head'), navy) >= 4.5);
 });
 
 test('month label of the accountant package banner is light on the navy hero', () => {
