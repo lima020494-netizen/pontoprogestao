@@ -7,10 +7,12 @@ const html = readFileSync(new URL('../../public/vip-ponto.html', import.meta.url
 const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 const navy = '#1e3a8a'; // fundo institucional escuro usado em faixas, cabeçalhos e barras
 
+// Procuram a declaração de um seletor específico, mesmo quando ele faz parte de uma lista de seletores.
 function declaration(selector: string, file: string) {
-  const rule = new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{([^}]*)\\}').exec(file);
-  assert.ok(rule, `regra CSS ausente: ${selector}`);
-  return rule[1];
+  for (const [, group, body] of file.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (group.split(',').some(s => s.trim().replace(/\s+/g, ' ') === selector)) return body;
+  }
+  assert.fail(`regra CSS ausente: ${selector}`);
 }
 
 function colorOf(decl: string, selector: string) {
