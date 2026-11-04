@@ -2353,6 +2353,12 @@ function camposBatidaMadrugada(){
   $('ib-madrugada').classList.toggle('hidden',!madrugada);$('ib-anterior-campo').classList.toggle('hidden',!madrugada||!saida);
   if(!madrugada||!saida)$('ib-anterior').checked=false;
 }
+function salvarBatidaManual(){
+  const hora=$('ib-hora').value,madrugada=!!hora&&toMin(hora)<360;
+  const erro=registrarBatidaManual({pin:$('ib-pin').value,data:$('ib-data').value,hora,tipo:madrugada?$('ib-tipo').value:TIPOS[0],motivo:$('ib-motivo').value,autorizadoPor:$('ib-autorizou').value,anterior:$('ib-anterior')?.checked});
+  if(erro)return alert(erro);
+  fecharModal();subBatidas();
+}
 function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior=false}){
   if(!data||!hora)return 'Informe data e hora.';
   if(!TIPOS.includes(tipo))return 'Selecione um tipo de marcação válido.';
@@ -2368,12 +2374,6 @@ function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior
     autorizadoPor,gerenciador:GERENCIADOR.nome,movimento:`Inserida manualmente - Autorizado por: ${autorizadoPor} - Motivo: ${motivo} - Por: ${GERENCIADOR.nome}`,criadoEm:new Date().toISOString()});
   set('batidas',all); filaPonto(nsrM); reordenarJornada(pin,jornada); log(`${brOf(data)} ${hora} * Marcação Manual - Motivo: ${motivo} - Autorizado por: ${autorizadoPor}`);
   window.__batFilt={pin,data:jornada,ini:$('gb-ini')?.value||jornada,fim:$('gb-fim')?.value||data};return '';
-}
-function salvarBatidaManual(){
-  const hora=$('ib-hora').value,madrugada=!!hora&&toMin(hora)<360;
-  const erro=registrarBatidaManual({pin:$('ib-pin').value,data:$('ib-data').value,hora,tipo:madrugada?$('ib-tipo').value:TIPOS[0],motivo:$('ib-motivo').value,autorizadoPor:$('ib-autorizou').value,anterior:$('ib-anterior')?.checked});
-  if(erro)return alert(erro);
-  fecharModal();subBatidas();
 }
 function lancarOcorrencia(pinSelecionado='',dataSelecionada=''){
  const fs=get('funcionarios',[]),lote=window.__tratLote,ex=lote?{}:ocorrenciaDia(pinSelecionado,dataSelecionada)||{};window.__ocEdit=ex;const impar=!lote&&!ex.tipo&&pinSelecionado&&dataSelecionada&&batidasJornada(pinSelecionado,dataSelecionada).length%2===1;const tipoSel=ex.tipo||(impar?'Esquecimento de Marcação':'');
