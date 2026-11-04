@@ -42,14 +42,14 @@ const linhasPeriodo=[
 test('inbox without a selected collaborator shows only pendencies',()=>{assert.deepEqual([...tratList('',linhasPeriodo)],['1|2026-10-01','2|2026-10-01']);});
 test('selecting a collaborator shows the full period with pendencies on top',()=>{assert.deepEqual([...tratList('Ana — PIN 1',linhasPeriodo)],['1|2026-10-01','1|2026-10-03','1|2026-10-02']);});
 const drawerRules=html.slice(html.indexOf('function lancarOcorrencia('),html.indexOf('function camposOcorrencia('));
-const saveRules=html.slice(html.indexOf('async function salvarOcorrencia('),html.indexOf("document.addEventListener('keydown'"));
+const saveRules=html.slice(html.indexOf('async function salvarOcorrencia('),html.indexOf("document.addEventListener('keydown',e=>{const modal=$('modal-generico')"));
 const LOTE=[{pin:'1',data:'2026-10-02'}];
 function drawer(lote:unknown[]|null){
  let out='';
  const modal={classList:{add(){},remove(){},toggle(){},contains:()=>false},setAttribute(){},querySelector:()=>null};
  const ctx={window:{__tratLote:lote},document:{activeElement:null},get:(k:string,f:unknown)=>k==='funcionarios'?[{pin:'1',nome:'Ana'}]:f,
   ocorrenciaDia:()=>undefined,batidasJornada:()=>[],funcPorPin:()=>({nome:'Ana'}),esc:(x:unknown)=>String(x),
-  abrirModal:(h:string)=>{out=h},$:((id:string)=>id==='modal-generico'?modal:{value:'',textContent:''}) as unknown as (id:string)=>unknown,
+  abreModal:(h:string)=>{out=h},brOf:(d:string)=>d,$:((id:string)=>id==='modal-generico'?modal:{value:'',textContent:''}) as unknown as (id:string)=>unknown,
   camposOcorrencia:()=>{},hojeISO:()=>'2026-11-04',TIPOS:['Entrada','Saída']};
  runInNewContext(rules+drawerRules+';lancarOcorrencia("1","2026-10-02")',ctx);
  return out;
