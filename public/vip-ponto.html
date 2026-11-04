@@ -697,6 +697,28 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 .routine-arrow{position:absolute;right:-14px;top:50%;transform:translateY(-50%);z-index:1;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--card);border:1px solid var(--line);color:#0ea5e9;font-size:11px}.routine-step:last-child .routine-arrow{display:none}
 @media(max-width:760px){.routine-flow{grid-template-columns:1fr;gap:12px}.routine-step{min-height:68px;padding:12px 16px}.routine-arrow{right:auto;left:34px;top:auto;bottom:-18px;transform:rotate(90deg)}}
 @media(prefers-reduced-motion:reduce){.routine-step,.drawer-nav .btn{transition:none}.routine-step:hover{transform:none}}
+
+/* Executive module layout: Banco, Escalas, Empresa (presentation only) */
+.mod-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}.mod-head h3{font:600 22px 'Sora',sans-serif;color:var(--navy);margin:0}.mod-head p{margin:4px 0 0;font-size:13px}
+.mod-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 2px rgba(15,23,42,.04)}.mod-card-t{font:600 15px 'Sora',sans-serif;color:var(--navy);margin:0 0 12px}.mod-card h3{font-size:17px}
+.num{font-variant-numeric:tabular-nums}
+.exec-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.exec-kpi{display:flex;flex-direction:column;gap:6px;padding:16px 20px;border-radius:12px;border:1px solid var(--treat-line,var(--line));background:var(--treat-bg,var(--card));color:var(--treat-fg,var(--txt))}.exec-kpi span{font-size:13px;font-weight:600}.exec-kpi strong{font:700 28px 'Sora',sans-serif}.exec-kpi small{font-size:12px;opacity:.8}
+.tone-green{--treat-bg:#f0fdf4;--treat-fg:#15803d;--treat-line:#bbf7d0}.tone-net{--treat-bg:var(--card);--treat-fg:var(--navy);--treat-line:var(--line)}
+.bh-mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:10px;overflow:hidden}.bh-mini>div{padding:12px 16px;display:flex;flex-direction:column;gap:4px}.bh-mini>div+div{border-left:1px solid var(--line)}.bh-mini span{font-size:12px;color:var(--muted)}.bh-mini strong{font-size:20px;color:var(--txt)}.bh-mini .pos{color:#15803d}.bh-mini .neg{color:#b91c1c}
+.saldo-badge{display:inline-block;min-width:72px;text-align:center;padding:3px 10px;border-radius:999px;border:1px solid var(--treat-line);background:var(--treat-bg);color:var(--treat-fg);font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums}
+.jornada-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:16px}
+.jornada-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}.jornada-card header{display:flex;gap:12px;align-items:center;margin-bottom:12px}.jornada-card strong{display:block;font-size:14px}.jornada-card small{color:var(--muted);font-size:12px}
+.jornada-tipo{flex:none;min-width:52px;text-align:center;padding:8px;border-radius:8px;background:#1E3A8A;color:#fff;font:700 13px 'Sora',sans-serif}
+.semana{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;list-style:none;margin:0;padding:0}.semana li{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:6px;border:1px solid;font-size:11px}.semana b{font-size:11px}
+.dia-T{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}.dia-D{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}.dia-F{background:#faf5ff;color:#7e22ce;border-color:#e9d5ff}.dia-A{background:#f8fafc;color:#475569;border-color:#e2e8f0}
+.esc-legenda{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.esc-legenda span{padding:3px 10px;border-radius:999px;border:1px solid;font-size:12px;font-weight:600}
+.escala-table td.esc-cel{border-left:3px solid;border-color:inherit}.escala-table td.esc-cel select{background:transparent}
+.emp-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}.emp-tabs button{min-height:44px;padding:10px 16px;border:0;background:transparent;font:600 13.5px 'Manrope',sans-serif;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer}.emp-tabs button[aria-selected=true]{color:var(--navy);border-bottom-color:#0ea5e9}.emp-tabs button:focus-visible{outline:2px solid #0ea5e9;outline-offset:-2px}
+.emp-pane{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}.emp-pane-h{margin-bottom:16px}.emp-pane-h h4{font:600 16px 'Sora',sans-serif;color:var(--navy);margin:0}.emp-pane-h p{margin:4px 0 0;font-size:13px}.emp-pane .card{box-shadow:none;border:1px solid var(--line);border-radius:10px;margin:16px 0 0}
+.emp-savebar{position:sticky;bottom:0;display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap;margin:20px -20px -20px;padding:12px 20px;background:var(--card);border-top:1px solid var(--line);border-radius:0 0 12px 12px}.emp-savebar #e-msg{margin-right:auto}.emp-savebar .btn{min-width:180px}
+.emp-link-card{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid var(--line);border-radius:10px}.emp-link-card>span{font-size:28px}.emp-link-card>div{flex:1}.emp-link-card p{margin:4px 0 0;font-size:13px}
+@media(max-width:760px){.exec-kpis{grid-template-columns:1fr;gap:8px}.exec-kpi strong{font-size:22px}.bh-mini{grid-template-columns:1fr 1fr}.bh-mini>div:nth-child(3){border-left:0}.bh-mini>div:nth-child(n+3){border-top:1px solid var(--line)}.mod-card,.emp-pane{padding:16px}.emp-savebar{margin:16px -16px -16px;padding:12px 16px}.emp-savebar .btn{width:100%}.emp-link-card{flex-wrap:wrap}}
 </style>
 </head>
 <body>
@@ -1730,7 +1752,25 @@ function irAba(k){
 }
 /* Empregador/Gerenciadores dentro do gestor (reutiliza o mesmo formulário) */
 function abaEmp(){ $('empregador-form').innerHTML=''; telaEmpregador('gestor-body');
-  const b=$('gestor-body'); if(b) b.insertAdjacentHTML('beforeend',`<section class="card account-danger" aria-labelledby="minha-conta-t"><h4 id="minha-conta-t">Minha Conta</h4><p class="muted">A exclusão apaga todos os dados desta empresa. Exige confirmação da sua senha.</p><button class="btn ghost danger-ghost" onclick="abrirExcluirConta()">Excluir conta…</button></section>`); }
+  const b=$('gestor-body'); if(!b)return; b.insertAdjacentHTML('beforeend',`<section class="card account-danger" aria-labelledby="minha-conta-t"><h4 id="minha-conta-t">Minha Conta</h4><p class="muted">A exclusão apaga todos os dados desta empresa. Exige confirmação da sua senha.</p><button class="btn ghost danger-ghost" onclick="abrirExcluirConta()">Excluir conta…</button></section>`);
+  organizarEmpresaAbas(b); }
+/* Presentation only: regroups the existing company form nodes (same IDs) into tabs. */
+function organizarEmpresaAbas(b){
+  const cards=[...b.children].filter(n=>n.classList.contains('card'));const c1=cards[0],cGer=cards[1],cConta=b.querySelector('.account-danger');if(!c1)return;
+  const mk=(k,t,d)=>{const s=document.createElement('section');s.className='emp-pane';s.id='emp-pane-'+k;s.setAttribute('role','tabpanel');s.setAttribute('aria-labelledby','emp-tab-'+k);s.innerHTML=`<header class="emp-pane-h"><h4>${t}</h4><p class="muted">${d}</p></header>`;return s;};
+  const geral=mk('geral','Dados Gerais','Identificação da empresa usada no espelho, cupom e relatórios.'),jor=mk('jor','Jornada & Horas Extras','Horário padrão, sábado, DSR e regras do banco de horas.'),qui=mk('qui','Quiosque & Dispositivos','Terminal de registro e aplicativo Android.'),seg=mk('seg','Segurança','Gerenciadores com PIN e exclusão da conta.');
+  const kids=[...c1.childNodes],hr=c1.querySelector('.hr'),logoLbl=[...c1.querySelectorAll('label')].find(l=>/Logo da empresa/.test(l.textContent));
+  let alvo=geral;kids.forEach(n=>{if(n===hr)alvo=jor;if(n===logoLbl)alvo=geral;if(n.nodeType===1&&(n.id==='e-msg'||n.tagName==='BUTTON'))return;if(n.nodeType===1&&n.tagName==='H3')return;alvo.appendChild(n);});
+  const dsr=$('e-dsr')?.parentNode;if(dsr)jor.insertBefore(dsr,jor.children[1]);
+  qui.insertAdjacentHTML('beforeend',`<div class="emp-link-card"><span aria-hidden="true">🖥️</span><div><strong>Terminal Quiosque</strong><p class="muted">Link, QR Code, impressora e download do aplicativo Android.</p></div><button type="button" class="btn" onclick="navegarGestor('kiosk')">Abrir configurações</button></div>`);
+  if(cGer)seg.appendChild(cGer);if(cConta)seg.appendChild(cConta);
+  const msg=$('e-msg'),btn=c1.querySelector('button[onclick="salvarEmpregador()"]');
+  const bar=document.createElement('div');bar.className='emp-savebar';if(msg)bar.appendChild(msg);if(btn){btn.className='btn';btn.style.marginTop='0';btn.textContent='Salvar alterações';bar.appendChild(btn);}
+  const tabs=[['geral','Dados Gerais'],['jor','Jornada & Horas Extras'],['qui','Quiosque & Dispositivos'],['seg','Segurança']];
+  b.innerHTML=`<div class="mod-head"><div><h3>Empresa &amp; Parâmetros</h3><p class="muted">Configurações da empresa organizadas por assunto.</p></div></div><div class="emp-tabs" role="tablist" aria-label="Seções da empresa">${tabs.map(([k,t],i)=>`<button type="button" role="tab" id="emp-tab-${k}" aria-controls="emp-pane-${k}" aria-selected="${i===0}" onclick="mostrarEmpAba('${k}')">${t}</button>`).join('')}</div>`;
+  [geral,jor,qui,seg].forEach((p,i)=>{p.hidden=i>0;b.appendChild(p);});geral.appendChild(bar);
+}
+function mostrarEmpAba(k){document.querySelectorAll('.emp-tabs [role=tab]').forEach(t=>t.setAttribute('aria-selected',String(t.id==='emp-tab-'+k)));document.querySelectorAll('.emp-pane').forEach(p=>p.hidden=p.id!=='emp-pane-'+k);const bar=document.querySelector('.emp-savebar'),p=$('emp-pane-'+k);if(bar&&(k==='geral'||k==='jor'))p.appendChild(bar);}
 async function abaLogs(){
   renderLogs(get('logs',[]));
   if(!sb||!CONTA||SHARE_DATA)return;
@@ -2356,14 +2396,19 @@ function subEscala(){
     lista.forEach(f=>{
       rows+=`<tr><td><b>${esc(f.nome)}</b><div class="muted">${esc(f.funcao)}</div></td>`+dias.map(d=>{
         const it=buscaNaEscala(f.pin,d)||{tipo:'Trabalhado',horarioEntrada:''};
-        return `<td><select ${travada?'disabled':''} onchange="setCelula('${ini}','${f.pin}','${d}',this.value)">
+        const tc=it.tipo==='DSR'?'D':it.tipo==='Trabalhado'?'T':'F';
+        return `<td class="esc-cel dia-${tc}"><select ${travada?'disabled':''} onchange="this.parentNode.className='esc-cel dia-'+(this.value==='DSR'?'D':this.value==='Trabalhado'?'T':'F');setCelula('${ini}','${f.pin}','${d}',this.value)">
           ${TIPOS_ESC.map(t=>`<option ${(it.tipo==='Folga Domingo'?'Folga Compensada':it.tipo)===t?'selected':''}>${t}</option>`).join('')}</select>
           ${it.tipo==='Trabalhado'?`<input ${travada?'disabled':''} type="time" value="${it.horarioEntrada||''}" onchange="setHora('${ini}','${f.pin}','${d}',this.value)" style="margin-top:4px"/>`:''}</td>`;
       }).join('')+'</tr>';
     });
   });
   const hist=get('logsEscala',[]).filter(h=>h.semana===ini);
-  $('sub-body').innerHTML=`<div class="row"><h3>Escala ${brOf(ini)} a ${brOf(fim)} ${travada?'<span class="lock">🔒 bloqueada após 30 dias</span>':`<span class="muted" style="font-size:13px">🔓 editável por mais ${diasRest} dia(s)</span>`}</h3></div>
+  const PADRAO={'5x2':'TTTTTFD','6x1':'TTTTTTD','4x3':'TTTTFFD','12x36':'AAAAAAA','22x10':'AAAAAAA'},SEM=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const cards=ESCALAS.map(([c,n,m])=>{const q=fs.filter(f=>(f.escala||'5x2')===c).length;if(!q)return '';return `<article class="jornada-card"><header><span class="jornada-tipo">${esc(c)}</span><div><strong>${esc(n)}</strong><small>${toHHMM(m)} por dia · ${q} colaborador(es)</small></div></header><ol class="semana">${[...PADRAO[c]].map((t,i)=>`<li class="dia-${t}"><b>${SEM[i]}</b><span>${t==='T'?'Trab.':t==='D'?'DSR':t==='F'?'Folga':'Alt.'}</span></li>`).join('')}</ol></article>`;}).join('');
+  $('sub-body').innerHTML=`<div class="mod-head"><div><h3>Escalas &amp; Jornadas</h3><p class="muted">Padrão de referência por tipo de jornada. A escala do período abaixo prevalece no cálculo.</p></div></div>
+  ${cards?`<div class="jornada-grid">${cards}</div>`:''}
+  <section class="mod-card"><div class="row"><h3>Escala ${brOf(ini)} a ${brOf(fim)} ${travada?'<span class="lock">🔒 bloqueada após 30 dias</span>':`<span class="muted" style="font-size:13px">🔓 editável por mais ${diasRest} dia(s)</span>`}</h3></div>
   <div class="grid g4">
     <div><label>Período</label><select id="escala-dias" onchange="setEscPeriodo(this.value)">${[7,15,30].map(n=>`<option value="${n}" ${nd===n?'selected':''}>${n} dias</option>`).join('')}</select></div>
     <div><label>Início</label><input type="date" id="escala-inicio" value="${ini}" onchange="escIniChange(this.value)"/></div>
@@ -2381,9 +2426,9 @@ function subEscala(){
     <input type="file" id="imp-esc" accept=".csv,.xlsx,.xls" class="hidden" onchange="importarEscala(this)"/>
   </div>
   <div class="muted">A escala prevalece sobre a jornada do cadastro. Edição por 30 dias após criação; depois, bloqueada. Máx. 3 folgas por semana.</div>
-  <div class="tbl-wrap"><table class="escala-table"><tr><th>Funcionário</th>${dias.map(d=>`<th>${DIAS[dow(d)].slice(0,3)}<br>${brOf(d).slice(0,5)}</th>`).join('')}</tr>${rows}</table></div>
+  <div class="esc-legenda"><span class="dia-T">Trabalhado</span><span class="dia-D">DSR</span><span class="dia-F">Folga Compensada</span></div><div class="tbl-wrap"><table class="escala-table"><tr><th>Funcionário</th>${dias.map(d=>`<th>${DIAS[dow(d)].slice(0,3)}<br>${brOf(d).slice(0,5)}</th>`).join('')}</tr>${rows}</table></div>
   <div class="hr"></div><h4>Histórico de alterações da escala</h4>
-  <div class="tbl-wrap"><table><tr><th>Registro</th></tr>${hist.map(h=>`<tr><td>${esc(h.texto)}</td></tr>`).join('')||'<tr><td class="muted">Sem alterações.</td></tr>'}</table></div>`;
+  <div class="tbl-wrap"><table><tr><th>Registro</th></tr>${hist.map(h=>`<tr><td>${esc(h.texto)}</td></tr>`).join('')||'<tr><td class="muted">Sem alterações.</td></tr>'}</table></div></section>`;
 }
 const ESC_TRAVA_DIAS=30;
 const TIPOS_ESC=['Trabalhado','DSR','Folga Compensada']; // 'Folga Domingo' legado é exibido como Folga Compensada
@@ -2512,19 +2557,19 @@ function confirmarImport(){
 function ajudaBancoHoras(){abrirModal(`<div class="row"><h3>Banco de Horas</h3><button class="btn sm ghost right" aria-label="Fechar ajuda" onclick="fecharModal()">✕</button></div><p>Saldo anterior + créditos − débitos = saldo acumulado. A vigência informada é respeitada; quando vazia, vale a admissão ou o início do período.</p><p>A escala prevalece sobre o cadastro. Feriados e descansos previstos não geram faltas. Créditos representam minutos trabalhados, sem multiplicação por adicional monetário.</p>`);}
 function subBanco(){
   const fs=get('funcionarios',[]),hoje=hojeISO();
-  $('sub-body').innerHTML=`<div class="row"><h3>Banco de Horas</h3><button class="btn sm ghost right" aria-label="Ajuda sobre banco de horas" title="Ajuda sobre banco de horas" onclick="ajudaBancoHoras()">ⓘ</button></div>
-  <div class="grid g4"><div><label>Funcionário</label><select id="bh-pin">${fs.map(f=>`<option value="${f.pin}">${esc(f.nome)}</option>`).join('')}</select></div>
+  $('sub-body').innerHTML=`<div class="mod-head"><div><h3>Banco de Horas</h3><p class="muted">Saldos da equipe, extrato individual e fechamento do período.</p></div><button class="btn sm ghost" aria-label="Ajuda sobre banco de horas" title="Ajuda sobre banco de horas" onclick="ajudaBancoHoras()">ⓘ</button></div>
+  <div id="bh-kpis" class="exec-kpis" aria-live="polite"></div>
+  <section class="mod-card"><h4 class="mod-card-t">Extrato individual</h4><div class="grid g4 mod-filters"><div><label>Funcionário</label><select id="bh-pin">${fs.map(f=>`<option value="${f.pin}">${esc(f.nome)}</option>`).join('')}</select></div>
   <div><label>Período inicial</label><input type="date" id="bh-ini" value="${hoje.slice(0,8)}01"/></div>
   <div><label>Período final</label><input type="date" id="bh-fim" value="${hoje}"/></div>
-  <div style="display:flex;align-items:flex-end"><button class="btn" onclick="calcBancoView()">Calcular</button></div></div>
-  <div id="bh-out" style="margin-top:12px"></div>
-  <hr style="margin:18px 0;border:0;border-top:1px solid #dbe3ee"/>
-  <div class="row"><div><h3>Resumo geral — todos os colaboradores</h3><div class="muted">Fechamento consolidado do banco de horas.</div></div>
+  <div style="display:flex;align-items:flex-end"><button class="btn" onclick="calcBancoView()">Ver extrato</button></div></div>
+  <div id="bh-out" style="margin-top:16px"></div></section>
+  <section class="mod-card"><div class="row"><div><h4 class="mod-card-t">Fechamento — todos os colaboradores</h4><div class="muted">Fechamento consolidado do banco de horas.</div></div>
     <div class="right row"><button class="btn sm" onclick="pdfResumoBanco()">📄 Baixar PDF</button><button class="btn sm ghost" onclick="csvResumoBanco()">Exportar CSV</button></div></div>
   <div class="grid g4"><div><label>Data inicial</label><input type="date" id="bhr-ini" value="${hoje.slice(0,8)}01" onchange="renderResumoBanco()"/></div>
   <div><label>Data final</label><input type="date" id="bhr-fim" value="${hoje}" onchange="renderResumoBanco()"/></div>
   <div><label>Status</label><select id="bhr-st" onchange="renderResumoBanco()">${['Todos','Ativos','Desligados','Afastamento','Férias'].map(s=>`<option>${s}</option>`).join('')}</select></div></div>
-  <div id="bhr-out" style="margin-top:10px"></div>`;
+  <div id="bhr-out" style="margin-top:10px"></div></section>`;
   if(fs.length)calcBancoView();
   renderResumoBanco();
 }
@@ -2546,6 +2591,8 @@ async function renderResumoBanco(){
   try{await garantirHistorico(r.ini);}catch(e){}
   if(r.ini>r.fim){$('bhr-out').innerHTML='<div class="alert err">A data inicial deve ser anterior à data final.</div>';return;}
   $('bhr-out').innerHTML=tabelaResumoBanco(r);
+  const pos=r.linhas.reduce((a,{b})=>a+Math.max(0,b.atual),0),neg=r.linhas.reduce((a,{b})=>a+Math.min(0,b.atual),0),np=r.linhas.filter(x=>x.b.atual>0).length,nn=r.linhas.filter(x=>x.b.atual<0).length;
+  if($('bh-kpis'))$('bh-kpis').innerHTML=`<div class="exec-kpi tone-green"><span>Saldo positivo da equipe</span><strong class="num">+${toHHMM(pos)}</strong><small>${np} colaborador(es)</small></div><div class="exec-kpi tone-red"><span>Saldo negativo da equipe</span><strong class="num">-${toHHMM(-neg)}</strong><small>${nn} colaborador(es)</small></div><div class="exec-kpi tone-net"><span>Saldo líquido consolidado</span><strong class="num">${toSaldo(pos+neg)}</strong><small>${brOf(r.ini)} a ${brOf(r.fim)} · ${esc(r.st)}</small></div>`;
 }
 async function pdfResumoBanco(){
   const r=dadosResumoBanco();if(!r.ini||!r.fim||r.ini>r.fim)return toast('Informe um período válido.');
@@ -2566,12 +2613,13 @@ function csvResumoBanco(){
 }
 function calcBancoView(){
   const b=calcBanco($('bh-pin').value,$('bh-ini').value,$('bh-fim').value);
-  $('bh-out').innerHTML=`<div class="grid g4">
-    ${[['Saldo Anterior',toSaldo(b.anterior)],['Créditos','+'+toHHMM(b.creditos)],['Débitos','-'+toHHMM(b.debitos)],['Saldo Atual',toSaldo(b.atual)]]
-    .map(([t,v])=>`<div class="card" style="margin:0;text-align:center"><div class="muted">${t}</div><div style="font-size:26px;font-weight:900">${v}</div></div>`).join('')}
+  const linha=d=>{const cr=/^Crédito/.test(d),h=(d.match(/(\d+:\d{2})$/)||[])[1]||'',dt=(d.match(/dia (\d{2}\/\d{2}\/\d{4})/)||[])[1]||'—',txt=d.replace(/ dia \d{2}\/\d{2}\/\d{4}/,'');return `<tr><td class="num">${esc(dt)}</td><td>${esc(txt)}</td><td style="text-align:right"><span class="saldo-badge ${cr?'tone-green':'tone-red'}">${cr?'+':'-'}${esc(h)}</span></td></tr>`;};
+  $('bh-out').innerHTML=`<div class="bh-mini">
+    ${[['Saldo anterior',toSaldo(b.anterior),''],['Créditos','+'+toHHMM(b.creditos),'pos'],['Débitos','-'+toHHMM(b.debitos),'neg'],['Saldo atual',toSaldo(b.atual),b.atual<0?'neg':b.atual>0?'pos':'']]
+    .map(([t,v,c])=>`<div><span>${t}</span><strong class="num ${c}">${v}</strong></div>`).join('')}
   </div>
-  <div class="tbl-wrap" style="margin-top:10px"><table><tr><th>Movimentações do período</th></tr>
-  ${b.detalhes.map(d=>`<tr><td>${esc(d)}</td></tr>`).join('')||'<tr><td class="muted">Sem movimentações.</td></tr>'}</table></div>`;
+  <div class="tbl-wrap" style="margin-top:12px"><table class="bh-extrato"><thead><tr><th>Data</th><th>Movimentação</th><th style="text-align:right">Horas</th></tr></thead><tbody>
+  ${b.detalhes.map(linha).join('')||'<tr><td colspan="3" class="muted">Sem movimentações no período.</td></tr>'}</tbody></table></div>`;
 }
 /* F) Relatórios */
 function subRelatorios(){
