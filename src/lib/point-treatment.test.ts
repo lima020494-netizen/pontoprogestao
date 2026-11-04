@@ -107,4 +107,7 @@ test('batch aborts the whole forgotten-punch insert when one selected day cannot
  await runInNewContext(rules+prepare+manualRules+saveRules+';salvarOcorrencia()',ctx);
  assert.equal((data['batidas'] as unknown[]).length,4);
  assert.match(String(nodes['oc-erro']?.['textContent']),/Limite de 4/);
-});
+});test('closed manual adjustment with full hours leaves the inbox as green',()=>{const s=classify('2026-11-01',480,480,4,{tipo:'Esquecimento de Marcação',status:'concluido'});assert.equal(s.pendente,false);assert.equal(s.cor,'green');});
+test('shift over six hours with only two punches flags missing break',()=>{const s=classify('2026-11-01',480,480,2);assert.equal(s.pendente,true);assert.equal(s.cor,'orange');assert.equal(s.titulo,'Intervalo não registrado');});
+test('six-hour shift with two punches does not require a break',()=>{assert.equal(classify('2026-11-01',360,360,2).pendente,false);});
+test('short worked time without allowance stays as review shift',()=>{const s=classify('2026-11-01',480,300,4);assert.equal(s.pendente,true);assert.equal(s.titulo,'Revisar jornada');});
