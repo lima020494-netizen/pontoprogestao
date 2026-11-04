@@ -2031,22 +2031,29 @@ function miniResumoFolha(d){
 const FOLHA_RODAPE='Ponto Pro Gestão v1.0 · Sistema de Tratamento de Ponto · Emissão conforme Portaria MTE nº 671/2021';
 const FOLHA_CIENCIA='Declaro ciência das marcações e dos tratamentos apresentados neste espelho de ponto.';
 function modeloEspelho(d){
-  const head=['Dia','Entrada 1','Saída 1','Entrada 2','Saída 2','Prevista','Trabalhadas','Extras','Débito','Noturno','Status'];
-  const just=[...d.just];
-  const body=d.linhas.map(l=>{
+  const head=['Dia','E1','S1','E2','S2','Prevista','Trabalhadas','Extras','Faltas','Saldo','Ocorrência'];
+  const notas=[],porDia={},curto=t=>String(t||'').replace(/\s*-\s*Autorizado por:.*$/i,'').replace(/^\s*Motivo:\s*/i,'').replace(/\s+/g,' ').trim();
+  const nota=(dia,texto)=>{const t=`${brOf(dia)}: ${texto}`;let i=notas.indexOf(t);if(i<0){notas.push(t);i=notas.length-1;}(porDia[dia]=porDia[dia]||new Set()).add(i+1);};
+  const rows=d.linhas.map(l=>{
     const bs=batidasDia(d.f.pin,l.data),marca=tipo=>{const b=bs.find(x=>x.tipo===tipo);if(!b)return '--:--';const tratada=!!(b.manual||b.movimento||b.fonte==='MANUAL');
-      if(tratada){const motivo=b.movimento||b.motivo||'Marcação manual; justificativa não informada no registro.',nota=`${brOf(l.data)} ${b.hora} * ${motivo}`,original=`${brOf(l.data)} ${b.hora} - ${motivo}`,i=just.indexOf(original);if(i>=0)just[i]=nota;else if(!just.includes(nota))just.push(nota);}
+      if(tratada){const m=curto(b.movimento||b.motivo).replace(/^\d{4}-\d\d-\d\d \d\d:\d\d \* /,'').replace(/^Marcação Manual\s*-\s*/i,'');nota(l.data,`${b.fonte==='MANUAL'||b.manual?'Ajuste manual de marcação':'Reclassificação de marcação'} ${b.hora}${m?' ('+m+')':''}`);}
       return b.hora+(tratada?'*':'');};
-    return [brOf(l.data).slice(0,5),marca('Entrada'),marca('Saída Intervalo'),marca('Entrada Intervalo'),marca('Saída'),toHHMM(l.previsto),toHHMM(l.trabalhado),toHHMM(Math.max(0,l.trabalhado-l.previsto)),toHHMM(Math.max(0,-l.saldo)),toHHMM(l.noturno),l.ocorrencia||(bs.length%2?'INCOMPLETO':bs.length?'TRABALHADO':'—')];
+    return {l,cells:[brOf(l.data).slice(0,5),marca('Entrada'),marca('Saída Intervalo'),marca('Entrada Intervalo'),marca('Saída'),toHHMM(l.previsto),toHHMM(l.trabalhado),toHHMM(Math.max(0,l.trabalhado-l.previsto)),toHHMM(Math.max(0,-l.saldo)),l.saldo?toSaldo(l.saldo):'00:00',l.ocorrencia||(bs.length%2?'INCOMPLETO':bs.length?'TRABALHADO':'—')]};
   });
-  const notas=[`* Marcação manual/tratada. E1/S1/E2/S2: entrada, saída intervalo, retorno, saída. Extras 50%: além do previsto em dia útil; 100%: trabalho em folga/feriado (conferir enquadramento aplicável). Banco usa o fator configurado para domingo/feriado, distinto de remuneração e de horas extras realizadas. Atrasos de entrada não geram débito: são métrica gerencial exclusiva do Dashboard.`,...new Set(just)];
-  if(preLegenda(d.f))notas.push(preLegenda(d.f));
-  return {head,body,resumo:miniResumoFolha(d),notas};
+  const iso=br=>{const m=/^(\d\d)\/(\d\d)\/(\d{4})/.exec(br);return m?`${m[3]}-${m[2]}-${m[1]}`:'';};
+  for(const j of d.just||[]){if(/^\d\d\/\d\d\/\d{4} \d\d:\d\d - /.test(j))continue;const dia=iso(j);if(!dia)continue;
+    const resto=curto(j.replace(/^\d\d\/\d\d\/\d{4}( a \d\d\/\d\d\/\d{4})?\s*-\s*/,'')).split(' - ').map(x=>x.trim()).filter(Boolean);
+    const per=/ a (\d\d\/\d\d\/\d{4})/.exec(j.slice(0,24));const tipo=(resto.shift()||'').toLowerCase().replace(/^./,c=>c.toUpperCase());
+    nota(dia,`${tipo}${per?' até '+per[1]:''}${resto.length?' — '+[...new Set(resto)].join('; '):''}`);}
+  const body=rows.map(({l,cells})=>{const n=porDia[l.data];if(n)cells[10]=`${cells[10]} ${[...n].sort((a,b)=>a-b).map(x=>'['+x+']').join('')}`;return cells;});
+  const out=notas.map((t,i)=>`[${i+1}] ${t}`);out.push('* Marcação manual ou reclassificada. Registros originais, NSR e trilha de auditoria preservados no sistema.');
+  if(preLegenda(d.f))out.push(preLegenda(d.f));
+  return {head,body,resumo:miniResumoFolha(d),notas:out};
 }
 function dadosCabecalhoFolha(f,ini,fim){
   const e=get('empregador',{})||{},end=[e.logradouro,e.numero,e.complemento,e.bairro,e.cep].filter(Boolean).join(', ');
-  return [[`EMPREGADOR\nRazão Social: ${e.razao||e.fantasia||'Não informado'}\n${e.tipo||'CNPJ'}: ${e.doc||'—'}\nEndereço: ${end||'—'}\nCidade/UF: ${[e.cidade,e.uf].filter(Boolean).join('/')||'—'}`,
-    `COLABORADOR\nNome: ${f.nome||'—'}\nCargo: ${f.cargo||f.funcao||'—'} · Setor: ${f.departamento||'—'}\nCPF: ${f.cpf||'—'} · Matrícula/PIN: ${f.matricula||f.pin||'—'}\nAdmissão: ${brOf(f.admissao)||'—'} · Escala: ${f.escala||'—'}`]];
+  return [[`EMPREGADOR\nRazão Social: ${e.razao||e.fantasia||'Não informado'}\n${e.tipo||'CNPJ'}: ${e.doc||'—'} · Cidade/UF: ${[e.cidade,e.uf].filter(Boolean).join('/')||'—'}`,
+    `COLABORADOR\nNome: ${f.nome||'—'}\nCargo: ${f.cargo||f.funcao||'—'} · Setor: ${f.departamento||'—'}\nCPF: ${(d=>d.length===11?d.slice(0,3)+'.***.***-'+d.slice(9):(d?'***':'—'))(String(f.cpf||'').replace(/\D/g,''))} · Matrícula/PIN: ${f.matricula||f.pin||'—'}\nAdmissão: ${brOf(f.admissao)||'—'} · Escala: ${f.escala||'—'}`]];
 }
 function horarioTrabalhoFolha(){
   const e=get('empregador',{})||{},horas=[e.hEntrada??'08:00',e.hSaiInt??'12:00',e.hEntInt??'14:00',e.hSaida??'18:00'].filter(Boolean).join('  ')||'Não informado';
@@ -2055,9 +2062,9 @@ function horarioTrabalhoFolha(){
 }
 function totaisCartaoFolha(d){
   return {dias:d.linhas.filter(l=>l.trabalhado>0).length,faltas:d.tot.faltas,dsrs:d.linhas.filter(l=>/DSR/.test(l.ocorrencia)).length,folgas:d.linhas.filter(l=>/FOLGA/.test(l.ocorrencia)&&!/DSR/.test(l.ocorrencia)).length,
-    row:['Totais','—','—','—','—',toHHMM(d.linhas.reduce((n,l)=>n+l.previsto,0)),toHHMM(d.tot.trabalhado),toHHMM(d.tot.extras),toHHMM(d.tot.faltantes),toHHMM(d.linhas.reduce((n,l)=>n+l.noturno,0)),'—']};
+    row:['Totais','—','—','—','—',toHHMM(d.linhas.reduce((n,l)=>n+l.previsto,0)),toHHMM(d.tot.trabalhado),toHHMM(d.tot.extras),toHHMM(d.tot.faltantes),toSaldo(d.linhas.reduce((n,l)=>n+(l.saldo||0),0)),'—']};
 }
-function corCelulaFolha(col,value){if(col===7)return 'sheet-credit';if(col===8)return 'sheet-debit';if(col===10){if(/AFASTADO|AFASTAMENTO|MATERNIDADE/.test(value))return 'sheet-away';if(/FALTA/.test(value)&&!/JUSTIFICADA|ABONADA/.test(value)||/SUSPENSÃO/.test(value))return 'sheet-debit';if(/DSR|FOLGA/.test(value))return 'sheet-rest';if(/ATESTADO|AFASTAMENTO/.test(value))return 'sheet-credit';}return '';}
+function corCelulaFolha(col,value){if(col===7)return 'sheet-credit';if(col===8)return 'sheet-debit';if(col===9)return /^-/.test(value)?'sheet-debit':/^\+/.test(value)?'sheet-credit':'';if(col===10){if(/AFASTADO|AFASTAMENTO|MATERNIDADE/.test(value))return 'sheet-away';if(/FALTA/.test(value)&&!/JUSTIFICADA|ABONADA/.test(value)||/SUSPENSÃO/.test(value))return 'sheet-debit';if(/DSR|FOLGA/.test(value))return 'sheet-rest';if(/ATESTADO|AFASTAMENTO/.test(value))return 'sheet-credit';}return '';}
 function bancoCartaoFolha(d){return [['Crédito',toHHMM(d.banco.creditos),'sheet-credit'],['Débito',toHHMM(d.banco.debitos),'sheet-debit'],['Saldo do Mês',toSaldo(d.banco.creditos-d.banco.debitos),d.banco.creditos-d.banco.debitos<0?'sheet-debit':'sheet-credit'],['Saldo Acumulado',toSaldo(d.banco.atual),d.banco.atual<0?'sheet-debit':'sheet-credit']];}
 const gerarFolhaMTE=(pin,ini,fim)=>dadosFolha(pin,ini,fim); // consulta buscaNaEscala() em cada dia
 function calcBanco(pin,ini,fim){
@@ -2836,7 +2843,7 @@ async function gerarPDFComLogo(dados){
       const peopleEnd=pdfTabelaPadrao(doc,{...common,y:27,head:null,body:dadosCabecalhoFolha(d.f,d.ini,d.fim)[0].map(x=>[x]),widths:[99],tableWidth:99,left:10});
       const hoursEnd=pdfTabelaPadrao(doc,{...common,y:27,left:113,tableWidth:87,head:[{content:'Horário de Trabalho',colSpan:2}],body:horarioTrabalhoFolha(),widths:[13,74],fontSize:6.5,cellPadding:.7});
       let y=Math.max(peopleEnd,hoursEnd)+3;
-      const longStatuses=chunks[idx].filter(r=>String(r[10]).length>25).length;
+      const longStatuses=chunks[idx].filter(r=>String(r[10]).length>22).length;
       y=pdfTabelaPadrao(doc,{...common,y,head:m.head,body:chunks[idx],foot:idx===chunks.length-1?[t.row]:[],widths:[12,13,13,13,13,16,17,15,25,15,38],fontSize:longStatuses>10?5.5:6.3,cellPadding:longStatuses>10?.3:.43,cellStyle:c=>{const role=corCelulaFolha(c.column.index,String(c.cell.raw));return role==='sheet-away'?palette.away:role==='sheet-credit'?palette.credit:role==='sheet-debit'?palette.debit:role==='sheet-rest'?palette.rest:null;}})+3;
       if(idx===chunks.length-1){
         doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...palette.ink);doc.text(`Dias Trabalhados: ${t.dias} · Dias de Falta: ${t.faltas} · DSRs: ${t.dsrs} · Folgas: ${t.folgas}`,10,y);y+=3;
