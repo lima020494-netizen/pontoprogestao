@@ -57,12 +57,12 @@ function drawer(lote:unknown[]|null){
 test('batch selector offers every allowance, license, rest day and adjustment',()=>{
  const tipos=[...runInNewContext(rules+';tiposTratamentoLote()',{}) as string[]];
  for(const t of ['Atestado médico','Licença Gala','Licença Nojo','Licença Paternidade','Doação de Sangue','Alistamento Eleitoral','Falta Justificada','Folga compensatória','Férias','Folga de Feriado/DSR Trabalhado','Trabalho Externo / Viagem','Suspensão Disciplinar'])assert.ok(tipos.includes(t),t);
- assert.ok(!tipos.includes('Falta'));assert.ok(!tipos.includes('Esquecimento de Marcação'));
+  assert.ok(!tipos.includes('Falta'));assert.ok(tipos.includes('Esquecimento de Marcação'));
 });
 test('batch drawer lists every reason instead of only two',()=>{
  const h=drawer(LOTE);
  for(const t of ['Atestado Médico','Licença Gala','Licença Nojo','Nascimento Filho / Paternidade','Doação de Sangue','Alistamento Eleitoral','Falta Justificada pela Empresa','Folga Compensatória','Férias','Folga de Feriado / DSR Trabalhado','Trabalho Externo / Viagem','Suspensão Disciplinar'])assert.ok(h.includes('>'+t),t);
- assert.ok(!h.includes('Esquecimento'));assert.ok(!h.includes('value="Falta"'));
+ assert.ok(h.includes('>Esquecimento de Marcação<'));assert.ok(!h.includes('value="Falta"'));
 });
 test('single-day drawer keeps the forgotten-punch adjustment available',()=>{assert.ok(drawer(null).includes('>Esquecimento de Marcação<'));});
 test('batch cannot submit a continuous leave, which needs a start and end date',()=>{
