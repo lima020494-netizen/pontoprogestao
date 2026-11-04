@@ -2015,8 +2015,8 @@ const GRUPOS_OCORRENCIAS=[
  {nome:'Grupo 3 — Compensações e descansos',itens:[['Folga compensatória','Folga Compensatória (Banco de Horas)'],['Férias','Férias (início e fim)'],['Folga de Feriado/DSR Trabalhado','Folga de Feriado / DSR Trabalhado']]},
  {nome:'Grupo 4 — Ajustes operacionais',itens:[['Trabalho Externo / Viagem','Trabalho Externo / Viagem (jornada prevista)'],['Esquecimento de Marcação','Esquecimento de Marcação'],['Suspensão Disciplinar','Suspensão Disciplinar (desconta dia + DSR)'],['Falta','Falta não justificada']]}
 ];
-/* Em massa ficam disponíveis todos os abonos, licenças, compensações e ajustes; falta e batida esquecida exigem um dia por vez. */
-function tiposTratamentoLote(){return GRUPOS_OCORRENCIAS.flatMap(g=>g.itens).map(([v])=>v).filter(v=>v!=='Falta'&&v!=='Esquecimento de Marcação');}
+/* Em massa ficam disponíveis todos os abonos, licenças, compensações e ajustes, incluindo a batida esquecida, que é inserida em cada dia selecionado. */
+function tiposTratamentoLote(){return GRUPOS_OCORRENCIAS.flatMap(g=>g.itens).map(([v])=>v).filter(v=>v!=='Falta');}
 function regraOcorrencia(tipo){
  const t=String(tipo||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
  const afastado=t==='afastamento inss'||t==='licenca maternidade';
@@ -2364,7 +2364,7 @@ function salvarBatidaManual(){
   if(erro)return alert(erro);
   fecharModal();subBatidas();
 }
-function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior=false}){
+function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior=false,simular=false}){
   if(!data||!hora)return 'Informe data e hora.';
   if(!TIPOS.includes(tipo))return 'Selecione um tipo de marcação válido.';
   if(String(motivo||'').trim().length<5)return 'Motivo obrigatório (mín. 5 caracteres).';
@@ -2374,6 +2374,7 @@ function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior
   const madrugada=toMin(hora)<360;anterior=madrugada&&tipo==='Saída'&&anterior;const jornada=anterior?addDias(data,-1):data;
   if(anterior&&!batidasJornada(pin,jornada).some(b=>b.tipo==='Entrada'))return 'Não há entrada na jornada da noite anterior. Confira a data da marcação.';
   if(batidasJornada(pin,jornada).length>=4)return 'Limite de 4 marcações na jornada.';
+  if(simular)return '';                                        // checagem sem gravar: usada quando vários dias são tratados juntos
   const nsrM=proximoNSR();
   all.push({pin,nome:f.nome,cpf:f.cpf,data,hora,tipo,jornada:madrugada?jornada:undefined,jornadaManual:madrugada,tipoManual:madrugada?tipo:undefined,nsr:nsrM,fonte:'MANUAL',sync:false,offset:get('ntpOffset',0),
     autorizadoPor,gerenciador:GERENCIADOR.nome,movimento:`Inserida manualmente - Autorizado por: ${autorizadoPor} - Motivo: ${motivo} - Por: ${GERENCIADOR.nome}`,criadoEm:new Date().toISOString()});
@@ -2391,7 +2392,7 @@ function camposOcorrencia(){
  const tipo=$('oc-tipo').value,r=regraOcorrencia(tipo),lote=!!window.__tratLote;$('oc-autorizacao').classList.remove('hidden');
  $('oc-anexo-campo')?.classList.toggle('hidden',tipo!=='Atestado médico');$('oc-legal')?.classList.toggle('hidden',tipo!=='Falta Justificada');$('oc-vinculo-campo')?.classList.toggle('hidden',tipo!=='Folga compensatória');$('oc-batida-campo')?.classList.toggle('hidden',tipo!=='Esquecimento de Marcação');
  const periodo=!['Falta Justificada','Folga compensatória','Folga de Feriado/DSR Trabalhado','Trabalho Externo / Viagem','Suspensão Disciplinar','Doação de Sangue','Esquecimento de Marcação'].includes(tipo);$('oc-fim-campo')?.classList.toggle('hidden',!periodo);if(!periodo&&$('oc-fim')&&$('oc-data'))$('oc-fim').value=$('oc-data').value;const lbl=document.querySelector('label[for="oc-data"]');if(lbl)lbl.textContent=periodo?'Data início *':'Data *';
- if($('oc-regra'))$('oc-regra').textContent=lote&&r.afastado?'Afastamento exige período contínuo com data início e fim: trate um colaborador de cada vez.':r.pagador;$('oc-erro').textContent='';
+  if($('oc-regra'))$('oc-regra').textContent=lote&&r.afastado?'Afastamento exige período contínuo com data início e fim: trate um colaborador de cada vez.':lote&&tipo==='Esquecimento de Marcação'?'A marcação será inserida em cada um dos dias selecionados.':r.pagador;$('oc-erro').textContent='';
 }
 function validarAuditoriaTratamento(autorizadoPor,motivo){if(!String(autorizadoPor||'').trim())return 'Informe quem autorizou.';if(String(motivo||'').trim().length<5)return 'Motivo obrigatório (mín. 5 caracteres).';return '';}
 function validarAnexoTratamento(file){if(!file)return '';if(!['application/pdf','image/jpeg','image/png'].includes(file.type))return 'Use PDF, JPG ou PNG.';if(file.size>1048576)return 'O anexo deve ter até 1 MB.';return '';}
@@ -2407,7 +2408,18 @@ async function salvarOcorrencia(){
  const alvos=lote?lote.map(x=>({pin:x.pin,ini:x.data,fim:x.data})):[{pin,ini,fim}],extras={};
  const auditoria=validarAuditoriaTratamento(autorizadoPor,motivo);if(auditoria){$('oc-erro').textContent=auditoria;return;}
  if(lote&&regraOcorrencia(tipo).afastado){$('oc-erro').textContent='Afastamento INSS e Licença Maternidade exigem período contínuo com data início e fim. Trate um colaborador de cada vez.';return;}
- if(tipo==='Esquecimento de Marcação'){if(lote){$('oc-erro').textContent='Esquecimento de marcação deve ser tratado um dia por vez.';return;}const erro=registrarBatidaManual({pin,data:ini,hora:$('oc-hora').value,tipo:$('oc-btipo').value,motivo,autorizadoPor,anterior:$('oc-anterior')?.checked});if(erro){$('oc-erro').textContent=erro;return;}fecharModal();TRAT_SELECAO.clear();subBatidas();toast('Batida esquecida registrada.',2000);return;}
+ if(tipo==='Esquecimento de Marcação'){
+  const hora=$('oc-hora').value,tipoBatida=$('oc-btipo').value,anterior=$('oc-anterior')?.checked;
+  if(lote){
+    if(!lote.length){$('oc-erro').textContent='Selecione ao menos um registro.';return;}
+    const inv=lote.map(a=>({a,erro:registrarBatidaManual({pin:a.pin,data:a.data,hora,tipo:tipoBatida,motivo,autorizadoPor,anterior,simular:true})})).find(x=>x.erro);
+    if(inv){$('oc-erro').textContent=brOf(inv.a.data)+': '+inv.erro;return;}   // nenhum dia é gravado quando algum deles está inválido
+    lote.forEach(a=>registrarBatidaManual({pin:a.pin,data:a.data,hora,tipo:tipoBatida,motivo,autorizadoPor,anterior}));
+  }else{
+    const erro=registrarBatidaManual({pin,data:ini,hora,tipo:tipoBatida,motivo,autorizadoPor,anterior});if(erro){$('oc-erro').textContent=erro;return;}
+  }
+  fecharModal();TRAT_SELECAO.clear();subBatidas();toast('Batida esquecida registrada.',2000);return;
+}
  let efetivo=tipo;if(tipo==='Falta Justificada'){const map={Casamento:'Licença Gala',Falecimento:'Licença Nojo',Nascimento:'Licença Paternidade',Sangue:'Doação de Sangue',Eleitoral:'Alistamento Eleitoral'};const legal=$('oc-legal-motivo')?.value||'Empresa';efetivo=map[legal]||tipo;extras.motivoLegal=legal;}
  if(regraOcorrencia(tipo).compensacao&&$('oc-vinculo')?.value){const data=$('oc-vinculo').value,bs=batidasDia(pin,data);if(!bs.length||!(feriadoDe(data)||previstoDia(funcPorPin(pin),data)===0)){ $('oc-erro').textContent='O vínculo deve apontar para um descanso ou feriado trabalhado.';return;}extras.dataDsrTrabalhado=data;}
  const file=$('oc-anexo')?.files?.[0],erroAnexo=validarAnexoTratamento(file);if(erroAnexo){$('oc-erro').textContent=erroAnexo;return;}

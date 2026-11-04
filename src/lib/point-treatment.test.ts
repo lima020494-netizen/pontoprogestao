@@ -57,12 +57,12 @@ function drawer(lote:unknown[]|null){
 test('batch selector offers every allowance, license, rest day and adjustment',()=>{
  const tipos=[...runInNewContext(rules+';tiposTratamentoLote()',{}) as string[]];
  for(const t of ['Atestado médico','Licença Gala','Licença Nojo','Licença Paternidade','Doação de Sangue','Alistamento Eleitoral','Falta Justificada','Folga compensatória','Férias','Folga de Feriado/DSR Trabalhado','Trabalho Externo / Viagem','Suspensão Disciplinar'])assert.ok(tipos.includes(t),t);
- assert.ok(!tipos.includes('Falta'));assert.ok(!tipos.includes('Esquecimento de Marcação'));
+  assert.ok(!tipos.includes('Falta'));assert.ok(tipos.includes('Esquecimento de Marcação'));
 });
 test('batch drawer lists every reason instead of only two',()=>{
  const h=drawer(LOTE);
  for(const t of ['Atestado Médico','Licença Gala','Licença Nojo','Nascimento Filho / Paternidade','Doação de Sangue','Alistamento Eleitoral','Falta Justificada pela Empresa','Folga Compensatória','Férias','Folga de Feriado / DSR Trabalhado','Trabalho Externo / Viagem','Suspensão Disciplinar'])assert.ok(h.includes('>'+t),t);
- assert.ok(!h.includes('Esquecimento'));assert.ok(!h.includes('value="Falta"'));
+ assert.ok(h.includes('>Esquecimento de Marcação<'));assert.ok(!h.includes('value="Falta"'));
 });
 test('single-day drawer keeps the forgotten-punch adjustment available',()=>{assert.ok(drawer(null).includes('>Esquecimento de Marcação<'));});
 test('batch cannot submit a continuous leave, which needs a start and end date',()=>{
@@ -71,4 +71,40 @@ test('batch cannot submit a continuous leave, which needs a start and end date',
  const ctx={window:{__tratLote:LOTE,__ocEdit:{}},$:(id:string)=>id==='oc-erro'?{set textContent(v:string){erro=v},get textContent(){return erro}}:{value:values[id]||'',textContent:''},set:()=>{saves++},log:()=>{},fecharModal:()=>{},subBatidas:()=>{},toast:()=>{},TRAT_SELECAO:new Set()};
  runInNewContext(rules+prepare+saveRules+';salvarOcorrencia()',ctx);
  assert.match(erro,/per[ií]odo cont[ií]nuo/);assert.equal(saves,0);
+});
+const manualRules=html.slice(html.indexOf('function registrarBatidaManual('),html.indexOf('function lancarOcorrencia('));
+function loteEsquecimento(dias:{pin:string;data:string}[],punches:Record<string,unknown>[],values:Record<string,string>){
+ const data:Record<string,unknown>={batidas:punches,funcionarios:[{pin:'1',nome:'Ana',cpf:'123.456.789-00'}],ntpOffset:0};
+ const nodes:Record<string,Record<string,unknown>>={};
+ for(const [k,v] of Object.entries(values))nodes[k]={value:v,checked:false,textContent:'',files:[]};
+ const ctx={window:{__tratLote:dias,__ocEdit:{}},
+  get:(k:string,f:unknown)=>data[k]??f,set:(k:string,v:unknown)=>{data[k]=v},
+  funcPorPin:(pin:string)=>(data['funcionarios'] as {pin:string}[]).find(f=>f.pin===pin),
+  batidasJornada:(pin:string,dia:string)=>(data['batidas'] as {pin:string;data:string}[]).filter(b=>b.pin===pin&&b.data===dia),
+  TIPOS:['Entrada','Saída Intervalo','Entrada Intervalo','Saída'],
+  toMin:(h:string)=>Number(h.slice(0,2))*60+Number(h.slice(3,5)),
+  addDias:(d:string,n:number)=>new Date(Date.parse(d)+n*86400000).toISOString().slice(0,10),
+  brOf:(d:string)=>d,proximoNSR:()=>String((data['batidas'] as unknown[]).length+1),
+  filaPonto:()=>{},reordenarJornada:()=>{},log:()=>{},GERENCIADOR:{nome:'Gestor'},
+  TRAT_SELECAO:new Set(),TRAT_VISAO:'pendentes',fecharModal:()=>{},subBatidas:()=>{},toast:()=>{},
+  $:((id:string)=>nodes[id]??={value:'',checked:false,textContent:'',files:[]}) as unknown as (id:string)=>unknown};
+ return {ctx,data,nodes};
+}
+const ESQUECIMENTO={'oc-pin':'1','oc-tipo':'Esquecimento de Marcação','oc-hora':'12:00','oc-btipo':'Saída Intervalo','oc-motivo':'Esqueci de marcar o intervalo','oc-autorizou':'Gestor RH'};
+test('batch inserts the forgotten punch on every selected day',async()=>{
+ const dias=[{pin:'1',data:'2026-10-02'},{pin:'1',data:'2026-10-03'}];
+ const {ctx,data}=loteEsquecimento(dias,[{pin:'1',data:'2026-10-02',hora:'08:00',tipo:'Entrada',nsr:'1'}],ESQUECIMENTO);
+ await runInNewContext(rules+prepare+manualRules+saveRules+';salvarOcorrencia()',ctx);
+ const bs=data['batidas'] as {data:string;hora:string;tipo:string;fonte:string;autorizadoPor:string}[];
+ assert.equal(bs.length,3);
+ assert.deepEqual(bs.slice(1).map(b=>[b.data,b.hora,b.tipo]),[['2026-10-02','12:00','Saída Intervalo'],['2026-10-03','12:00','Saída Intervalo']]);
+ assert.ok(bs.slice(1).every(b=>b.fonte==='MANUAL'&&b.autorizadoPor==='Gestor RH'));
+});
+test('batch aborts the whole forgotten-punch insert when one selected day cannot take it',async()=>{
+ const cheias=['08:00','12:00','13:00','17:00'].map((h,i)=>({pin:'1',data:'2026-10-02',hora:h,tipo:'Entrada',nsr:String(i+1)}));
+ const dias=[{pin:'1',data:'2026-10-02'},{pin:'1',data:'2026-10-03'}];
+ const {ctx,data,nodes}=loteEsquecimento(dias,cheias,ESQUECIMENTO);
+ await runInNewContext(rules+prepare+manualRules+saveRules+';salvarOcorrencia()',ctx);
+ assert.equal((data['batidas'] as unknown[]).length,4);
+ assert.match(String(nodes['oc-erro']?.['textContent']),/Limite de 4/);
 });
