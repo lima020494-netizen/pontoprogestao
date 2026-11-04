@@ -2226,11 +2226,14 @@ function classificacaoTratamento(l,oc,bs,hoje){
  const impar=bs.length%2===1,erro=bs.length>4;
  const falta=passado&&l.previsto>0&&!bs.length&&(!oc||r.falta);
  const parcial=passado&&l.previsto>0&&l.trabalhado<l.previsto&&!r.abonado&&!r.compensacao&&!r.externo&&!falta;
- const pendente=solicitacao||erro||falta||(passado&&(impar||parcial||r.manual));
+ const intervalo=passado&&l.previsto>360&&bs.length===2&&!r.abonado&&!r.compensacao&&!r.externo;
+ const pendente=solicitacao||erro||falta||(passado&&(impar||intervalo||parcial));
  if(erro)return {cor:'red',titulo:'Revisar marcações',pendente,falta,impar,solicitacao};
  if(solicitacao)return {cor:'blue',titulo:'Solicitação pendente',pendente,falta,impar,solicitacao};
  if(falta)return {cor:'red',titulo:'Falta não tratada',pendente,falta,impar,solicitacao};
- if(impar||parcial||r.manual)return {cor:'orange',titulo:impar?(passado?'Batidas ímpares':'Jornada em andamento'):'Revisar jornada',pendente,falta,impar,solicitacao};
+ if(impar)return {cor:'orange',titulo:passado?'Batidas ímpares':'Jornada em andamento',pendente,falta,impar,solicitacao};
+ if(intervalo)return {cor:'orange',titulo:'Intervalo não registrado',pendente,falta,impar,solicitacao};
+ if(parcial)return {cor:'orange',titulo:'Revisar jornada',pendente,falta,impar,solicitacao};
  if(r.abonado)return {cor:'blue',titulo:oc.tipo,pendente,falta,impar,solicitacao};
  if(l.trabalhado>0&&l.previsto===0)return {cor:'purple',titulo:'Trabalho em descanso / feriado',pendente,falta,impar,solicitacao};
  return {cor:'green',titulo:oc?.tipo||(l.previsto===0?'Descanso':'Concluído'),pendente,falta,impar,solicitacao};
