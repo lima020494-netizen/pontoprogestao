@@ -12,7 +12,7 @@ test('three summary rows preserve eight holiday hours and bank movement without 
   assert.deepEqual(m.resumo[2].map((x:string[])=>x[1]),['+02:00','+08:00','+10:00']);assert.equal(m.body[0][7],'08:00');
 });
 test('manual punch is marked and its reason retained without modifying original timestamps or NSR',()=>{
-  const original=JSON.stringify(punches);const m=model();assert.equal(m.body[0][1],'08:00*');assert.equal(m.body[0][4],'16:00');assert.ok(m.notas.some((x:string)=>x.includes('Motivo: esquecimento')));assert.equal(JSON.stringify(punches),original);
+  const original=JSON.stringify(punches);const m=model();assert.equal(m.body[0][1],'08:00*');assert.equal(m.body[0][4],'16:00');assert.ok(m.notas.some((x:string)=>/^\[1\] 12\/10\/2026: Ajuste manual de marcação 08:00 \(esquecimento\)$/.test(x)));assert.match(m.body[0][10],/\[1\]$/);assert.ok(!m.notas.some((x:string)=>x.includes('Motivo:')));assert.equal(JSON.stringify(punches),original);
 });
 test('employee can be saved with empty optional bank start',()=>{
   const values:Record<string,string>={'f-nome':'Teste','f-cpf':'123','f-funcao':'Equipe','f-dep':'Operação','f-adm':'2026-10-01','f-pin':'1234','f-status':'Ativo','inicio-vigencia-banco':''};let saved:any;
@@ -39,5 +39,5 @@ test('work hours follow separately edited Saturday company settings',()=>{
   const source=html.slice(html.indexOf('function dadosCabecalhoFolha('),html.indexOf('function horarioTrabalhoFolha('));
   const rows=JSON.parse(JSON.stringify(runInNewContext(source+';dadosCabecalhoFolha({nome:"Ana",cpf:"123.456.789-00",admissao:"2026-01-05"},null,null)',{get:()=>({razao:'Empresa X'}),brOf:(s:string)=>s.split('-').reverse().join('/')})));
   const colab=rows[0][1] as string;
-  assert.ok(colab.includes('CPF: 123.456.789-00'));assert.ok(!/PIS/.test(colab));
+  assert.ok(colab.includes('CPF: 123.***.***-00'));assert.ok(!/PIS/.test(colab));
 });
