@@ -41,3 +41,4 @@
 - Accountant closing excludes open/future absences without altering PDF calculations.
 - Capacitor hosts HTTPS /quiosque; no native printer bridge.
 - Text over dark navy surfaces must be declared with ID-scoped specificity (e.g. `#gestor-body td.dept-head`) so the shared `#gestor-body td/label` color defaults cannot darken it; contrast.test.ts locks every dark surface to AA.
+- Stable cloud reads use expiring account-scoped IndexedDB cache with explicit refresh/invalidation; authorization and punches never use this cache, and audit reads paginate on demand to bound egress.
