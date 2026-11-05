@@ -939,12 +939,25 @@ const linhaPonto=b=>({email_dono:CONTA,nsr:b.nsr,pin:b.pin,data:b.data,hora:b.ho
 
 let NUVEM_DESDE='';
 function janelaNuvemDesde(){return addDias(hojeISO().slice(0,8)+'01',-1);} // mês corrente + véspera (virada noturna)
-async function garantirHistorico(dataIni){ // busca sob demanda batidas anteriores à janela inicial
-  if(!sb||!CONTA||!dataIni||!NUVEM_DESDE||dataIni>=NUVEM_DESDE) return;
-  const {data,error}=await sb.from('pontos').select('nsr,dados').eq('email_dono',CONTA).gte('dados->>data',dataIni).lt('dados->>data',NUVEM_DESDE);
-  if(error) throw error;
+async function lerPontosNuvem(conta,desde,ate){
+  const rows=[],tamanho=1000;
+  for(let inicio=0;;inicio+=tamanho){
+    let q=sb.from('pontos').select('nsr,dados').eq('email_dono',conta).gte('dados->>data',desde);
+    if(ate)q=q.lt('dados->>data',ate);
+    const {data,error}=await q.order('nsr',{ascending:true}).range(inicio,inicio+tamanho-1);
+    if(error)throw error;
+    rows.push(...(data||[]));if((data||[]).length<tamanho)return rows;
+  }
+}
+async function garantirHistorico(dataIni){ // inclui a véspera e a vigência para reconciliar saldo anterior
+  if(!sb||!CONTA||!dataIni||!NUVEM_DESDE)return;
+  const inicios=get('funcionarios',[]).map(f=>f.inicioVigenciaBancoHoras||f.bancoInicio||f.admissao||dataIni);
+  const desde=addDias([dataIni,...inicios].filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).sort()[0]||dataIni,-1);
+  if(desde>=NUVEM_DESDE)return;
+  const conta=CONTA,rows=await lerPontosNuvem(conta,desde,NUVEM_DESDE);
+  if(CONTA!==conta)return;
   const mapa=new Map(get('batidas',[]).map(b=>[b.nsr,b]));
-  (data||[]).forEach(r=>r.dados&&mapa.set(r.nsr,r.dados));
+  rows.forEach(r=>r.dados&&mapa.set(r.nsr,r.dados));
   set('batidas',[...mapa.values()]);
 }
 async function carregarNuvem(){
@@ -956,7 +969,7 @@ async function carregarNuvem(){
     const rs=await Promise.all([
       sb.from('empregador').select('dados').eq('email_dono',CONTA).maybeSingle(),
       sb.from('funcionarios').select('pin,dados').eq('email_dono',CONTA),
-      sb.from('pontos').select('nsr,dados').eq('email_dono',CONTA).gte('dados->>data',NUVEM_DESDE).limit(20000),
+      lerPontosNuvem(CONTA,NUVEM_DESDE).then(data=>({data})),
       sb.from('feriados').select('dados,data,nome,tipo').eq('conta',CONTA),
       sb.from('dados').select('chave,valor').eq('conta',CONTA),
       sb.from('logs').select('quando,por,acao').eq('email_dono',CONTA).order('quando',{ascending:false}).limit(3000),
@@ -1407,7 +1420,7 @@ function indiceJornadas(){
 }
 function jornadaDe(b){const m=indiceJornadas();return m.get(b)||m.get(b.pin+'#'+b.nsr)||b.jornada||b.data;}
 const ordemJornada=(a,b)=>instanteBatida(a).key.localeCompare(instanteBatida(b).key);
-function batidasJornada(pin,iso){return get('batidas',[]).filter(b=>!b.excluida&&b.pin===pin&&jornadaDe(b)===iso).sort(ordemJornada);}
+function batidasJornada(pin,iso){const bs=get('batidas',[]).filter(b=>!b.excluida&&b.pin===pin&&jornadaDe(b)===iso).sort(ordemJornada);if(new Set(bs.map(b=>b.tipo)).size===bs.length)return bs;const tipos=['Entrada','Saída Intervalo','Entrada Intervalo','Saída'];return bs.map((b,i)=>({...b,tipo:tipos[i]||b.tipo}));}
 function jornadaAtualISO(pin){
   const agora=getHoraOficial(), hoje=isoOf(agora), ontem=addDias(hoje,-1);
   if(agora.getHours()<6){
@@ -2061,7 +2074,7 @@ function movimentoBancoDia(pin,data,prev,trab,atraso=0){
  const deficit=Math.max(0,prev-trab-Math.min(atraso,Math.max(0,prev-trab)));
  const saldo=regra.abonado?Math.max(0,credito):regra.compensacao?-440:regra.externo?0:falta?0:(credito>0?credito:-deficit);
  const faltantes=regra.compensacao||regra.abonado||regra.externo?0:falta?prev:deficit;
- return {...regra,saldo,faltantes};
+ return {...regra,saldo:saldo||0,faltantes};
 }
 /* Linhas da folha + totais + banco de horas */
 function dadosFolha(pin,ini,fim){
@@ -2099,7 +2112,7 @@ function dadosFolha(pin,ini,fim){
     const mov=bs.filter(b=>b.movimento).map(b=>`_${b.hora} ${b.movimento}`).join(' | ');
     bs.filter(b=>b.movimento).forEach(b=>just.push(`${brOf(d)} ${b.hora} - ${b.movimento}`));
     linhas.push({data:d,dia:DIAS[dow(d)],e1:por(g('Entrada')),e2:por(g('Saída Intervalo')),e3:por(g('Entrada Intervalo')),e4:por(g('Saída')),
-      noturno:noct.min,trabalhado:trab,previsto:prev,saldo:movimento.saldo,
+      noturno:noct.min,trabalhado:trab,previsto:prev,saldo:d<(f.inicioVigenciaBancoHoras||f.bancoInicio||f.admissao||ini)?0:movimento.saldo,
       descontoDia:movimento.suspensao?prev:0,descontoDsr:descontoDsrDia(pin,d,prev),
       atrasoMin,ocorrencia:oc||(f.intervalo?.preAssinalado?'INTERVALO PRÉ-ASSINALADO ART. 71':''),cls,fonte:bs[0]?bs[0].fonte:'—',mov,nsr:bs.map(b=>b.nsr).join(' / ')});
   }
@@ -2163,22 +2176,26 @@ const gerarFolhaMTE=(pin,ini,fim)=>dadosFolha(pin,ini,fim); // consulta buscaNaE
 function calcBanco(pin,ini,fim){
   const f=funcPorPin(pin)||{};
   const soma=(de,ate)=>{
-    let cred=0,deb=0,det=[];
+    let cred=0,deb=0,det=[],dias=[];
     for(let d=de; d<=ate; d=addDias(d,1)){
       const bs=batidasDia(pin,d),prev=previstoDia(f,d),trab=trabalhoApuradoDia(f,d,bs);
       const movimento=movimentoBancoDia(pin,d,prev,trab,atrasoDia(pin,d,bs,prev));
+      dias.push({data:d,previsto:prev,trabalhado:trab,saldo:movimento.saldo,ocorrencia:typeof ocorrenciaDia==='function'?ocorrenciaDia(pin,d)?.tipo||'':'',vigente:true});
       if(movimento.saldo>0){cred+=movimento.saldo;det.push(`Crédito - Hora Extra dia ${brOf(d)} - Previsto ${toHHMM(prev)} / Realizado ${toHHMM(trab)} / Banco ${toHHMM(movimento.saldo)}`);}
       else if(movimento.saldo<0){deb-=movimento.saldo;det.push(`${movimento.compensacao?'Débito - Folga Compensatória':'Débito - Carga incompleta'} dia ${brOf(d)} - ${toHHMM(-movimento.saldo)}`);}
     }
     // Descanso cadastrado não prova compensação: nunca inferir débito por quantidade de folgas.
     // Créditos usam o fator configurado; banco não representa remuneração salarial.
-    return {cred,deb,det};
+    return {cred,deb,det,dias};
   };
   const vig=f.inicioVigenciaBancoHoras||f.bancoInicio||f.admissao||ini; // só conta a partir da vigência
   const ant=vig<ini?soma(vig,addDias(ini,-1)):{cred:0,deb:0,det:[]};
   const per=vig>fim?{cred:0,deb:0,det:[`Banco de horas vigente a partir de ${brOf(vig)}`]}:soma(vig>ini?vig:ini,fim);
   const anterior=ant.cred-ant.deb;
-  return {anterior,creditos:per.cred,debitos:per.deb,atual:anterior+per.cred-per.deb,detalhes:per.det};
+  const dias=[];
+  for(let d=ini;d<=fim&&d<vig;d=addDias(d,1)){const bs=batidasDia(pin,d);dias.push({data:d,previsto:previstoDia(f,d),trabalhado:trabalhoApuradoDia(f,d,bs),saldo:0,ocorrencia:typeof ocorrenciaDia==='function'?ocorrenciaDia(pin,d)?.tipo||'':'',vigente:false});}
+  dias.push(...(per.dias||[]));
+  return {anterior,creditos:per.cred,debitos:per.deb,atual:anterior+per.cred-per.deb,detalhes:per.det,dias,vigencia:vig};
 }
 
 /* ============================== MÓDULO 3 — GERENCIAMENTO ============================== */
@@ -2647,16 +2664,19 @@ function tabelaResumoBanco(r){
   </tbody>${r.linhas.length?`<tfoot><tr><th>Total (${r.linhas.length})</th><th></th><th>${toSaldo(t.ant)}</th><th>+${toHHMM(t.cr)}</th><th>-${toHHMM(t.db)}</th><th>${toSaldo(t.at)}</th></tr></tfoot>`:''}</table></div>`;
 }
 async function renderResumoBanco(){
+  const p=dadosResumoBanco();
+  try{await garantirHistorico(p.ini);}catch(e){if($('bhr-out'))$('bhr-out').innerHTML='<div class="alert err">Não foi possível carregar o histórico. Tente novamente antes de conferir os saldos.</div>';return;}
+  if(!$('bhr-out'))return;
   const r=dadosResumoBanco();
-  try{await garantirHistorico(r.ini);}catch(e){}
   if(r.ini>r.fim){$('bhr-out').innerHTML='<div class="alert err">A data inicial deve ser anterior à data final.</div>';return;}
   $('bhr-out').innerHTML=tabelaResumoBanco(r);
   const pos=r.linhas.reduce((a,{b})=>a+Math.max(0,b.atual),0),neg=r.linhas.reduce((a,{b})=>a+Math.min(0,b.atual),0),np=r.linhas.filter(x=>x.b.atual>0).length,nn=r.linhas.filter(x=>x.b.atual<0).length;
   if($('bh-kpis'))$('bh-kpis').innerHTML=`<div class="exec-kpi tone-green"><span>Saldo positivo da equipe</span><strong class="num">+${toHHMM(pos)}</strong><small>${np} colaborador(es)</small></div><div class="exec-kpi tone-red"><span>Saldo negativo da equipe</span><strong class="num">-${toHHMM(-neg)}</strong><small>${nn} colaborador(es)</small></div><div class="exec-kpi tone-net"><span>Saldo líquido consolidado</span><strong class="num">${toSaldo(pos+neg)}</strong><small>${brOf(r.ini)} a ${brOf(r.fim)} · ${esc(r.st)}</small></div>`;
 }
 async function pdfResumoBanco(){
-  const r=dadosResumoBanco();if(!r.ini||!r.fim||r.ini>r.fim)return toast('Informe um período válido.');
-  try{await garantirHistorico(r.ini);}catch(e){}
+  const p=dadosResumoBanco();if(!p.ini||!p.fim||p.ini>p.fim)return toast('Informe um período válido.');
+  try{await garantirHistorico(p.ini);}catch(e){return toast('Histórico indisponível. Tente novamente antes de exportar.');}
+  const r=dadosResumoBanco();
   await garantirLib('pdf');
   const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'}),titulo='Fechamento do Banco de Horas',sub=`Período ${brOf(r.ini)} a ${brOf(r.fim)} • Status: ${r.st}`;
   const totais=r.linhas.reduce((a,{b})=>({anterior:a.anterior+b.anterior,creditos:a.creditos+b.creditos,debitos:a.debitos+b.debitos,atual:a.atual+b.atual}),{anterior:0,creditos:0,debitos:0,atual:0});
@@ -2665,21 +2685,26 @@ async function pdfResumoBanco(){
   pdfTabelaPadrao(doc,{y:pdfCabecalhoPadrao(doc,titulo,sub),titulo,sub,head:['Colaborador / Cargo','Status','Saldo anterior','Créditos','Débitos','Saldo atual'],body,widths:[58,28,26,26,26,26]});
   pdfRodapesPadrao(doc,CONTA||'Gestor');doc.save(`Banco_Horas_${r.ini}_${r.fim}.pdf`);log('Exportou PDF consolidado do banco de horas');
 }
-function csvResumoBanco(){
+async function csvResumoBanco(){
+  const p=dadosResumoBanco();if(!p.ini||!p.fim||p.ini>p.fim)return toast('Informe um período válido.');
+  try{await garantirHistorico(p.ini);}catch(e){return toast('Histórico indisponível. Tente novamente antes de exportar.');}
   const r=dadosResumoBanco(),q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
   const csv='\ufeff'+[['Colaborador','Cargo','Status','Saldo Anterior','Créditos','Débitos','Saldo Atual'].map(q).join(';'),
     ...r.linhas.map(({f,b})=>[f.nome,f.funcao||'',f.status||'Ativo',toSaldo(b.anterior),toHHMM(b.creditos),toHHMM(b.debitos),toSaldo(b.atual)].map(q).join(';'))].join('\r\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`Banco_Horas_Consolidado_${r.ini}_${r.fim}.csv`;a.click();
 }
-function calcBancoView(){
-  const b=calcBanco($('bh-pin').value,$('bh-ini').value,$('bh-fim').value);
-  const linha=d=>{const cr=/^Crédito/.test(d),h=(d.match(/(\d+:\d{2})$/)||[])[1]||'',dt=(d.match(/dia (\d{2}\/\d{2}\/\d{4})/)||[])[1]||'—',txt=d.replace(/ dia \d{2}\/\d{2}\/\d{4}/,'');return `<tr><td class="num">${esc(dt)}</td><td>${esc(txt)}</td><td style="text-align:right"><span class="saldo-badge ${cr?'tone-green':'tone-red'}">${cr?'+':'-'}${esc(h)}</span></td></tr>`;};
-  $('bh-out').innerHTML=`<div class="bh-mini">
+async function calcBancoView(){
+  const pin=$('bh-pin').value,ini=$('bh-ini').value,fim=$('bh-fim').value,out=$('bh-out');
+  if(!pin||!ini||!fim||ini>fim){out.innerHTML='<div class="alert err">Informe um colaborador e período válidos.</div>';return;}
+  out.innerHTML='<div class="muted" role="status">Carregando histórico…</div>';
+  try{await garantirHistorico(ini);}catch(e){if($('bh-out')===out)out.innerHTML='<div class="alert err">Não foi possível carregar o histórico. Tente novamente antes de conferir os saldos.</div>';return;}
+  if($('bh-out')!==out||$('bh-pin').value!==pin||$('bh-ini').value!==ini||$('bh-fim').value!==fim)return;
+  const b=calcBanco(pin,ini,fim);
+  out.innerHTML=`<div class="muted">Vigência do banco: ${brOf(b.vigencia)}${ini<b.vigencia?' · Dias anteriores aparecem para conferência, sem movimentar o saldo.':''}</div><div class="bh-mini">
     ${[['Saldo anterior',toSaldo(b.anterior),''],['Créditos','+'+toHHMM(b.creditos),'pos'],['Débitos','-'+toHHMM(b.debitos),'neg'],['Saldo atual',toSaldo(b.atual),b.atual<0?'neg':b.atual>0?'pos':'']]
     .map(([t,v,c])=>`<div><span>${t}</span><strong class="num ${c}">${v}</strong></div>`).join('')}
-  </div>
-  <div class="tbl-wrap" style="margin-top:12px"><table class="bh-extrato"><thead><tr><th>Data</th><th>Movimentação</th><th style="text-align:right">Horas</th></tr></thead><tbody>
-  ${b.detalhes.map(linha).join('')||'<tr><td colspan="3" class="muted">Sem movimentações no período.</td></tr>'}</tbody></table></div>`;
+  </div><div class="tbl-wrap" style="margin-top:12px"><table class="bh-extrato"><thead><tr><th>Data</th><th>Previsto</th><th>Realizado</th><th>Movimentação / Ocorrência</th><th>Saldo</th></tr></thead><tbody>
+  ${b.dias.map(d=>{const texto=!d.vigente?'Fora da vigência':d.saldo>0?'Crédito - Hora Extra':d.saldo<0?regraOcorrencia(d.ocorrencia).compensacao?'Débito - Folga Compensatória':'Débito - Carga incompleta':d.ocorrencia||'Sem movimentação';return `<tr><td class="num">${brOf(d.data)}</td><td class="num">${toHHMM(d.previsto)}</td><td class="num">${toHHMM(d.trabalhado)}</td><td>${esc(texto)}</td><td><span class="saldo-badge ${d.saldo>0?'tone-green':d.saldo<0?'tone-red':'tone-net'}">${d.saldo?toSaldo(d.saldo):'00:00'}</span></td></tr>`;}).join('')||'<tr><td colspan="5" class="muted">Sem registros no período.</td></tr>'}</tbody></table></div>`;
 }
 /* F) Relatórios */
 function subRelatorios(){
