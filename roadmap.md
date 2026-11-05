@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Revisar Banco de Horas: histórico de 01–03/10/2026 da Penina (Atalaia VIP Lounge), vigência, concordância com folha/fechamento e testes completos, sem alterar batidas reais ou publicar.
+- [x] Revisar Banco de Horas: consulta somente leitura confirmou 84 registros da Penina, vigência em 03/10 e todas as batidas de 01/02 excluídas com ocorrências de compensação. Corrigidos extrato sem histórico, paginação, resumo/PDF/CSV calculados antes da carga e saldo diário fora da vigência; extrato mostra todos os dias e vigência. Tipos legados repetidos normalizados apenas na leitura. 174 testes passaram, scripts/build OK e cópia real conferida em desktop/390px sem erros. Sem alteração de registros ou publicação; sessão autenticada da cliente não disponível no Supabase externo, por isso login/sincronização de ponta a ponta não verificados.
 
 - [x] Tratamento de Ponto: inbox, KPIs, timeline por jornada, seleção em massa e gaveta com autorizador/motivo obrigatórios, períodos e anexo PDF/JPG/PNG até 1 MB no registro account-scoped existente. APK permanente em /download, /apk e configuração. 140 testes passaram; prévia desktop/celular, abono em lote até Tudo em dia, anexo e madrugada 00:20 conferidos com dados isolados, sem erros; redirects 302 corretos. Cálculos preservados, sem publicar. Gravação autenticada/sincronização externa não verificáveis; KPI de solicitações conta somente ocorrências realmente pendentes, sem inventar solicitações ou criar novo portal.
 
