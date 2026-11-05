@@ -1032,6 +1032,7 @@ async function nuvemPushAgora(k,v){
     else if(k==='feriados'){ chk(await sb.from('feriados').delete().eq('conta',CONTA));
       if(v.length) chk(await sb.from('feriados').upsert(v.map(f=>({conta:CONTA,data:f.data,nome:f.nome,tipo:f.tipo,dados:f})),{onConflict:'conta,data,nome'})); }
     else chk(await sb.from('dados').upsert({conta:CONTA,chave:k,valor:v,atualizado_em:new Date().toISOString()},{onConflict:'conta,chave'}));
+    if(['empregador','feriados'].includes(k))await cacheEstavelInvalidar(CONTA,k);
     NUVEM_OK=true;
   }catch(e){ NUVEM_OK=false; console.warn('Falha ao sincronizar com a nuvem:',k,e); }
 }
@@ -3576,6 +3577,7 @@ async function executarExclusao(){
     const r=await sb.from(t).delete().eq(c,CONTA); if(r.error) console.warn('excluir',t,r.error.message);
   }
   Object.keys(localStorage).filter(k=>k.startsWith(`vip:${CONTA}:`)||k.startsWith(`${CONTA}_`)).forEach(k=>localStorage.removeItem(k));
+  await Promise.all(['empregador','feriados'].map(k=>cacheEstavelInvalidar(CONTA,k)));
   salvaContas(contas().filter(c=>c.email!==CONTA));
   try{await sb.auth.signOut();}catch(e){}
   alert('Conta excluída. Todos os dados da empresa foram apagados.'); location.reload();
