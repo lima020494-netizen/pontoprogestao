@@ -907,7 +907,7 @@ let SHARE_DATA=null;
 const CACHE_SESSAO=new Map();
 const get = (k,d) => { if(SHARE_DATA&&Object.prototype.hasOwnProperty.call(SHARE_DATA,k))return SHARE_DATA[k];try{const chave=K(k),raw=localStorage.getItem(chave);if(!raw){CACHE_SESSAO.delete(chave);return d;}const cache=CACHE_SESSAO.get(chave);if(cache?.raw===raw)return cache.valor;const valor=JSON.parse(raw);CACHE_SESSAO.set(chave,{raw,valor});return valor;}catch(e){return d;} };
 let CARREGANDO=false; // evita eco de gravação durante a carga da nuvem
-const set = (k,v) => { localStorage.setItem(K(k),JSON.stringify(v)); if(!CARREGANDO) nuvemPush(k,v); };
+const set = (k,v) => { localStorage.setItem(K(k),JSON.stringify(v)); if(!CARREGANDO){if(['empregador','feriados'].includes(k))cacheEstavelInvalidar(CONTA,k);nuvemPush(k,v);} };
 
 /* ---------- Supabase — FONTE PRINCIPAL; localStorage = cache offline ----------
    Tabelas: empregador, funcionarios, pontos, logs, escala (isoladas por email_dono)
@@ -918,12 +918,27 @@ const sb = window.supabase ? window.supabase.createClient(SUPA_URL,SUPA_KEY) : n
 let NUVEM_OK=false;
 /* Fila offline robusta em IndexedDB (batida completa); localStorage só como reserva se IDB faltar */
 const IDB={db:null,mem:[],ok:false};
-function idbAbrir(){return new Promise(res=>{try{const r=indexedDB.open('vipponto',1);
-  r.onupgradeneeded=()=>{const s=r.result.createObjectStore('fila',{keyPath:'id'});s.createIndex('conta','conta');};
+function idbAbrir(){return new Promise(res=>{try{const r=indexedDB.open('vipponto',2);
+  r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('fila')){const s=r.result.createObjectStore('fila',{keyPath:'id'});s.createIndex('conta','conta');}if(!r.result.objectStoreNames.contains('config_cache'))r.result.createObjectStore('config_cache',{keyPath:'id'});};
   r.onsuccess=()=>{IDB.db=r.result;IDB.ok=true;res(true);};r.onerror=()=>res(false);}catch(e){res(false);}});}
 const IDB_PRONTO=idbAbrir();
 function idbTx(modo,fn){return IDB_PRONTO.then(ok=>ok?new Promise((res,rej)=>{const t=IDB.db.transaction('fila',modo),s=t.objectStore('fila');const out=fn(s);
   t.oncomplete=()=>res(out&&out.result);t.onerror=()=>rej(t.error);}):Promise.reject('sem IDB'));}
+/* Cache de leitura, nunca de autorização ou batidas. Expira em cinco minutos. */
+const CACHE_ESTAVEL_MS=5*60*1000,CACHE_LEITURAS=new Map(),CACHE_VERSOES=new Map();
+async function cacheEstavelTx(modo,fn){if(!await IDB_PRONTO)throw new Error('sem IDB');return new Promise((res,rej)=>{const t=IDB.db.transaction('config_cache',modo),r=fn(t.objectStore('config_cache'));t.oncomplete=()=>res(r?.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);});}
+async function cacheEstavelInvalidar(conta,chave){const id=conta+'|'+chave;CACHE_VERSOES.set(id,(CACHE_VERSOES.get(id)||0)+1);try{await cacheEstavelTx('readwrite',s=>s.delete(id));}catch(e){}}
+async function lerEstavel(conta,chave,consultar,forcar=false){
+  const id=conta+'|'+chave,versao=CACHE_VERSOES.get(id)||0;
+  if(CACHE_LEITURAS.has(id))return CACHE_LEITURAS.get(id);
+  const carga=(async()=>{
+    if(!forcar){try{const c=await cacheEstavelTx('readonly',s=>s.get(id));if(c&&c.expira>Date.now()&&versao===(CACHE_VERSOES.get(id)||0))return c.valor;}catch(e){}}
+    const valor=chk(await consultar());
+    if(versao===(CACHE_VERSOES.get(id)||0))try{await cacheEstavelTx('readwrite',s=>s.put({id,expira:Date.now()+CACHE_ESTAVEL_MS,valor}));}catch(e){}
+    return valor;
+  })();CACHE_LEITURAS.set(id,carga);
+  try{return await carga;}finally{CACHE_LEITURAS.delete(id);}
+}
 async function filaListar(){if(!CONTA) return [];try{const l=await idbTx('readonly',s=>s.index('conta').getAll(CONTA))||[];IDB.mem=l.map(x=>x.nsr);return l.map(x=>x.b);}catch(e){return [];}}
 async function filaAdd(b){try{await idbTx('readwrite',s=>s.put({id:CONTA+'|'+b.nsr,conta:CONTA,nsr:b.nsr,b}));IDB.mem=[...new Set([...IDB.mem,b.nsr])];}
   catch(e){salvaPendentes([...pendentesLS(),b.nsr]);}}
@@ -960,21 +975,23 @@ async function garantirHistorico(dataIni){ // inclui a véspera e a vigência pa
   rows.forEach(r=>r.dados&&mapa.set(r.nsr,r.dados));
   set('batidas',[...mapa.values()]);
 }
-async function carregarNuvem(){
-  if(!sb||!CONTA) return;
+async function carregarNuvem(forcar=false){
+  if(!sb||!CONTA||CARREGANDO) return;
   CARREGANDO=true;
+  const conta=CONTA;
   try{
     NUVEM_DESDE=janelaNuvemDesde();
     await sincronizarPendentes();
     const rs=await Promise.all([
-      sb.from('empregador').select('dados').eq('email_dono',CONTA).maybeSingle(),
+      lerEstavel(conta,'empregador',()=>sb.from('empregador').select('dados').eq('email_dono',conta).maybeSingle(),forcar),
       sb.from('funcionarios').select('pin,dados').eq('email_dono',CONTA),
       lerPontosNuvem(CONTA,NUVEM_DESDE).then(data=>({data})),
-      sb.from('feriados').select('dados,data,nome,tipo').eq('conta',CONTA),
+      lerEstavel(conta,'feriados',()=>sb.from('feriados').select('dados,data,nome,tipo').eq('conta',conta),forcar),
       sb.from('dados').select('chave,valor').eq('conta',CONTA),
-      sb.from('logs').select('quando,por,acao').eq('email_dono',CONTA).order('quando',{ascending:false}).limit(3000),
+      sb.from('logs').select('quando,por,acao').eq('email_dono',CONTA).order('quando',{ascending:false}).limit(50),
       sb.from('escala').select('semana,dados').eq('email_dono',CONTA)]);
     rs.forEach(chk);
+    if(CONTA!==conta)return;
     const [emp,fun,pon,fer,gen,lg,es]=rs;
     (gen.data||[]).forEach(r=>{if(!['funcionarios','batidas','empregador','feriados','logs'].includes(r.chave)) set(r.chave,r.valor);});
     if(emp.data&&emp.data.dados) set('empregador',emp.data.dados);
@@ -985,13 +1002,13 @@ async function carregarNuvem(){
     filaB.forEach(b=>mapa.set(b.nsr,b));
     const todas=[...mapa.values()]; set('batidas',todas);
     const maxN=todas.reduce((m,b)=>Math.max(m,Number(b.nsr)||0),0); if(maxN>(get('nsr',0)||0)) set('nsr',maxN);
-    if((fer.data||[]).length) set('feriados',fer.data.map(r=>r.dados||{data:r.data,nome:r.nome,tipo:r.tipo}));
+    set('feriados',(fer.data||[]).map(r=>r.dados||{data:r.data,nome:r.nome,tipo:r.tipo}));
     localStorage.setItem(K('logs'),JSON.stringify(lg.data||[]));LOGS_SESSAO.add(CONTA);
     const escs={}; (es.data||[]).forEach(r=>{if(r.semana&&r.dados)escs[r.semana]=r.dados;});
     if(Object.keys(escs).length) set('escalas',escs);
     NUVEM_OK=true;
   }catch(e){ NUVEM_OK=false; console.warn('Nuvem indisponível — usando dados do aparelho.',e); }
-  CARREGANDO=false;
+  finally{CARREGANDO=false;}
   if(typeof atualizaStatus==='function') atualizaStatus();
 }
 const NUVEM_TIMERS={};
@@ -1015,6 +1032,7 @@ async function nuvemPushAgora(k,v){
     else if(k==='feriados'){ chk(await sb.from('feriados').delete().eq('conta',CONTA));
       if(v.length) chk(await sb.from('feriados').upsert(v.map(f=>({conta:CONTA,data:f.data,nome:f.nome,tipo:f.tipo,dados:f})),{onConflict:'conta,data,nome'})); }
     else chk(await sb.from('dados').upsert({conta:CONTA,chave:k,valor:v,atualizado_em:new Date().toISOString()},{onConflict:'conta,chave'}));
+    if(['empregador','feriados'].includes(k))await cacheEstavelInvalidar(CONTA,k);
     NUVEM_OK=true;
   }catch(e){ NUVEM_OK=false; console.warn('Falha ao sincronizar com a nuvem:',k,e); }
 }
@@ -1035,9 +1053,10 @@ async function sincronizarPendentes(){
   finally{ SINC=false; if(typeof atualizaStatus==='function') atualizaStatus(); }
 }
 function filaPonto(nsr){const b=get('batidas',[]).find(x=>x.nsr===nsr);(b?filaAdd(b):Promise.resolve(salvaPendentes([...pendentesLS(),nsr]))).then(sincronizarPendentes);}
-window.addEventListener('online',async()=>{await sincronizarPendentes();if(CONTA&&!CARREGANDO)await carregarNuvem();});
-setInterval(async()=>{ if(!CONTA) return; await sincronizarPendentes();
-  if($('tela-gestor').classList.contains('hidden')&&$('modal-generico').classList.contains('hidden')) await carregarNuvem(); },120000);
+window.addEventListener('online',async()=>{await sincronizarPendentes();if(CONTA&&!CARREGANDO)await carregarNuvem(true);});
+// Retentativa da fila preservada; não recarrega dados da empresa em standby/quiosque.
+setInterval(()=>{if(CONTA)sincronizarPendentes();},120000);
+async function atualizarDadosNuvem(){await carregarNuvem(true);if(GERENCIADOR&&MODO_GESTOR){await atualizarAvisoSuporte();irAba(ABA);}toast(NUVEM_OK?'Dados atualizados.':'Sem conexão: mantendo dados do aparelho.',2000);}
 
 /* Migração automática: sobe tudo que estava só no aparelho (SUNMI) */
 async function migrarTudoSunmiParaSupabase(forcar){
@@ -1729,7 +1748,7 @@ async function copiarLinkQuiosque(){
   try{await navigator.clipboard.writeText(link);toast('Link do quiosque copiado.',2000);}
   catch(e){const campo=$('terminal-link');if(campo){campo.focus();campo.select();}toast('Selecione e copie o link do quiosque.',3000);}
 }
-function terminalQuiosqueHTML(){const link=linkQuiosque(),qr=qrDataUrl(link);return `<section class="terminal-section" aria-label="Terminal de ponto"><div><h3>Terminal de ponto</h3><div class="terminal-link"><input id="terminal-link" aria-label="Link do quiosque" readonly value="${esc(link)}"/><button class="btn ghost" onclick="copiarLinkQuiosque()" aria-label="Copiar link do quiosque" title="Copiar link">⧉</button></div><div class="row"><a class="btn" href="${esc(link)}" target="_top">Abrir Quiosque ↗</a><a class="btn ghost" href="/download" target="_blank" rel="noopener">⇩ Baixar Aplicativo Android (.APK)</a></div><p class="muted terminal-help">Em terminais Android com impressora térmica integrada (58mm/80mm) ou tablets Android, abra o APK baixado e autorize a instalação deste navegador quando solicitado. Depois, abra o aplicativo e entre com a conta da empresa.</p></div>${qr?`<img class="terminal-qr" src="${qr}" alt="QR Code para abrir o quiosque"/>`:''}</section>`;}
+function terminalQuiosqueHTML(){const link=linkQuiosque(),qr=qrDataUrl(link);return `<section class="terminal-section" aria-label="Terminal de ponto"><div><h3>Terminal de ponto</h3><button class="btn sm ghost" onclick="atualizarDadosNuvem()" title="Atualizar dados" aria-label="Atualizar dados">↻</button><div class="terminal-link"><input id="terminal-link" aria-label="Link do quiosque" readonly value="${esc(link)}"/><button class="btn ghost" onclick="copiarLinkQuiosque()" aria-label="Copiar link do quiosque" title="Copiar link">⧉</button></div><div class="row"><a class="btn" href="${esc(link)}" target="_top">Abrir Quiosque ↗</a><a class="btn ghost" href="/download" target="_blank" rel="noopener">⇩ Baixar Aplicativo Android (.APK)</a></div><p class="muted terminal-help">Em terminais Android com impressora térmica integrada (58mm/80mm) ou tablets Android, abra o APK baixado e autorize a instalação deste navegador quando solicitado. Depois, abra o aplicativo e entre com a conta da empresa.</p></div>${qr?`<img class="terminal-qr" src="${qr}" alt="QR Code para abrir o quiosque"/>`:''}</section>`;}
 function abaTerminalQuiosque(){ $('gestor-body').innerHTML=terminalQuiosqueHTML(); }
 async function atualizarAvisoSuporte(){
   const aviso=$('gestor-suporte-aviso');if(!aviso||!CONTA)return;
@@ -1818,19 +1837,37 @@ function organizarEmpresaAbas(b){
   [geral,jor,qui,seg].forEach((p,i)=>{p.hidden=i>0;b.appendChild(p);});geral.appendChild(bar);
 }
 function mostrarEmpAba(k){document.querySelectorAll('.emp-tabs [role=tab]').forEach(t=>t.setAttribute('aria-selected',String(t.id==='emp-tab-'+k)));document.querySelectorAll('.emp-pane').forEach(p=>p.hidden=p.id!=='emp-pane-'+k);const bar=document.querySelector('.emp-savebar'),p=$('emp-pane-'+k);if(bar&&(k==='geral'||k==='jor'))p.appendChild(bar);}
-async function abaLogs(){
-  renderLogs(get('logs',[]));
-  if(!sb||!CONTA||SHARE_DATA)return;
+const LOGS_PAGINA=50;
+let LOGS_VISAO=null;
+async function abaLogs(mais=false){
+  if(!sb||!CONTA||SHARE_DATA){renderLogs(get('logs',[]));return;}
   const conta=CONTA;
-  if(!LOGS_CARGAS.has(conta))LOGS_CARGAS.set(conta,(async()=>{try{const r=await sb.from('logs').select('quando,por,acao').eq('email_dono',conta).order('quando',{ascending:false}).limit(3000);if(!r.error){localStorage.setItem(`vip:${conta}:logs`,JSON.stringify(r.data||[]));LOGS_SESSAO.add(conta);return r.data||[];}}finally{LOGS_CARGAS.delete(conta);}})());
-  const dados=await LOGS_CARGAS.get(conta);if(dados&&CONTA===conta&&ABA==='logs')renderLogs(dados);
-  if(CONTA!==conta||ABA!=='logs')return;
-  const auditoria=await sb.from('audit_logs').select('criado_em,acao').eq('empresa_id',conta).eq('is_support_action',true).order('criado_em',{ascending:false}).limit(300);
-  if(CONTA===conta&&ABA==='logs'&&!auditoria.error){const base=get('logs',[]);renderLogs([...base,...(auditoria.data||[]).map(x=>({quando:x.criado_em,por:'Suporte técnico',acao:x.acao}))].sort((a,b)=>new Date(b.quando)-new Date(a.quando)));}
+  if(LOGS_CARGAS.has(conta))return;
+  if(!mais||LOGS_VISAO?.conta!==conta)LOGS_VISAO={conta,pagina:0,base:[],suporte:[],mais:true};
+  const estado=LOGS_VISAO,inicio=estado.pagina*LOGS_PAGINA;
+  renderLogs(estado.base.length?[...estado.base,...estado.suporte]:get('logs',[]),false);
+  const carga=(async()=>{
+    try{
+      const [r,a]=await Promise.all([
+        sb.from('logs').select('quando,por,acao').eq('email_dono',conta).order('quando',{ascending:false}).range(inicio,inicio+LOGS_PAGINA-1),
+        sb.from('audit_logs').select('criado_em,acao').eq('empresa_id',conta).eq('is_support_action',true).order('criado_em',{ascending:false}).range(inicio,inicio+LOGS_PAGINA-1)]);
+      chk(r);if(CONTA!==conta||LOGS_VISAO!==estado)return;
+      estado.base.push(...(r.data||[]));estado.suporte.push(...(a.error?[]:(a.data||[]).map(x=>({quando:x.criado_em,por:'Suporte técnico',acao:x.acao}))));
+      estado.pagina++;estado.mais=(r.data||[]).length===LOGS_PAGINA||(!a.error&&(a.data||[]).length===LOGS_PAGINA);
+      localStorage.setItem(`vip:${conta}:logs`,JSON.stringify(estado.base));LOGS_SESSAO.add(conta);
+      if(ABA==='logs')renderLogs([...estado.base,...estado.suporte].sort((a,b)=>new Date(b.quando)-new Date(a.quando)),estado.mais);
+    }catch(e){if(CONTA===conta&&ABA==='logs'){renderLogs(get('logs',[]));toast('Não foi possível carregar o histórico agora.',2000);}}
+    finally{LOGS_CARGAS.delete(conta);}
+  })();LOGS_CARGAS.set(conta,carga);await carga;
 }
-function renderLogs(l){
+function renderLogs(l,mais=false){
   $('gestor-body').innerHTML=`<h3>Histórico de ações (auditoria — nuvem)</h3><div class="tbl-wrap"><table><tr><th>Quando</th><th>Por</th><th>Ação</th></tr>
-  ${l.map(x=>`<tr><td>${new Date(x.quando).toLocaleString('pt-BR')}</td><td>${esc(x.por)}</td><td>${esc(x.acao)}</td></tr>`).join('')||'<tr><td colspan=3 class="muted">Sem registros.</td></tr>'}</table></div>`;
+  ${l.map(x=>`<tr><td>${new Date(x.quando).toLocaleString('pt-BR')}</td><td>${esc(x.por)}</td><td>${esc(x.acao)}</td></tr>`).join('')||'<tr><td colspan=3 class="muted">Sem registros.</td></tr>'}</table></div>${mais?'<button class="btn ghost" onclick="abaLogs(true)">Carregar mais</button>':''}`;
+}
+async function logsParaBackup(){
+  if(!sb||!CONTA)return get('logs',[]);
+  const conta=CONTA,rows=[];
+  for(let inicio=0;;inicio+=LOGS_PAGINA){const r=chk(await sb.from('logs').select('quando,por,acao').eq('email_dono',conta).order('quando',{ascending:false}).range(inicio,inicio+LOGS_PAGINA-1));rows.push(...(r.data||[]));if((r.data||[]).length<LOGS_PAGINA)return rows;}
 }
 
 /* ============================== MÓDULO 2 — EMPREGADOS ============================== */
@@ -3200,7 +3237,7 @@ function aplicarIdentidadeGlobal(settings){
 async function sincronizarDevGlobal(){
   if(DEV_SYNC)return DEV_SYNC;
   DEV_SYNC=(async()=>{try{
-    const [legacy,global]=await Promise.all([sb.from('app_config').select('valor').eq('chave','dev_info').maybeSingle(),sb.from('app_settings').select('settings').eq('id','global').maybeSingle()]);
+    const [legacy,global]=await Promise.all([lerEstavel('global','dev_info',()=>sb.from('app_config').select('valor').eq('chave','dev_info').maybeSingle()),lerEstavel('global','settings',()=>sb.from('app_settings').select('settings').eq('id','global').maybeSingle())]);
     const antes=JSON.stringify(devCfg()),settings=global.data?.settings;
     if(settings){localStorage.setItem('vip_ponto_app_settings',JSON.stringify(settings));aplicarDevGlobal(settings.developer||legacy.data?.valor||{});if(settings.logo_url)localStorage.setItem('ponto_pro_gestao_logo_app',settings.logo_url);aplicarIdentidadeGlobal(settings);}
     else if(legacy.data)aplicarDevGlobal(legacy.data.valor||{});
@@ -3211,8 +3248,7 @@ async function sincronizarDevGlobal(){
 window.addEventListener('online',sincronizarDevGlobal);
 window.addEventListener('storage',e=>{if(e.key==='vip_ponto_dev_info'||e.key==='ponto_pro_gestao_logo_app'){const l=$('logo-app');if(l)l.src=logoApp();if(SOBRE_ABERTO&&$('sobre-sistema')&&!podeEditarDev()&&!$('modal-generico').classList.contains('hidden'))renderSobre();}});
 setTimeout(sincronizarDevGlobal,0);
-setInterval(()=>{if(!document.hidden)sincronizarDevGlobal();},30000);
-setInterval(()=>{if(!document.hidden&&GERENCIADOR&&MODO_GESTOR)atualizarAvisoSuporte();},30000);
+// Identidade e suporte: somente boot, reconexão e abertura explícita, sem polling.
 async function abrirSobre(){
   SOBRE_ABERTO=true;LOGO_APP_TMP=null;
   await sincronizarDevGlobal();renderSobre();
@@ -3529,7 +3565,7 @@ async function enviarBackupPorEmail(para){
   zip.file('funcionarios.csv',csvDe(get('funcionarios',[]),['nome','cpf','cargo','funcao','departamento','admissao','escala','status','inicioVigenciaBancoHoras','email']));
   zip.file('pontos.csv',csvDe(get('batidas',[]),['nsr','nome','cpf','data','hora','tipo','fonte','movimento']));
   zip.file('escala.csv',csvDe(Object.values(get('escalas',{})||{}).flatMap(e=>(e.folgas||[]).map(x=>({periodo:`${e.semanaInicio} a ${e.semanaFim}`,funcionario:(funcPorPin(x.pin)||{}).nome||'',dia:x.dia,tipo:x.tipo,horario:x.horarioEntrada||''}))),['periodo','funcionario','dia','tipo','horario']));
-  zip.file('logs.csv',csvDe(get('logs',[]),['quando','por','acao']));
+  zip.file('logs.csv',csvDe(await logsParaBackup(),['quando','por','acao']));
   const blob=await zip.generateAsync({type:'blob'});
   return enviarArquivoPorEmail({para,assunto:'Backup Ponto Pro Gestão',nome:`Backup_Ponto_Pro_Gestao_${hojeISO()}.zip`,blob,mime:'application/zip'});
 }
@@ -3541,6 +3577,7 @@ async function executarExclusao(){
     const r=await sb.from(t).delete().eq(c,CONTA); if(r.error) console.warn('excluir',t,r.error.message);
   }
   Object.keys(localStorage).filter(k=>k.startsWith(`vip:${CONTA}:`)||k.startsWith(`${CONTA}_`)).forEach(k=>localStorage.removeItem(k));
+  await Promise.all(['empregador','feriados'].map(k=>cacheEstavelInvalidar(CONTA,k)));
   salvaContas(contas().filter(c=>c.email!==CONTA));
   try{await sb.auth.signOut();}catch(e){}
   alert('Conta excluída. Todos os dados da empresa foram apagados.'); location.reload();
