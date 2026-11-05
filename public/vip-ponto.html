@@ -2074,7 +2074,7 @@ function movimentoBancoDia(pin,data,prev,trab,atraso=0){
  const deficit=Math.max(0,prev-trab-Math.min(atraso,Math.max(0,prev-trab)));
  const saldo=regra.abonado?Math.max(0,credito):regra.compensacao?-440:regra.externo?0:falta?0:(credito>0?credito:-deficit);
  const faltantes=regra.compensacao||regra.abonado||regra.externo?0:falta?prev:deficit;
- return {...regra,saldo,faltantes};
+ return {...regra,saldo:saldo||0,faltantes};
 }
 /* Linhas da folha + totais + banco de horas */
 function dadosFolha(pin,ini,fim){
