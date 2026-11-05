@@ -24,6 +24,8 @@
 - Shared occurrence rules drive sheet/bank/XLS and treatment inbox/batch validation to avoid divergent calculations; periods sync/edit/delete as a unit. External work never synthesizes punches; vacation is neutral.
 - Export libraries (jspdf/autotable/jszip/xlsx) load on demand via garantirLib(), never in the initial head; every export entry point awaits it first.
 - Initial cloud punch load is windowed to the current month (NUVEM_DESDE); garantirHistorico(dataIni) back-fills older punches on demand for sheet, bank, batch and accountant exports.
+- Cloud punch reads are paginated; historical backfill includes bank activation/admission and the prior civil day, and bank views/exports calculate only after loading so opening balances reconcile. Daily statements retain zero-movement and pre-activation days without changing stored punches.
+- Repeated legacy punch types are normalized chronologically in derived jornada reads only; unique explicit types and fiscal storage remain intact so old manual records calculate consistently across sheet and bank.
 - Schedule grid and legacy imports share lerCelulaEscala and canonical TIPOS_ESC values, so menu options and accepted rest-day aliases retain existing calculation semantics.
 - Monthly ZIP is an action inside the sheet and adds a BIFF8 analytical workbook; reporting codes and deduction minutes are not eSocial transmission or wage calculation.
 - Super Admin lives only at /admin (own layout, master email + admin role + reserve PIN checked by the license endpoint); the client HTML app has no developer screens. Install icons use versioned filenames so installed shortcuts refresh.
