@@ -2676,7 +2676,7 @@ function subBanco(){
   <section class="mod-card"><h4 class="mod-card-t">Extrato individual</h4><div class="grid g4 mod-filters"><div><label>Funcionário</label><select id="bh-pin">${fs.map(f=>`<option value="${f.pin}">${esc(f.nome)}</option>`).join('')}</select></div>
   <div><label>Período inicial</label><input type="date" id="bh-ini" value="${hoje.slice(0,8)}01"/></div>
   <div><label>Período final</label><input type="date" id="bh-fim" value="${hoje}"/></div>
-  <div style="display:flex;align-items:flex-end"><button class="btn" onclick="calcBancoView()">Ver extrato</button></div></div>
+  <div style="display:flex;align-items:flex-end"><button class="btn" onclick="calcBancoView()">Ver extrato</button><button class="btn ghost" style="margin-left:6px" onclick="pdfExtratoBanco()">Baixar Extrato em PDF</button></div></div>
   <div id="bh-out" style="margin-top:16px"></div></section>
   <section class="mod-card"><div class="row"><div><h4 class="mod-card-t">Fechamento — todos os colaboradores</h4><div class="muted">Fechamento consolidado do banco de horas.</div></div>
     <div class="right row"><button class="btn sm" onclick="pdfResumoBanco()">📄 Baixar PDF</button><button class="btn sm ghost" onclick="csvResumoBanco()">Exportar CSV</button></div></div>
@@ -2742,6 +2742,27 @@ async function calcBancoView(){
     .map(([t,v,c])=>`<div><span>${t}</span><strong class="num ${c}">${v}</strong></div>`).join('')}
   </div><div class="tbl-wrap" style="margin-top:12px"><table class="bh-extrato"><thead><tr><th>Data</th><th>Previsto</th><th>Realizado</th><th>Movimentação / Ocorrência</th><th>Saldo</th></tr></thead><tbody>
   ${b.dias.map(d=>{const texto=!d.vigente?'Fora da vigência':d.saldo>0?'Crédito - Hora Extra':d.saldo<0?regraOcorrencia(d.ocorrencia).compensacao?'Débito - Folga Compensatória':'Débito - Carga incompleta':d.ocorrencia||'Sem movimentação';return `<tr><td class="num">${brOf(d.data)}</td><td class="num">${toHHMM(d.previsto)}</td><td class="num">${toHHMM(d.trabalhado)}</td><td>${esc(texto)}</td><td><span class="saldo-badge ${d.saldo>0?'tone-green':d.saldo<0?'tone-red':'tone-net'}">${d.saldo?toSaldo(d.saldo):'00:00'}</span></td></tr>`;}).join('')||'<tr><td colspan="5" class="muted">Sem registros no período.</td></tr>'}</tbody></table></div>`;
+}
+function textoMovBanco(d){return !d.vigente?'Fora da vigência':d.saldo>0?'Crédito - Hora Extra':d.saldo<0?regraOcorrencia(d.ocorrencia).compensacao?'Débito - Folga Compensatória':'Débito - Carga incompleta':d.ocorrencia||'Sem movimentação';}
+function linhasExtratoBanco(b){let acc=b.anterior;return b.dias.map(d=>{acc+=d.saldo;const oc=d.ocorrencia&&!textoMovBanco(d).includes(d.ocorrencia)?` (${d.ocorrencia})`:'';return [brOf(d.data),toHHMM(d.previsto),toHHMM(d.trabalhado),textoMovBanco(d)+oc,d.saldo?toSaldo(d.saldo):'00:00',toSaldo(acc)];});}
+async function pdfExtratoBanco(){
+  const pin=$('bh-pin').value,ini=$('bh-ini').value,fim=$('bh-fim').value;
+  if(!pin||!ini||!fim||ini>fim)return toast('Informe um colaborador e período válidos.');
+  try{await garantirHistorico(ini);}catch(e){return toast('Histórico indisponível. Tente novamente antes de exportar.');}
+  await garantirLib('pdf');
+  const f=funcPorPin(pin)||{},b=calcBanco(pin,ini,fim),{jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'});
+  const titulo='Extrato Individual do Banco de Horas',sub=`Período ${brOf(ini)} a ${brOf(fim)} • Vigência do banco: ${brOf(b.vigencia)}`;
+  let y=pdfCabecalhoPadrao(doc,titulo,sub);
+  y=pdfTabelaPadrao(doc,{y,titulo,sub,head:['Colaborador','CPF','PIN','Cargo'],body:[[f.nome||'—',cpfMascarado(f.cpf),pin,f.funcao||'—']],widths:[80,40,20,50]})+4;
+  y=pdfTabelaPadrao(doc,{y,titulo,sub,head:['Saldo anterior','Créditos','Débitos','Saldo atual'],body:[[toSaldo(b.anterior),'+'+toHHMM(b.creditos),'-'+toHHMM(b.debitos),toSaldo(b.atual)]],widths:[47.5,47.5,47.5,47.5],fontSize:10})+4;
+  y=pdfTabelaPadrao(doc,{y,titulo,sub,head:['Data','Previsto','Realizado','Movimentação / Ocorrência','Movimento','Saldo acumulado'],body:linhasExtratoBanco(b),widths:[22,20,20,72,26,30],fontSize:7.5,cellPadding:1.4,
+    cellStyle:c=>c.section==='body'&&c.column.index>=4?(String(c.cell.raw).startsWith('-')?[185,28,28]:String(c.cell.raw).startsWith('+')?[21,128,61]:null):null});
+  if(y>235){doc.addPage();y=20;}else y+=22;
+  doc.setDrawColor(60,70,90);doc.setLineWidth(.3);doc.line(15,y,95,y);doc.line(115,y,195,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(35,50,75);
+  doc.text('Gestor responsável',55,y+4,{align:'center'});doc.text(`${f.nome||'Colaborador'} — ciente`,155,y+4,{align:'center'});
+  doc.setFontSize(7);doc.text('Declaro ciência dos lançamentos e do saldo apurado neste extrato.',105,y+11,{align:'center'});
+  pdfRodapesPadrao(doc,CONTA||'Gestor');doc.save(`Extrato_Banco_${String(f.nome||pin).replace(/[^\w]+/g,'_')}_${ini}_${fim}.pdf`);log(`Exportou extrato do banco de horas PIN ${pin}`);
 }
 /* F) Relatórios */
 function subRelatorios(){
