@@ -90,4 +90,8 @@ test('consolidated PDF reads freshly loaded bank totals',async()=>{
   dadosResumoBanco:()=>({ini:'2026-10-01',fim:'2026-10-03',st:'Todos',linhas:[{f:{nome:'Teste',status:'Ativo'},b:{anterior:0,creditos:loaded?120:0,debitos:0,atual:loaded?120:0}}]}),
   window:{jspdf:{jsPDF:class{save(){}}}},pdfCabecalhoPadrao:()=>0,pdfRodapesPadrao:()=>{},pdfTabelaPadrao:(_doc:unknown,r:any)=>{body=r.body},
  });assert.equal(body[0]?.[3],'+02:00');assert.equal(body[0]?.[5],'+02:00');
+});test('individual statement PDF ends its running balance at the current bank balance',()=>{
+  const b={anterior:120,creditos:60,debitos:30,atual:150,dias:[{data:'2026-10-01',previsto:480,trabalhado:540,saldo:60,ocorrencia:'',vigente:true},{data:'2026-10-02',previsto:480,trabalhado:450,saldo:-30,ocorrencia:'',vigente:true}]};
+  const rows=runInNewContext(slice('function textoMovBanco','async function pdfExtratoBanco')+';linhasExtratoBanco(b)',{...helpers,b,regraOcorrencia:()=>({})});
+  assert.equal(rows[0][5],'+03:00');assert.equal(rows[1][5],'+02:30');assert.equal(rows[1][3],'Débito - Carga incompleta');
 });
