@@ -50,7 +50,7 @@ function drawer(lote:unknown[]|null){
  const ctx={window:{__tratLote:lote},document:{activeElement:null},get:(k:string,f:unknown)=>k==='funcionarios'?[{pin:'1',nome:'Ana'}]:f,
   ocorrenciaDia:()=>undefined,batidasJornada:()=>[],funcPorPin:()=>({nome:'Ana'}),esc:(x:unknown)=>String(x),
   abrirModal:(h:string)=>{out=h},brOf:(d:string)=>d,$:((id:string)=>id==='modal-generico'?modal:{value:'',textContent:''}) as unknown as (id:string)=>unknown,
-  camposOcorrencia:()=>{},hojeISO:()=>'2026-11-04',TIPOS:['Entrada','Saída']};
+  camposOcorrencia:()=>{},camposQuatroBatidas:()=>'',hojeISO:()=>'2026-11-04',TIPOS:['Entrada','Saída']};
  runInNewContext(rules+drawerRules+';lancarOcorrencia("1","2026-10-02")',ctx);
  return out;
 }
@@ -111,3 +111,12 @@ test('batch aborts the whole forgotten-punch insert when one selected day cannot
 test('shift over six hours with only two punches flags missing break',()=>{const s=classify('2026-11-01',480,480,2);assert.equal(s.pendente,true);assert.equal(s.cor,'orange');assert.equal(s.titulo,'Intervalo não registrado');});
 test('six-hour shift with two punches does not require a break',()=>{assert.equal(classify('2026-11-01',360,360,2).pendente,false);});
 test('short worked time without allowance stays as review shift',()=>{const s=classify('2026-11-01',480,300,4);assert.equal(s.pendente,true);assert.equal(s.titulo,'Revisar jornada');});
+test('one form inserts the four punches at once and skips types the day already has',async()=>{
+  const dias=[{pin:'1',data:'2026-10-02'},{pin:'1',data:'2026-10-03'}];
+  const v={'oc-pin':'1','oc-tipo':'Esquecimento de Marcação','oc-h0':'08:00','oc-h1':'12:00','oc-h2':'13:00','oc-h3':'17:00','oc-motivo':'Lançamento das marcações','oc-autorizou':'Gestor RH'};
+  const {ctx,data}=loteEsquecimento(dias,[{pin:'1',data:'2026-10-02',hora:'08:05',tipo:'Entrada',nsr:'1'}],v);
+  await runInNewContext(rules+prepare+manualRules+saveRules+';salvarOcorrencia()',ctx);
+  const bs=data['batidas'] as {data:string;tipo:string}[];
+  assert.equal(bs.filter(b=>b.data==='2026-10-02').length,4);
+  assert.equal(bs.filter(b=>b.data==='2026-10-03').length,4);
+});

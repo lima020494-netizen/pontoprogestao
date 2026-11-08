@@ -2403,23 +2403,17 @@ function inserirBatidaManual(pinSelecionado='',dataSelecionada=''){
   <div class="card grid g2">
     <div><label>Funcionário</label><select id="ib-pin" ${pinSelecionado?'disabled':''}>${fs.map(f=>`<option value="${f.pin}" ${f.pin===pinSelecionado?'selected':''}>${esc(f.nome)}</option>`).join('')}</select></div>
     <div><label>Data</label><input type="date" id="ib-data" value="${dataSelecionada||hojeISO()}" ${dataSelecionada?'readonly':''}/></div>
-    <div><label for="ib-hora">Hora</label><input type="time" id="ib-hora" onchange="camposBatidaMadrugada()" oninput="camposBatidaMadrugada()"/></div>
-    <div id="ib-madrugada" class="hidden"><label for="ib-tipo">Tipo de marcação</label><select id="ib-tipo" onchange="camposBatidaMadrugada()">${TIPOS.map(t=>`<option>${esc(t)}</option>`).join('')}</select><label id="ib-anterior-campo" class="hidden" style="display:flex;align-items:center;gap:8px;min-height:44px"><input type="checkbox" id="ib-anterior" style="width:20px;height:20px;flex:none"/> Saída da jornada da noite anterior</label></div>
+    <div style="grid-column:1/-1">${camposQuatroBatidas('ib',pinSelecionado&&dataSelecionada?batidasJornada(pinSelecionado,dataSelecionada):[])}<label style="display:flex;align-items:center;gap:8px;min-height:44px"><input type="checkbox" id="ib-anterior" style="width:20px;height:20px;flex:none"/> Saída da jornada da noite anterior (00:00–05:59)</label></div>
     <div class="muted" style="align-self:end">As marcações do dia são ordenadas por horário automaticamente.</div>
     <div><label for="ib-autorizou">Quem autorizou *</label><input id="ib-autorizou" required/></div>
     <div style="grid-column:1/-1"><label>Motivo (obrigatório, mín. 5 caracteres)</label><textarea id="ib-motivo" rows="2"></textarea></div>
-  </div><button class="btn gold" onclick="salvarBatidaManual()">Salvar batida manual</button>`);
-}
-function camposBatidaMadrugada(){
-  const hora=$('ib-hora').value,madrugada=!!hora&&toMin(hora)<360,saida=$('ib-tipo').value==='Saída';
-  $('ib-madrugada').classList.toggle('hidden',!madrugada);$('ib-anterior-campo').classList.toggle('hidden',!madrugada||!saida);
-  if(!madrugada||!saida)$('ib-anterior').checked=false;
+  </div><button class="btn gold" onclick="salvarBatidaManual()">Salvar batidas</button>`);
 }
 function salvarBatidaManual(){
-  const hora=$('ib-hora').value,madrugada=!!hora&&toMin(hora)<360;
-  const erro=registrarBatidaManual({pin:$('ib-pin').value,data:$('ib-data').value,hora,tipo:madrugada?$('ib-tipo').value:TIPOS[0],motivo:$('ib-motivo').value,autorizadoPor:$('ib-autorizou').value,anterior:$('ib-anterior')?.checked});
+  const {itens}=horariosInformados('ib');
+  const erro=registrarVariasBatidas({pin:$('ib-pin').value,data:$('ib-data').value,itens,motivo:$('ib-motivo').value,autorizadoPor:$('ib-autorizou').value,anterior:$('ib-anterior')?.checked});
   if(erro)return alert(erro);
-  fecharModal();subBatidas();
+  fecharModal();subBatidas();if(typeof toast==='function')toast(itens.length+' batida(s) registrada(s).',2000);
 }
 function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior=false,simular=false}){
   if(!data||!hora)return 'Informe data e hora.';
@@ -2438,11 +2432,32 @@ function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior
   set('batidas',all); filaPonto(nsrM); reordenarJornada(pin,jornada); log(`${brOf(data)} ${hora} * Marcação Manual - Motivo: ${motivo} - Autorizado por: ${autorizadoPor}`);
   window.__batFilt={pin,data:jornada,ini:$('gb-ini')?.value||jornada,fim:$('gb-fim')?.value||data};return '';
 }
+function camposQuatroBatidas(px,existentes){
+  const rot=['Entrada','Saída intervalo','Retorno intervalo','Saída'];
+  return `<p class="muted" style="margin:4px 0">Preencha só os horários que faltam — um, alguns ou os quatro.</p><div class="grid g2">${TIPOS.map((t,i)=>{const b=existentes.find(x=>x.tipo===t);return `<div><label for="${px}-h${i}">${rot[i]||esc(t)}</label><input type="time" id="${px}-h${i}" ${b?`value="${esc(b.hora)}" disabled title="Já registrada"`:''}/></div>`}).join('')}</div>`;
+}
+function horariosInformados(px){
+  const itens=TIPOS.map((tipo,i)=>{const el=$(px+'-h'+i);return {tipo,hora:el&&!el.disabled?el.value:''}}).filter(x=>x.hora);
+  const h=$(px+'-hora')?.value;if(!itens.length&&h){const t=$(px+'-btipo')?.value||(toMin(h)<360?$(px+'-tipo')?.value:'')||TIPOS[0];return {itens:[{tipo:t,hora:h}],legado:true};}
+  return {itens,legado:false};
+}
+function registrarVariasBatidas({pin,data,itens,motivo,autorizadoPor,anterior=false,soFaltantes=false,simular=false}){
+  if(!itens.length)return 'Informe ao menos um horário.';
+  if(String(motivo||'').trim().length<5)return 'Motivo obrigatório (mín. 5 caracteres).';
+  if(!String(autorizadoPor||'').trim())return 'Informe quem autorizou a marcação.';
+  const exist=batidasJornada(pin,data);if(soFaltantes)itens=itens.filter(x=>!exist.some(b=>b.tipo===x.tipo));
+  if(!itens.length)return '';
+  if(exist.length+itens.length>4)return 'Limite de 4 marcações na jornada.';
+  for(const x of itens){const e=registrarBatidaManual({pin,data,hora:x.hora,tipo:x.tipo,motivo,autorizadoPor,anterior,simular:true});if(e)return e;}
+  if(simular)return '';
+  for(const x of itens){const e=registrarBatidaManual({pin,data,hora:x.hora,tipo:x.tipo,motivo,autorizadoPor,anterior});if(e)return e;}
+  return '';
+}
 function lancarOcorrencia(pinSelecionado='',dataSelecionada=''){
  const fs=get('funcionarios',[]),lote=window.__tratLote,ex=lote?{}:ocorrenciaDia(pinSelecionado,dataSelecionada)||{};window.__ocEdit=ex;const impar=!lote&&!ex.tipo&&pinSelecionado&&dataSelecionada&&batidasJornada(pinSelecionado,dataSelecionada).length%2===1;const tipoSel=ex.tipo||(impar?'Esquecimento de Marcação':'');
  const liberados=tiposTratamentoLote(),grupos=GRUPOS_OCORRENCIAS.map(g=>({...g,itens:g.itens.filter(([v])=>v!=='Falta'&&(!lote||liberados.includes(v)))})).filter(g=>g.itens.length);
  window.__tratFoco=document.activeElement;
- abrirModal(`<div class="treatment-drawer-head"><div><small>TRATAMENTO DE PONTO</small><h3>${lote?'Abonar '+lote.length+' registros':'Tratar ocorrência'}</h3></div><button class="btn ghost" onclick="fecharModal();window.__tratLote=null" aria-label="Fechar ajustes">✕</button></div><div class="treatment-drawer-fields"><label for="oc-pin">Colaborador</label><select id="oc-pin" ${pinSelecionado?'disabled':''}>${fs.map(f=>`<option value="${esc(f.pin)}" ${f.pin===pinSelecionado?'selected':''}>${esc(f.nome)}</option>`).join('')}</select>${lote?'<div class="muted">'+lote.map(x=>esc(funcPorPin(x.pin)?.nome||'')+' · '+brOf(x.data)).join('<br>')+'</div>':''}<label for="oc-tipo">Tratamento</label><select id="oc-tipo" onchange="camposOcorrencia()">${grupos.map(g=>`<optgroup label="${esc(g.nome)}">${g.itens.map(([v,t])=>`<option value="${esc(v)}" ${v===tipoSel?'selected':''}>${esc(t)}</option>`).join('')}</optgroup>`).join('')}</select><div class="grid g2 ${lote?'hidden':''}"><div><label for="oc-data">Data início *</label><input type="date" id="oc-data" oninput="camposOcorrencia()" value="${ex.inicio||dataSelecionada||hojeISO()}"/></div><div id="oc-fim-campo"><label for="oc-fim">Data fim *</label><input type="date" id="oc-fim" value="${ex.fim||dataSelecionada||hojeISO()}"/></div></div><div id="oc-legal" class="hidden"><label for="oc-legal-motivo">Motivo legal / abono da empresa</label><select id="oc-legal-motivo"><option value="Empresa">Abono autorizado pela empresa</option><option value="Casamento">Casamento — art. 473, II</option><option value="Falecimento">Falecimento — art. 473, I</option><option value="Nascimento">Nascimento de filho — art. 473, III</option><option value="Sangue">Doação de sangue — art. 473, IV</option><option value="Eleitoral">Alistamento eleitoral — art. 473, V</option><option value="Comparecimento">Comparecimento legal documentado — art. 473</option></select></div><div id="oc-anexo-campo" class="hidden"><label for="oc-anexo">Anexo do atestado (PDF, JPG ou PNG, até 1 MB)</label><input id="oc-anexo" type="file" accept="application/pdf,image/jpeg,image/png"/>${ex.anexo?'<span class="muted">Anexo atual: '+esc(ex.anexo.nome)+'</span>':''}</div><div id="oc-vinculo-campo" class="hidden"><label for="oc-vinculo">DSR / feriado trabalhado (opcional)</label><input id="oc-vinculo" type="date" value="${ex.dataDsrTrabalhado||''}"/></div><div id="oc-batida-campo" class="hidden grid g2"><div><label for="oc-hora">Horário da batida esquecida *</label><input type="time" id="oc-hora"/></div><div><label for="oc-btipo">Tipo *</label><select id="oc-btipo">${TIPOS.map(t=>`<option>${esc(t)}</option>`).join('')}</select></div><label style="grid-column:1/-1;display:flex;align-items:center;gap:8px;min-height:44px"><input type="checkbox" id="oc-anterior" style="width:20px;height:20px;flex:none"/> Saída da jornada da noite anterior (00:00–05:59)</label></div><div id="oc-autorizacao"><label for="oc-autorizou">Quem autorizou *</label><input id="oc-autorizou" required value="${esc(ex.autorizadoPor||'')}"/></div><label for="oc-motivo">Motivo *</label><textarea id="oc-motivo" rows="3" required>${esc(ex.motivo||'')}</textarea><p id="oc-regra" class="muted"></p><div id="oc-erro" role="alert"></div></div><footer class="treatment-drawer-footer"><button class="btn ghost" onclick="fecharModal();window.__tratLote=null">Cancelar</button><button id="oc-salvar" class="btn" onclick="salvarOcorrencia()">Salvar tratamento</button></footer>`);
+ abrirModal(`<div class="treatment-drawer-head"><div><small>TRATAMENTO DE PONTO</small><h3>${lote?'Abonar '+lote.length+' registros':'Tratar ocorrência'}</h3></div><button class="btn ghost" onclick="fecharModal();window.__tratLote=null" aria-label="Fechar ajustes">✕</button></div><div class="treatment-drawer-fields"><label for="oc-pin">Colaborador</label><select id="oc-pin" ${pinSelecionado?'disabled':''}>${fs.map(f=>`<option value="${esc(f.pin)}" ${f.pin===pinSelecionado?'selected':''}>${esc(f.nome)}</option>`).join('')}</select>${lote?'<div class="muted">'+lote.map(x=>esc(funcPorPin(x.pin)?.nome||'')+' · '+brOf(x.data)).join('<br>')+'</div>':''}<label for="oc-tipo">Tratamento</label><select id="oc-tipo" onchange="camposOcorrencia()">${grupos.map(g=>`<optgroup label="${esc(g.nome)}">${g.itens.map(([v,t])=>`<option value="${esc(v)}" ${v===tipoSel?'selected':''}>${esc(t)}</option>`).join('')}</optgroup>`).join('')}</select><div class="grid g2 ${lote?'hidden':''}"><div><label for="oc-data">Data início *</label><input type="date" id="oc-data" oninput="camposOcorrencia()" value="${ex.inicio||dataSelecionada||hojeISO()}"/></div><div id="oc-fim-campo"><label for="oc-fim">Data fim *</label><input type="date" id="oc-fim" value="${ex.fim||dataSelecionada||hojeISO()}"/></div></div><div id="oc-legal" class="hidden"><label for="oc-legal-motivo">Motivo legal / abono da empresa</label><select id="oc-legal-motivo"><option value="Empresa">Abono autorizado pela empresa</option><option value="Casamento">Casamento — art. 473, II</option><option value="Falecimento">Falecimento — art. 473, I</option><option value="Nascimento">Nascimento de filho — art. 473, III</option><option value="Sangue">Doação de sangue — art. 473, IV</option><option value="Eleitoral">Alistamento eleitoral — art. 473, V</option><option value="Comparecimento">Comparecimento legal documentado — art. 473</option></select></div><div id="oc-anexo-campo" class="hidden"><label for="oc-anexo">Anexo do atestado (PDF, JPG ou PNG, até 1 MB)</label><input id="oc-anexo" type="file" accept="application/pdf,image/jpeg,image/png"/>${ex.anexo?'<span class="muted">Anexo atual: '+esc(ex.anexo.nome)+'</span>':''}</div><div id="oc-vinculo-campo" class="hidden"><label for="oc-vinculo">DSR / feriado trabalhado (opcional)</label><input id="oc-vinculo" type="date" value="${ex.dataDsrTrabalhado||''}"/></div><div id="oc-batida-campo" class="hidden">${camposQuatroBatidas('oc',lote?[]:batidasJornada(pinSelecionado,dataSelecionada))}<label style="display:flex;align-items:center;gap:8px;min-height:44px"><input type="checkbox" id="oc-anterior" style="width:20px;height:20px;flex:none"/> Saída da jornada da noite anterior (00:00–05:59)</label></div><div id="oc-autorizacao"><label for="oc-autorizou">Quem autorizou *</label><input id="oc-autorizou" required value="${esc(ex.autorizadoPor||'')}"/></div><label for="oc-motivo">Motivo *</label><textarea id="oc-motivo" rows="3" required>${esc(ex.motivo||'')}</textarea><p id="oc-regra" class="muted"></p><div id="oc-erro" role="alert"></div></div><footer class="treatment-drawer-footer"><button class="btn ghost" onclick="fecharModal();window.__tratLote=null">Cancelar</button><button id="oc-salvar" class="btn" onclick="salvarOcorrencia()">Salvar tratamento</button></footer>`);
  const modal=$('modal-generico');modal.classList.add('treatment-drawer');modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Ajustes do Tratamento de Ponto');camposOcorrencia();modal.querySelector('button')?.focus();
 }
 function camposOcorrencia(){
@@ -2466,14 +2481,14 @@ async function salvarOcorrencia(){
  const auditoria=validarAuditoriaTratamento(autorizadoPor,motivo);if(auditoria){$('oc-erro').textContent=auditoria;return;}
  if(lote&&regraOcorrencia(tipo).afastado){$('oc-erro').textContent='Afastamento INSS e Licença Maternidade exigem período contínuo com data início e fim. Trate um colaborador de cada vez.';return;}
  if(tipo==='Esquecimento de Marcação'){
-  const hora=$('oc-hora').value,tipoBatida=$('oc-btipo').value,anterior=$('oc-anterior')?.checked;
+  const {itens,legado}=horariosInformados('oc'),anterior=$('oc-anterior')?.checked,soFaltantes=!!lote&&!legado;
   if(lote){
     if(!lote.length){$('oc-erro').textContent='Selecione ao menos um registro.';return;}
-    const inv=lote.map(a=>({a,erro:registrarBatidaManual({pin:a.pin,data:a.data,hora,tipo:tipoBatida,motivo,autorizadoPor,anterior,simular:true})})).find(x=>x.erro);
+    const inv=lote.map(a=>({a,erro:registrarVariasBatidas({pin:a.pin,data:a.data,itens,motivo,autorizadoPor,anterior,soFaltantes,simular:true})})).find(x=>x.erro);
     if(inv){$('oc-erro').textContent=brOf(inv.a.data)+': '+inv.erro;return;}   // nenhum dia é gravado quando algum deles está inválido
-    lote.forEach(a=>registrarBatidaManual({pin:a.pin,data:a.data,hora,tipo:tipoBatida,motivo,autorizadoPor,anterior}));
+    lote.forEach(a=>registrarVariasBatidas({pin:a.pin,data:a.data,itens,motivo,autorizadoPor,anterior,soFaltantes}));
   }else{
-    const erro=registrarBatidaManual({pin,data:ini,hora,tipo:tipoBatida,motivo,autorizadoPor,anterior});if(erro){$('oc-erro').textContent=erro;return;}
+    const erro=registrarVariasBatidas({pin,data:ini,itens,motivo,autorizadoPor,anterior});if(erro){$('oc-erro').textContent=erro;return;}
   }
   fecharModal();TRAT_SELECAO.clear();subBatidas();toast('Batida esquecida registrada.',2000);return;
 }
