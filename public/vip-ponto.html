@@ -2443,6 +2443,8 @@ function horariosInformados(px){
 }
 function registrarVariasBatidas({pin,data,itens,motivo,autorizadoPor,anterior=false,soFaltantes=false,simular=false}){
   if(!itens.length)return 'Informe ao menos um horário.';
+  if(String(motivo||'').trim().length<5)return 'Motivo obrigatório (mín. 5 caracteres).';
+  if(!String(autorizadoPor||'').trim())return 'Informe quem autorizou a marcação.';
   const exist=batidasJornada(pin,data);if(soFaltantes)itens=itens.filter(x=>!exist.some(b=>b.tipo===x.tipo));
   if(!itens.length)return '';
   if(exist.length+itens.length>4)return 'Limite de 4 marcações na jornada.';
