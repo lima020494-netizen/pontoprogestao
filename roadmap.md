@@ -114,3 +114,4 @@
 - [x] Modo Suporte virou pílula compacta fixa no rodapé, liberando topo, gaveta e quiosque.
 - [x] Falta injustificada sem débito no banco (só desconto salarial); banco debita apenas Folga Compensatória e carga incompleta.
 - [x] Atrasos removidos da folha e do banco; permanecem só no Dashboard gerencial.
+- [x] Lançamento unificado das 4 batidas (Entrada, Saída/Retorno Intervalo, Saída) no Tratamento e na batida manual
