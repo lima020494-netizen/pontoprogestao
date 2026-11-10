@@ -27,6 +27,11 @@ function garantirLib(grupo){
 <script src="/qrcode-generator.min.js"></script>
 <meta name="theme-color" content="#1e3a8a" />
 <script src="/supabase-2.117.3.min.js"></script>
+<!-- Etapa 1: módulos locais síncronos; bootstrap e aliases legados permanecem no shell. -->
+<script src="/operacional/boot/namespace-v20261110-etapa1.js"></script>
+<script src="/operacional/core/formatos-v20261110-etapa1.js"></script>
+<script src="/operacional/boot/contexto-v20261110-etapa1.js"></script>
+<script src="/operacional/boot/compatibilidade-v20261110-etapa1.js"></script>
 <script src="/ponto-offline-register.js" defer></script>
 <style>
 /* ===================== DESIGN SYSTEM ===================== */
@@ -885,18 +890,8 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 /* ---------- utilitários ---------- */
 const $ = id => document.getElementById(id);
 const MODO_GESTOR=new URLSearchParams(location.search).get('modo')==='gestor';
-const pad = (n,l=2) => String(n).padStart(l,'0');
-const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const {pad,esc,isoOf,brOf,hhmm,toMin,toHHMM,toSaldo,DIAS,dow,addDias}=PontoProOperacional.obter('boot.compatibilidade').aliases('core.formatos',['pad','esc','isoOf','brOf','hhmm','toMin','toHHMM','toSaldo','DIAS','dow','addDias']);
 const hojeISO = () => isoOf(getHoraOficial());
-const isoOf = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-const brOf = iso => iso ? iso.split('-').reverse().join('/') : '';
-const hhmm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-const toMin = h => { if(!h) return 0; const [a,b]=h.split(':').map(Number); return a*60+(b||0); };
-const toHHMM = m => `${pad(Math.floor(Math.abs(m)/60))}:${pad(Math.abs(m)%60)}`;
-const toSaldo = m => (m<0?'-':'+')+toHHMM(m);
-const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-const dow = iso => new Date(iso+'T12:00:00').getDay();
-const addDias = (iso,n)=>{const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return isoOf(d);};
 function toast(msg,ms=5000){const t=document.createElement('div');t.className='toast';t.innerHTML=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
 function baixar(nome,conteudo,tipo){const b=new Blob([conteudo],{type:tipo||'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=nome;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);}
 
@@ -1892,7 +1887,7 @@ function abaFunc(){
   renderListaFunc();
 }
 let FUNC_BUSCA='',FUNC_FILTRO='todos';
-function cpfMascarado(c){const d=String(c||'').replace(/\D/g,'');return d.length===11?`${d.slice(0,3)}.***.***-${d.slice(9)}`:(d?'***':'—');}
+function cpfMascarado(c){return PontoProOperacional.obter('core.formatos').cpfMascarado(c);}
 function renderListaFunc(){
   const fs=get('funcionarios',[]),q=FUNC_BUSCA.trim().toLowerCase(),qn=q.replace(/\D/g,'');
   const linhas=fs.map((f,i)=>({f,i})).filter(({f})=>{
@@ -3215,6 +3210,18 @@ async function sairSuporte(){
   Object.keys(localStorage).filter(k=>k.startsWith('vip:'+CONTA+':')||k==='vip:lic:'+CONTA).forEach(k=>localStorage.removeItem(k));
   location.replace('/admin');
 }
+// Contexto explícito, somente leitura por getters; o estado legado continua único.
+PontoProOperacional.obter('boot.contexto').ligar({
+  conta:()=>CONTA,
+  sessao:()=>({autenticada:!!CONTA,cliente:sb}),
+  gestor:()=>GERENCIADOR,
+  empresa:()=>get('empregador',{})||{},
+  colaboradores:()=>get('funcionarios',[]),
+  escalas:()=>get('escalas',{}),
+  feriados:()=>get('feriados',[]),
+  ocorrencias:()=>get('ocorrencias',[]),
+  sincronizacao:()=>({online:NUVEM_OK,carregando:CARREGANDO,enviando:SINC,historicoDesde:NUVEM_DESDE}),
+});
 (async function boot(){
   localStorage.removeItem('vip:sessao');
   const folhaToken=new URLSearchParams(location.search).get('folha_token');
