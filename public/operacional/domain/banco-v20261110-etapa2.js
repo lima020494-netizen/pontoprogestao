@@ -126,14 +126,13 @@
         return { cred, deb, det, dias };
       };
       const vig = f.inicioVigenciaBancoHoras || f.bancoInicio || f.admissao || ini;
-      const ant = vig < ini ? S.__somaBanco(vig, S.addDias(ini, -1)) : { cred: 0, deb: 0, det: [] };
-      const per = vig > fim ? { cred: 0, deb: 0, det: [`Banco de horas vigente a partir de ${S.brOf(vig)}`] } : S.__somaBanco(vig > ini ? vig : ini, fim);
+      const ant = vig < ini ? soma(vig, S.addDias(ini, -1)) : { cred: 0, deb: 0, det: [] };
+      const per = vig > fim ? { cred: 0, deb: 0, det: [`Banco de horas vigente a partir de ${S.brOf(vig)}`] } : soma(vig > ini ? vig : ini, fim);
       const anterior = ant.cred - ant.deb;
       const dias = [];
       for (let d = ini; d <= fim && d < vig; d = S.addDias(d, 1)) { const bs = S.batidasDia(pin, d); dias.push({ data: d, previsto: S.previstoDia(f, d), trabalhado: S.trabalhoApuradoDia(f, d, bs), saldo: 0, ocorrencia: typeof S.ocorrenciaDia === 'function' ? S.ocorrenciaDia(pin, d)?.tipo || '' : '', vigente: false }); }
       dias.push(...(per.dias || []));
       return { anterior, creditos: per.cred, debitos: per.deb, atual: anterior + per.cred - per.deb, detalhes: per.det, dias, vigencia: vig };
-      function __somaBanco(de, ate) { return soma(de, ate); }
     }
     function classificacaoTratamento(l, oc, bs, hoje) {
       const r = S.regraOcorrencia(oc?.tipo), passado = l.data < hoje;
@@ -154,8 +153,7 @@
       return { cor: 'green', titulo: oc?.tipo || (l.previsto === 0 ? 'Descanso' : 'Concluído'), pendente, falta, impar, solicitacao };
     }
 
-    S.__somaBanco = null;
-    return { batidasDia, paresBatidas, difMin, minutosTrabalhados, calculaNoturna, trabalhadoDia, trabalhoApuradoDia, descontoDsrDia, atrasoDia, movimentoBancoDia, dadosFolha, resumoMensalFolha, calcBanco, classificacaoTratamento, __somaBanco: null };
+    return { batidasDia, paresBatidas, difMin, minutosTrabalhados, calculaNoturna, trabalhadoDia, trabalhoApuradoDia, descontoDsrDia, atrasoDia, movimentoBancoDia, dadosFolha, resumoMensalFolha, calcBanco, classificacaoTratamento };
   }
 
   namespace.definir('domain.banco', Object.freeze({ criar }));
