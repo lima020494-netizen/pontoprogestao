@@ -54,7 +54,7 @@ export function createDomainContext(overrides: Record<string, any> = {}) {
     log: (message: string) => { if (context.log) context.log(message); },
     aliases: overrides,
   });
-  Object.assign(context, dataApi, api, overrides);
+  Object.assign(context, api, dataApi, overrides);
   context.NUCLEO_OPERACIONAL = api;
   context.DATA_NUCLEO = dataApi;
   return context;
