@@ -18,7 +18,7 @@ function harness(initial: Punch[], localPending: string[] = []) {
   const localPunches = [...initial];
   const uploaded = new Map<string, any>();
   const batches: Punch[][] = [];
-  const conflictOptions: unknown[] = [];
+  const conflictOptions: { onConflict: string }[] = [];
   let failOnBatch = 0;
   const context: Record<string, any> = {
     CONTA: 'empresa-ficticia@example.invalid',
@@ -27,17 +27,20 @@ function harness(initial: Punch[], localPending: string[] = []) {
     pendentesLS: () => [...pending],
     get: () => localPunches,
     filaRemover: async (nsrs: string[]) => {
-      for (let i = queue.length - 1; i >= 0; i--) if (nsrs.includes(queue[i].nsr)) queue.splice(i, 1);
+      for (let i = queue.length - 1; i >= 0; i--) {
+        const item = queue[i];
+        if (item && nsrs.includes(item.nsr)) queue.splice(i, 1);
+      }
     },
     salvaPendentes: (nsrs: string[]) => { pending = [...nsrs]; },
     chk: (r: any) => { if (r?.error) throw r.error; return r; },
     atualizaStatus: () => {},
   };
-  context.sb = { from: (table: string) => {
+  context['sb'] = { from: (table: string) => {
     assert.equal(table, 'pontos');
     return { upsert: async (rows: any[], options: unknown) => {
       batches.push(rows);
-      conflictOptions.push(options);
+      conflictOptions.push(options as { onConflict: string });
       if (failOnBatch === batches.length) return { error: new Error('conexão simulada indisponível') };
       for (const row of rows) uploaded.set(row.email_dono + '|' + row.nsr, row);
       return { data: [] };
@@ -57,12 +60,12 @@ test('baseline queue: IndexedDB and legacy fallback deduplicate by NSR and prese
   const originalCopy = JSON.stringify([original, second]);
   assert.equal(await h.run(), 2);
   assert.equal(h.batches.length, 1);
-  assert.equal(h.batches[0].length, 2);
+  assert.equal(h.batches[0]?.length, 2);
   assert.equal(h.uploaded.size, 2);
   assert.equal(h.uploaded.get('empresa-ficticia@example.invalid|1').timestamp, original.criadoEm);
   assert.equal(h.uploaded.get('empresa-ficticia@example.invalid|1').dados.data, original.data);
   assert.equal(h.conflictOptions.length, 1);
-  assert.equal(h.conflictOptions[0].onConflict, 'email_dono,nsr');
+  assert.equal(h.conflictOptions[0]?.onConflict, 'email_dono,nsr');
   assert.equal(h.queue.length, 0);
   assert.deepEqual(h.pending, []);
   assert.equal(JSON.stringify(h.localPunches), originalCopy);
@@ -87,7 +90,7 @@ test('baseline queue: failed page retains every pending punch and retry is idemp
 test('baseline queue: concurrent retries cannot send the same pending batch twice', async () => {
   const h = harness([punch(1)]);
   let release!: (value: { data: unknown[] }) => void;
-  h.context.sb = { from: () => ({ upsert: (rows: Punch[]) => {
+  h.context['sb'] = { from: () => ({ upsert: (rows: Punch[]) => {
     h.batches.push(rows);
     return new Promise(resolve => { release = resolve; });
   } }) };

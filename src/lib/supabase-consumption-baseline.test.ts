@@ -38,7 +38,7 @@ test('baseline egress: first cloud load reads seven resources, cached reload fiv
     sincronizarPendentes: async () => { queueSyncs++; },
     get: (k: string, fallback: unknown) => localData[k] ?? fallback,
     set: (k: string, value: unknown) => { localData[k] = value; },
-    K: (k: string) => `vip:${context.CONTA}:${k}`,
+    K: (k: string) => `vip:${context['CONTA']}:${k}`,
     localStorage: { setItem: () => {} }, LOGS_SESSAO: new Set(), atualizaStatus: () => {},
     chk: (r: any) => { if (r?.error) throw r.error; return r; },
   };
@@ -90,7 +90,7 @@ test('baseline egress: retry timer sends only pending punches every 120 seconds'
     carregarNuvem: () => { companyLoads++; },
   });
   assert.equal(callbacks.length, 1);
-  callbacks[0]();
+  callbacks[0]?.();
   assert.equal(syncs, 1);
   assert.equal(companyLoads, 0);
 });

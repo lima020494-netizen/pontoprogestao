@@ -28,8 +28,8 @@ test('baseline AFD type 3 keeps NSR order, civil date/time and excludes only exc
   }) as string;
   const lines = content.trim().split('\r\n');
   assert.equal(lines.length, 4);
-  assert.ok(lines[1].startsWith('0000000013' + '09112026' + '2359'));
-  assert.ok(lines[2].startsWith('0000000023' + '10112026' + '0010'));
+  assert.ok(lines[1]?.startsWith('0000000013' + '09112026' + '2359'));
+  assert.ok(lines[2]?.startsWith('0000000023' + '10112026' + '0010'));
   assert.equal(lines.some(line => line.startsWith('0000000033')), false);
   assert.equal(lines[3], '999999999000000002Ponto Pro Gestão');
   assert.equal(JSON.stringify(punches), original);
@@ -38,7 +38,7 @@ test('baseline AFD type 3 keeps NSR order, civil date/time and excludes only exc
 test('baseline AEJ retains overnight civil timestamps, journey sequence and occurrence totals', () => {
   const source = slice('function gerarAEJ', '/* ===================== ATESTADO TÉCNICO');
   const original = JSON.stringify(punches);
-  let download: { nome: string; content: string } | null = null;
+  const downloads: { nome: string; content: string }[] = [];
   const data: Record<string, unknown> = {
     empregador: employer,
     batidas: punches,
@@ -51,16 +51,17 @@ test('baseline AEJ retains overnight civil timestamps, journey sequence and occu
     soNum, padL, dtTZ, cargaEscala: () => 440,
     ordemJornada: (a: any, b: any) => a.nsr.localeCompare(b.nsr),
     jornadaDe: () => '2026-11-09',
-    baixar: (nome: string, content: string) => { download = { nome, content }; },
+    baixar: (nome: string, content: string) => { downloads.push({ nome, content }); },
     brOf: (d: string) => d, log: () => {}, alert: () => { throw new Error('período inválido inesperado'); },
   });
+  const download = downloads[0];
   assert.ok(download);
-  const lines = download!.content.trim().split('\r\n');
-  const marks = lines.filter(x => x.startsWith('05|'));
+  const lines = download.content.trim().split('\r\n');
+  const marks = lines.filter((x: string) => x.startsWith('05|'));
   assert.equal(marks.length, 2);
   assert.ok(marks[0].includes('2026-11-09T23:59:00-0300|1|E|1|O'), marks[0]);
   assert.ok(marks[1].includes('2026-11-10T00:10:00-0300|1|S|1|O'), marks[1]);
-  assert.equal(lines.filter(x => x.startsWith('06|')).length, 1);
+  assert.equal(lines.filter((x: string) => x.startsWith('06|')).length, 1);
   assert.equal(lines.at(-1), '99|1|1|1|1|2|1|1');
   assert.equal(JSON.stringify(punches), original);
 });
