@@ -3,7 +3,7 @@
   'use strict';
 
   function criar(S) {
-function baixarnome,conteudo,tipo){const b=new Blob([conteudo],{type:tipo||'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=nome;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);}
+function baixar(nome,conteudo,tipo){const b=new Blob([conteudo],{type:tipo||'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=nome;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);}
 
 async function comprovantePDF(b){
   await S.garantirLib('pdf');
@@ -18,7 +18,7 @@ function gradeEscala(ini,fim){
   const dias=S.diasPeriodo(ini,fim||addDias(ini,6)), fs=S.get('funcionarios',[]).filter(f=>f.status!=='Desligado');
   return [['ID (PIN)','Nome',...dias.map(d=>S.brOf(d))],...fs.map(f=>[f.pin,f.nome,...dias.map(d=>S.celulaEscala(S.buscaNaEscala(f.pin,d)))])];
 }
-async function planilhaEscalaini,fim,fmt){
+async function planilhaEscala(ini,fim,fmt){
   if(fmt==='xlsx') await S.garantirLib('xlsx');
   const g=gradeEscala(ini,fim), nome=`Escala_${ini}_${fim}`;
   if(fmt==='xlsx'&&window.XLSX){const ws=XLSX.utils.aoa_to_sheet(g);ws['!cols']=[{wch:10},{wch:28},...g[0].slice(2).map(()=>({wch:13}))];
@@ -50,8 +50,8 @@ async function csvResumoBanco(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`Banco_Horas_Consolidado_${r.ini}_${r.fim}.csv`;a.click();
 }
 
-function textoMovBancod){return !d.vigente?'Fora da vigência':d.saldo>0?'Crédito - Hora Extra':d.saldo<0?S.regraOcorrencia(d.ocorrencia).compensacao?'Débito - Folga Compensatória':'Débito - Carga incompleta':d.ocorrencia||'Sem movimentação';}
-function linhasExtratoBancob){let acc=b.anterior;return b.dias.map(d=>{acc+=d.saldo;const oc=d.ocorrencia&&!S.textoMovBanco(d).includes(d.ocorrencia)?` (${d.ocorrencia})`:'';return [S.brOf(d.data),S.toHHMM(d.previsto),S.toHHMM(d.trabalhado),S.textoMovBanco(d)+oc,d.saldo?S.toSaldo(d.saldo):'00:00',S.toSaldo(acc)];});}
+function textoMovBanco(d){return !d.vigente?'Fora da vigência':d.saldo>0?'Crédito - Hora Extra':d.saldo<0?S.regraOcorrencia(d.ocorrencia).compensacao?'Débito - Folga Compensatória':'Débito - Carga incompleta':d.ocorrencia||'Sem movimentação';}
+function linhasExtratoBanco(b){let acc=b.anterior;return b.dias.map(d=>{acc+=d.saldo;const oc=d.ocorrencia&&!S.textoMovBanco(d).includes(d.ocorrencia)?` (${d.ocorrencia})`:'';return [S.brOf(d.data),S.toHHMM(d.previsto),S.toHHMM(d.trabalhado),S.textoMovBanco(d)+oc,d.saldo?S.toSaldo(d.saldo):'00:00',S.toSaldo(acc)];});}
 async function pdfExtratoBanco(){
   const pin=S.$('bh-pin').value,ini=S.$('bh-ini').value,fim=S.$('bh-fim').value;
   if(!pin||!ini||!fim||ini>fim)return S.toast('Informe um colaborador e período válidos.');
@@ -95,7 +95,7 @@ async function pdfDash(){
 
 async function baixarPDFFolha(){const p=S.periodoFolhaValido();if(!p||!S.$('fl-pin').value)return;try{await S.garantirHistorico(p.ini);}catch(e){}try{await S.garantirLib('pdf');}catch(e){return S.toast('PDF indisponível. Verifique a conexão e tente novamente.',5000);}try{await pdfFolhas([S.$('fl-pin').value],p.ini,p.fim);}catch(e){S.toast('Não foi possível gerar o PDF. Tente novamente.',5000);}}
 
-function dadosFechamentoContadord,hoje=S.hojeISO()){
+function dadosFechamentoContador(d,hoje=S.hojeISO()){
   const tot={...d.tot};
   const linhas=d.linhas.map(l=>{
     if(l.ocorrencia!=='FALTA')return {...l};
@@ -169,7 +169,7 @@ async function loteXML(){
 }
 
 
-const MANUAL[
+const MANUAL([
  ['1. Primeiro acesso','Crie sua conta. Os limites são definidos pelo plano ativo. A senha precisa de 8 caracteres com maiúscula, minúscula, número e símbolo (!@#$%&_). Depois preencha o cadastro do Empregador: CNPJ/CPF, razão social, nome fantasia, endereço, horário padrão e logo. Cadastre gerenciadores até o limite contratado, cada um com PIN próprio.'],
  ['2. Bater o ponto','Na tela inicial o empregado digita o PIN de 4 números. Cada número aparece por 1 segundo e vira bolinha. O nome e as batidas do dia aparecem; toque em ✓ REGISTRAR. O sistema usa a hora oficial do servidor (🟢 NTP OK), gera o NSR e imprime o comprovante. Depois de 2 segundos a confirmação desaparece e a tela fica livre.'],
  ['3. Comprovante','A cada batida o comprovante fica disponível. A impressão depende da impressora integrada do terminal (POS), do serviço de impressão direta, de uma impressora Bluetooth BLE compatível ou da opção do navegador. O envio não comprova a saída física do papel. Se não imprimir, toque na batida no histórico para reimprimir ou enviar por e-mail.'],
@@ -192,11 +192,11 @@ async function manualPDF(){
   S.pdfRodapesPadrao(doc,S.getConta()||'Manual público');doc.save('Manual_Ponto_Pro_Gestao.pdf');
 }
 
-const MESES['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MESES(['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 
-const EMAIL_SERVICO_ATIVOfalse;
-async function enviarArquivoPorEmail{para,assunto,nome,blob,mime,base64}){
+const EMAIL_SERVICO_ATIVO(false;
+async function enviarArquivoPorEmail({para,assunto,nome,blob,mime,base64}){
   if(S.EMAIL_SERVICO_ATIVO&&S.getSb()){
     try{const {error}=await S.getSb().functions.invoke('send-pdf',{body:{to:para,subject:assunto,filename:nome,pdf_base64:base64}});
       if(!error){S.toast(`Enviado para ${para}`,4000);return true;}}catch(e){}
@@ -221,7 +221,7 @@ async function baixarFolhaPortal(pin){
 
 async function baixarFolhaLink(){const d=window.__folhaLink;if(!d)return;const pdf=await S.gerarPDFComLogo({folhas:[S.gerarFolhaMTE(d.pin,d.ini,d.fim)]});pdf.doc.save(`Folha_${String(d.nome||'Funcionario').replace(/\s+/g,'_')}_${d.ini.slice(0,7)}.pdf`);}
 
-function linhasPins){return S.get('funcionarios',[]).map(f=>[f.nome,f.cpf||'',f.cargo||f.funcao||'',f.departamento||'',f.pin,S.statusTexto(f)]);}
+function linhasPins(){return S.get('funcionarios',[]).map(f=>[f.nome,f.cpf||'',f.cargo||f.funcao||'',f.departamento||'',f.pin,S.statusTexto(f)]);}
 
 async function pdfPins(){
   await S.garantirLib('pdf');
@@ -232,7 +232,7 @@ async function pdfPins(){
 }
 
 
-const csvDe(lista,cols)=>'\uFEFF'+cols.join(';')+'\n'+lista.map(o=>cols.map(c=>String(o[c]??'').replace(/[;\r\n]/g,' ')).join(';')).join('\n');
+const csvDe((lista,cols)=>'\uFEFF'+cols.join(';')+'\n'+lista.map(o=>cols.map(c=>String(o[c]??'').replace(/[;\r\n]/g,' ')).join(';')).join('\n');
 async function enviarBackupPorEmail(para){
   await S.garantirLib('zip');
   const zip=new JSZip();

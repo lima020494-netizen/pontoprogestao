@@ -4,7 +4,7 @@
 
   function criar(S) {
 /* XML AFD/ACJEF bem-formado */
-function xmlConteudopin,ini,fim){
+function xmlConteudo(pin,ini,fim){
   const d=S.dadosFolha(pin,ini,fim),f=d.f,e=S.get('empregador',{})||{},dt=S.getHoraOficial();
   const t=(tag,v)=>`    <${tag}>${S.esc(v??'')}</${tag}>\n`;
   let x=`<?xml version="1.0" encoding="UTF-8"?>\n<folhaPonto portaria="671/2021">\n  <empregador>\n`;
@@ -34,19 +34,19 @@ function xmlConteudopin,ini,fim){
   x+=`  <rodape>${S.esc(S.rodapeLegal())}</rodape>\n</folhaPonto>\n`;
   return x;
 }
-const nomeXML(f,ini)=>`${(f.nome||'FUNC').toUpperCase().replace(/[^A-Z]+/g,'_')}_${ini.slice(5,7)}_${ini.slice(0,4)}.xml`;
+const nomeXML((f,ini)=>`${(f.nome||'FUNC').toUpperCase().replace(/[^A-Z]+/g,'_')}_${ini.slice(5,7)}_${ini.slice(0,4)}.xml`;
 function xmlFolha(pin,ini,fim){
   const f=S.funcPorPin(pin); S.baixar(S.nomeXML(f,ini),S.xmlConteudo(pin,ini,fim),'application/xml;charset=utf-8');
   S.log(`Exportou XML de ${f.nome} ${S.brOf(ini)}–${S.brOf(fim)}`);
 }
 
 /* ===================== UTILITÁRIOS AFD ===================== */
-const soNumv=>String(v||'').replace(/\D/g,'');
-const padL(v,n,c='0')=>String(v??'').slice(-n).padStart(n,c);
-const padR(v,n)=>{let t=String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');return t.slice(0,n).padEnd(n,' ');};
-function dtTZiso,hm){return `${iso}T${(hm||'00:00').slice(0,5)}:00-0300`;}
-function crc16str){let crc=0;for(const ch of str){crc^=ch.charCodeAt(0)&0xff;for(let i=0;i<8;i++)crc=(crc&1)?(crc>>>1)^0x8408:crc>>>1;}return crc.toString(16).toUpperCase().padStart(4,'0');} // CRC-16/KERMIT
-async function sha256t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+const soNum(v=>String(v||'').replace(/\D/g,'');
+const padL((v,n,c='0')=>String(v??'').slice(-n).padStart(n,c);
+const padR((v,n)=>{let t=String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');return t.slice(0,n).padEnd(n,' ');};
+function dtTZ(iso,hm){return `${iso}T${(hm||'00:00').slice(0,5)}:00-0300`;}
+function crc16(str){let crc=0;for(const ch of str){crc^=ch.charCodeAt(0)&0xff;for(let i=0;i<8;i++)crc=(crc&1)?(crc>>>1)^0x8408:crc>>>1;}return crc.toString(16).toUpperCase().padStart(4,'0');} // CRC-16/KERMIT
+async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 
 /* ===================== AFD — Anexo V Portaria 671 (REP-P, leiaute 003) ===================== */
 async function gerarAFD(ini,fim){
@@ -127,7 +127,7 @@ async function pdfAtestadoTecnico(){
 }
 
 
-function conteudoAFDOficialini,fim){
+function conteudoAFDOficial(ini,fim){
   const e=S.get('empregador',{})||{},dmy=iso=>iso.slice(8,10)+iso.slice(5,7)+iso.slice(0,4),ag=S.getHoraOficial();
   const bs=S.get('batidas',[]).filter(b=>!b.excluida&&b.data>=ini&&b.data<=fim).sort((a,b)=>a.nsr.localeCompare(b.nsr));
   const cnpj=S.padL(S.soNum(e.doc),14);

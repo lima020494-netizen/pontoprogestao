@@ -3,15 +3,15 @@
   'use strict';
 
   function criar(S) {
-function miniResumoFolhad){
+function miniResumoFolha(d){
   const r=S.resumoMensalFolha(d);
   return [[['Horas Previstas',r[0][1]],['Horas Realizadas',r[1][1]],['Adicional Noturno',r[4][1]]],
     [['Horas Extras 50%',S.toHHMM(d.tot.extras50||0)],['Horas Extras 100%',S.toHHMM(d.tot.extras100||0)],['Faltas',r[3][1]]],
     [['Saldo Anterior',S.toSaldo(d.banco.anterior)],['Saldo do Mês',r[5][1]],['Saldo Acumulado',S.toSaldo(d.banco.atual)]]];
 }
-const FOLHA_RODAPE'Ponto Pro Gestão v1.0 · Sistema de Tratamento de Ponto · Emissão conforme Portaria MTE nº 671/2021';
-const FOLHA_CIENCIA'Declaro ciência das marcações e dos tratamentos apresentados neste espelho de ponto.';
-function modeloEspelhod){
+const FOLHA_RODAPE('Ponto Pro Gestão v1.0 · Sistema de Tratamento de Ponto · Emissão conforme Portaria MTE nº 671/2021';
+const FOLHA_CIENCIA('Declaro ciência das marcações e dos tratamentos apresentados neste espelho de ponto.';
+function modeloEspelho(d){
   const head=['Dia','E1','S1','E2','S2','Prevista','Trabalhadas','Extras','Faltas','Saldo','Ocorrência'];
   const notas=[],porDia={},curto=t=>String(t||'').replace(/\s*-\s*Autorizado por:.*$/i,'').replace(/^\s*Motivo:\s*/i,'').replace(/\s+/g,' ').trim();
   const nota=(dia,texto)=>{const t=`${S.brOf(dia)}: ${texto}`;let i=notas.indexOf(t);if(i<0){notas.push(t);i=notas.length-1;}(porDia[dia]=porDia[dia]||new Set()).add(i+1);};
@@ -31,26 +31,26 @@ function modeloEspelhod){
   if(S.preLegenda(d.f))out.push(S.preLegenda(d.f));
   return {head,body,resumo:S.miniResumoFolha(d),notas:out};
 }
-function dadosCabecalhoFolhaf,ini,fim){
+function dadosCabecalhoFolha(f,ini,fim){
   const e=S.get('empregador',{})||{},end=[e.logradouro,e.numero,e.complemento,e.bairro,e.cep].filter(Boolean).join(', ');
   return [[`EMPREGADOR\nRazão Social: ${e.razao||e.fantasia||'Não informado'}\n${e.tipo||'CNPJ'}: ${e.doc||'—'} · Cidade/UF: ${[e.cidade,e.uf].filter(Boolean).join('/')||'—'}`,
     `COLABORADOR\nNome: ${f.nome||'—'}\nCargo: ${f.cargo||f.funcao||'—'} · Setor: ${f.departamento||'—'}\nCPF: ${(d=>d.length===11?d.slice(0,3)+'.***.***-'+d.slice(9):(d?'***':'—'))(String(f.cpf||'').replace(/\D/g,''))} · Matrícula/PIN: ${f.matricula||f.pin||'—'}\nAdmissão: ${S.brOf(f.admissao)||'—'} · Escala: ${f.escala||'—'}`]];
 }
-function horarioTrabalhoFolha){
+function horarioTrabalhoFolha(){
   const e=S.get('empregador',{})||{},horas=[e.hEntrada??'08:00',e.hSaiInt??'12:00',e.hEntInt??'14:00',e.hSaida??'18:00'].filter(Boolean).join('  ')||'Não informado';
   const sabado=[e.hSabEntrada??'08:00',e.hSabSaida??'12:00'].filter(Boolean).join('  ')||'Não informado';
   return ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'].map((dia,i)=>[dia,i===0?(e.dsr==='Não'?horas:'DSR'):i===6?sabado:horas]);
 }
-function totaisCartaoFolhad){
+function totaisCartaoFolha(d){
   return {dias:d.linhas.filter(l=>l.trabalhado>0).length,faltas:d.tot.faltas,dsrs:d.linhas.filter(l=>/DSR/.test(l.ocorrencia)).length,folgas:d.linhas.filter(l=>/FOLGA/.test(l.ocorrencia)&&!/DSR/.test(l.ocorrencia)).length,
     row:['Totais','—','—','—','—',S.toHHMM(d.linhas.reduce((n,l)=>n+l.previsto,0)),S.toHHMM(d.tot.trabalhado),S.toHHMM(d.tot.extras),S.toHHMM(d.tot.faltantes),S.toSaldo(d.linhas.reduce((n,l)=>n+(l.saldo||0),0)),'—']};
 }
-function corCelulaFolhacol,value){if(col===7)return 'sheet-credit';if(col===8)return 'sheet-debit';if(col===9)return /^-/.test(value)?'sheet-debit':/^\+/.test(value)?'sheet-credit':'';if(col===10){if(/AFASTADO|AFASTAMENTO|MATERNIDADE/.test(value))return 'sheet-away';if(/FALTA/.test(value)&&!/JUSTIFICADA|ABONADA/.test(value)||/SUSPENSÃO/.test(value))return 'sheet-debit';if(/DSR|FOLGA/.test(value))return 'sheet-rest';if(/ATESTADO|AFASTAMENTO/.test(value))return 'sheet-credit';}return '';}
-function bancoCartaoFolhad){return [['Crédito',S.toHHMM(d.banco.creditos),'sheet-credit'],['Débito',S.toHHMM(d.banco.debitos),'sheet-debit'],['Saldo do Mês',S.toSaldo(d.banco.creditos-d.banco.debitos),d.banco.creditos-d.banco.debitos<0?'sheet-debit':'sheet-credit'],['Saldo Acumulado',S.toSaldo(d.banco.atual),d.banco.atual<0?'sheet-debit':'sheet-credit']];}
-const gerarFolhaMTE(pin,ini,fim)=>S.dadosFolha(pin,ini,fim); // consulta S.buscaNaEscala() em cada dia
+function corCelulaFolha(col,value){if(col===7)return 'sheet-credit';if(col===8)return 'sheet-debit';if(col===9)return /^-/.test(value)?'sheet-debit':/^\+/.test(value)?'sheet-credit':'';if(col===10){if(/AFASTADO|AFASTAMENTO|MATERNIDADE/.test(value))return 'sheet-away';if(/FALTA/.test(value)&&!/JUSTIFICADA|ABONADA/.test(value)||/SUSPENSÃO/.test(value))return 'sheet-debit';if(/DSR|FOLGA/.test(value))return 'sheet-rest';if(/ATESTADO|AFASTAMENTO/.test(value))return 'sheet-credit';}return '';}
+function bancoCartaoFolha(d){return [['Crédito',S.toHHMM(d.banco.creditos),'sheet-credit'],['Débito',S.toHHMM(d.banco.debitos),'sheet-debit'],['Saldo do Mês',S.toSaldo(d.banco.creditos-d.banco.debitos),d.banco.creditos-d.banco.debitos<0?'sheet-debit':'sheet-credit'],['Saldo Acumulado',S.toSaldo(d.banco.atual),d.banco.atual<0?'sheet-debit':'sheet-credit']];}
+const gerarFolhaMTE((pin,ini,fim)=>S.dadosFolha(pin,ini,fim); // consulta S.buscaNaEscala() em cada dia
 
-const LEGENDA'FALTA = dia sem batida e sem folga/feriado | FOLGA = folga prevista em escala | FERIADO = feriado cadastrado | _ = batida tratada/movida com motivo obrigatório | *N = hora noturna reduzida 22h-05h (Art. 73 CLT)';
-const preLegendaf=>f&&f.intervalo&&f.intervalo.preAssinalado?`Intervalo pré-assinalado ${f.intervalo.inicio||'12:00'}-${f.intervalo.fim||'13:00'} - Art. 71`:'';
+const LEGENDA('FALTA = dia sem batida e sem folga/feriado | FOLGA = folga prevista em escala | FERIADO = feriado cadastrado | _ = batida tratada/movida com motivo obrigatório | *N = hora noturna reduzida 22h-05h (Art. 73 CLT)';
+const preLegenda(f=>f&&f.intervalo&&f.intervalo.preAssinalado?`Intervalo pré-assinalado ${f.intervalo.inicio||'12:00'}-${f.intervalo.fim||'13:00'} - Art. 71`:'';
 
 function cabecalhoFolhaHTML(f,ini,fim){
   const e=S.get('empregador',{})||{};
@@ -70,7 +70,7 @@ function htmlFolha(pin,ini,fim){
     <footer class="sheet-footer">${S.FOLHA_RODAPE}</footer></div>`;
 }
 /* Official sheet renderer shared by individual, batch, portal, link and ZIP. */
-async function gerarPDFComLogodados){
+async function gerarPDFComLogo(dados){
   await S.garantirLib('pdf');
   const lista=dados.folhas||(dados.pins||[dados.pin]).map(p=>S.dadosFolha(p,dados.ini,dados.fim));
   const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'}),e=S.get('empregador',{})||{};
