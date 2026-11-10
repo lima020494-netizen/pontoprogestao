@@ -1,5 +1,8 @@
 /* Ponto Pro Gestão — Etapa 3: namespaces legados e cache local por conta. */
-PontoProOperacional.registrar('data.armazenamento', function(S){
+(function (namespace) {
+  'use strict';
+
+   function criar(S){
   const CACHE_SESSAO=new Map();
   const K=k=>`vip:${S.getConta()}:${k}`;
   const get=(k,d)=>{
@@ -23,4 +26,6 @@ PontoProOperacional.registrar('data.armazenamento', function(S){
   const contas=()=>{try{return JSON.parse(S.localStorage.getItem('vip:contas')||'[]');}catch(e){return [];}};
   const salvaContas=c=>S.localStorage.setItem('vip:contas',JSON.stringify(c));
   return {CACHE_SESSAO,K,get,set,chk,contas,salvaContas};
-});
+
+  namespace.definir('data.armazenamento', Object.freeze({ criar }));
+})(window.PontoProOperacional);

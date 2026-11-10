@@ -1,5 +1,8 @@
 /* Ponto Pro Gestão — Etapa 3: IndexedDB v2 e cache estável expirável. */
-PontoProOperacional.registrar('data.indexeddb', function(S){
+(function (namespace) {
+  'use strict';
+
+   function criar(S){
   const IDB={db:null,mem:[],ok:false};
   function idbAbrir(){return new Promise(res=>{try{const r=S.indexedDB.open('vipponto',2);
     r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('fila')){const s=r.result.createObjectStore('fila',{keyPath:'id'});s.createIndex('conta','conta');}if(!r.result.objectStoreNames.contains('config_cache'))r.result.createObjectStore('config_cache',{keyPath:'id'});};
@@ -22,4 +25,6 @@ PontoProOperacional.registrar('data.indexeddb', function(S){
     try{return await carga;}finally{CACHE_LEITURAS.delete(id);}
   }
   return {IDB,IDB_PRONTO,idbAbrir,idbTx,CACHE_ESTAVEL_MS,CACHE_LEITURAS,CACHE_VERSOES,cacheEstavelTx,cacheEstavelInvalidar,lerEstavel};
-});
+
+  namespace.definir('data.indexeddb', Object.freeze({ criar }));
+})(window.PontoProOperacional);

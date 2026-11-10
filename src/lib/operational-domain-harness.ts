@@ -12,11 +12,14 @@ export const operationalSlice = (start: string, end: string) => {
 };
 
 const moduleFiles = [
-  'core/formatos-v1.js', 'boot/compatibilidade-v1.js', 'boot/runtime-v1.js',
-  'domain/nucleo-v1.js', 'domain/jornada-v1.js', 'domain/escala-v1.js',
-  'domain/ocorrencias-v1.js', 'domain/banco-v1.js', 'domain/nucleo-v1.js',
-  'data/armazenamento-v1.js', 'data/indexeddb-v1.js', 'data/fila-offline-v1.js',
-  'data/supabase-v1.js', 'data/nucleo-v1.js',
+  'boot/namespace-v20261110-etapa1.js', 'core/formatos-v20261110-etapa1.js',
+  'boot/contexto-v20261110-etapa1.js', 'boot/compatibilidade-v20261110-etapa1.js',
+  'domain/escala-v20261110-etapa2.js', 'domain/ocorrencias-v20261110-etapa2.js',
+  'domain/jornada-v20261110-etapa2.js', 'domain/banco-v20261110-etapa2.js',
+  'domain/nucleo-v20261110-etapa2.js',
+  'data/armazenamento-v20261110-etapa3.js', 'data/indexeddb-v20261110-etapa3.js',
+  'data/fila-offline-v20261110-etapa3.js', 'data/supabase-v20261110-etapa3.js',
+  'data/nucleo-v20261110-etapa3.js',
 ];
 const modules = moduleFiles.map((path) => source(`public/operacional/${path}`));
 

@@ -1,5 +1,8 @@
 /* Ponto Pro Gestão — Etapa 3: repositórios Supabase, paginação e retaguarda. */
-PontoProOperacional.registrar('data.supabase', function(S){
+(function (namespace) {
+  'use strict';
+
+   function criar(S){
   const NUVEM_TIMERS={};
   const linhaFunc=f=>{const d=Object.assign({},f);delete d.jornada;return {email_dono:S.getConta(),pin:f.pin,nome:f.nome||'(sem nome)',cpf:f.cpf||null,cargo:f.cargo||null,
     departamento:f.departamento||null,escala:f.escala||null,status:f.status||'Ativo',ativo:f.status!=='Desligado',
@@ -121,4 +124,6 @@ PontoProOperacional.registrar('data.supabase', function(S){
     }catch(e){console.warn('Migração falhou',e);return 'Migração falhou: '+(e.message||e);}
   }
   return {linhaFunc,linhaPonto,janelaNuvemDesde,lerPontosNuvem,garantirHistorico,carregarNuvem,nuvemPush,nuvemPushAgora,migrarTudoSunmiParaSupabase};
-});
+
+  namespace.definir('data.supabase', Object.freeze({ criar }));
+})(window.PontoProOperacional);

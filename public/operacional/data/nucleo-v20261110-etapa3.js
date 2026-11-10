@@ -1,5 +1,8 @@
 /* Ponto Pro Gestão — Etapa 3: composição única dos módulos de dados e offline. */
-PontoProOperacional.registrar('data.nucleo',function(dependencias={}){
+(function (namespace) {
+  'use strict';
+
+  function criar(dependencias={}){
   const S={...dependencias};
   Object.assign(S,PontoProOperacional.obter('data.armazenamento')(S));
   Object.assign(S,PontoProOperacional.obter('data.indexeddb')(S));
@@ -7,4 +10,6 @@ PontoProOperacional.registrar('data.nucleo',function(dependencias={}){
   Object.assign(S,PontoProOperacional.obter('data.supabase')(S));
   Object.assign(S,dependencias.aliases||{});
   return S;
-});
+
+  namespace.definir('data.nucleo', Object.freeze({ criar }));
+})(window.PontoProOperacional);

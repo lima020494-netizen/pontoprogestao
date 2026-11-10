@@ -1,5 +1,8 @@
 /* Ponto Pro Gestão — Etapa 3: fila completa de batidas, envio imediato e lotes. */
-PontoProOperacional.registrar('data.fila-offline', function(S){
+(function (namespace) {
+  'use strict';
+
+   function criar(S){
   let SINC=false;
   async function filaListar(){const conta=S.getConta();if(!conta)return [];try{const l=await S.idbTx('readonly',s=>s.index('conta').getAll(conta))||[];S.IDB.mem=l.map(x=>x.nsr);return l.map(x=>x.b);}catch(e){return [];}}
   async function filaAdd(b){try{await S.idbTx('readwrite',s=>s.put({id:S.getConta()+'|'+b.nsr,conta:S.getConta(),nsr:b.nsr,b}));S.IDB.mem=[...new Set([...S.IDB.mem,b.nsr])];}
@@ -24,4 +27,6 @@ PontoProOperacional.registrar('data.fila-offline', function(S){
   }
   function filaPonto(nsr){const b=S.get('batidas',[]).find(x=>x.nsr===nsr);(b?S.filaAdd(b):Promise.resolve(S.salvaPendentes([...S.pendentesLS(),nsr]))).then(()=>S.sincronizarPendentes());}
   return {filaListar,filaAdd,filaRemover,pendentesLS,pendentes,salvaPendentes,sincronizarPendentes,filaPonto,get sincronizando(){return SINC;}};
-});
+
+  namespace.definir('data.fila-offline', Object.freeze({ criar }));
+})(window.PontoProOperacional);
