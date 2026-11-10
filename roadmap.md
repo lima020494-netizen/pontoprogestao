@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Etapa 0 da modularização: registrar linha de base e reforçar testes de cálculos, fila offline e consumo do Supabase, sem alterar motor, regras ou dados e sem publicar. Etapas 1–7 aguardam autorização explícita após a apresentação dos resultados.
+- [x] Etapa 0 da modularização: linha de base registrada em docs/etapa-0-linha-de-base.md; 194 testes em 29 arquivos passaram, incluindo 12 novos cenários de cálculo, fila, consumo e AFD/AEJ. Navegador com dados fictícios confirmou upgrade IDB 1→2, duas batidas preservadas offline e envio único na reconexão; cargas mediram 7/5/7 consultas (inicial/cache/forced). Motor e service worker mantiveram os mesmos hashes; nenhum dado real ou regra alterado e nada publicado.
+- [ ] Etapas 1–7 da modularização: aguardando autorização explícita do usuário após a apresentação da Etapa 0.
 
 - [x] Reduzir egress: removido polling de identidade/suporte e recarga periódica do quiosque; preservada retentativa e envio imediato da fila. Auditoria paginada em 50 por fonte, backup completo sob demanda. Empregador/feriados e identidade usam cache IndexedDB por conta com validade de 5 min, invalidação ao salvar e atualização explícita no Terminal/reconexão. 180 testes passaram; cache real e upgrade preservando fila conferidos no navegador, sem erros; build OK. Somente preview; sincronização autenticada externa e economia real de egress não verificadas. Auditoria 6.2 continua bloqueada por conexão expirada conforme abaixo.
 
