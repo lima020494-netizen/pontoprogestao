@@ -1,10 +1,13 @@
 /* Only the kiosk shell and public static files. Never cache API/auth/company responses. */
-const CACHE = 'ponto-static-20261110-operacional-etapa1-v1';
+const CACHE = 'ponto-static-20261110-operacional-etapa2-v1';
 const SHELL = '/vip-ponto.html';
 const ASSETS = [SHELL, '/jspdf-2.5.1.umd.min.js', '/jspdf.plugin.autotable.min.js',
   '/jszip-3.10.1.min.js', '/xlsx-0.18.5.full.min.js', '/supabase-2.117.3.min.js',
   '/operacional/boot/namespace-v20261110-etapa1.js', '/operacional/core/formatos-v20261110-etapa1.js',
   '/operacional/boot/contexto-v20261110-etapa1.js', '/operacional/boot/compatibilidade-v20261110-etapa1.js',
+  '/operacional/domain/escala-v20261110-etapa2.js', '/operacional/domain/ocorrencias-v20261110-etapa2.js',
+  '/operacional/domain/jornada-v20261110-etapa2.js', '/operacional/domain/banco-v20261110-etapa2.js',
+  '/operacional/domain/nucleo-v20261110-etapa2.js',
   '/qrcode-generator.min.js', '/ponto-offline-register.js', '/vip-logo.png',
   '/favicon-v20261028.png', '/favicon.ico', '/pwa-icon-192-v20261028.png', '/pwa-icon-512-v20261028.png', '/pwa-icon-maskable-192-v20261028.png', '/pwa-icon-maskable-512-v20261028.png', '/apple-touch-icon-v20261028.png', '/manifest.webmanifest'];
 self.addEventListener('install', event => {

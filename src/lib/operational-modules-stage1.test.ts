@@ -110,7 +110,7 @@ test('stage 1: modules add no Supabase, storage, queue, export or polling behavi
 
 test('stage 1: service worker caches all new shell modules atomically and still excludes account data', () => {
   const sw = readFileSync('public/ponto-offline-sw.js', 'utf8');
-  assert.match(sw, /ponto-static-20261110-operacional-etapa1-v1/);
+  assert.match(sw, /ponto-static-20261110-operacional-etapa2-v1/);
   for (const path of modulePaths) assert.ok(sw.includes(`'/${path}'`), path);
   const assets = sw.slice(sw.indexOf('const ASSETS'), sw.indexOf('self.addEventListener'));
   assert.doesNotMatch(assets, /\/api\/|\/rest\/|\/auth\/|pontos_pendentes/);

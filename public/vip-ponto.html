@@ -32,6 +32,12 @@ function garantirLib(grupo){
 <script src="/operacional/core/formatos-v20261110-etapa1.js"></script>
 <script src="/operacional/boot/contexto-v20261110-etapa1.js"></script>
 <script src="/operacional/boot/compatibilidade-v20261110-etapa1.js"></script>
+<!-- Etapa 2: domínio puro compartilhado; o compositor é ligado ao estado legado no shell. -->
+<script src="/operacional/domain/escala-v20261110-etapa2.js"></script>
+<script src="/operacional/domain/ocorrencias-v20261110-etapa2.js"></script>
+<script src="/operacional/domain/jornada-v20261110-etapa2.js"></script>
+<script src="/operacional/domain/banco-v20261110-etapa2.js"></script>
+<script src="/operacional/domain/nucleo-v20261110-etapa2.js"></script>
 <script src="/ponto-offline-register.js" defer></script>
 <style>
 /* ===================== DESIGN SYSTEM ===================== */
@@ -1394,47 +1400,12 @@ function mostrarHistoricoDia(f){
     </div>
   </section>`;
 }
-/* Virada noturna: batida de madrugada (00:00–05:59) fecha a jornada aberta do dia anterior.
-   b.data/b.hora (carimbo original, NSR/AFD) nunca são alterados; a jornada é derivada.
-   A ORDEM segue o instante real da marcação (criadoEm/timestamp + NSR), não data+hora:
-   registros antigos gravaram a madrugada com a data da jornada (ex.: 09/10 00:23 batido em 10/10). */
-function instanteBatida(b){
-  if(b.fonte==='MANUAL')return {civil:b.data,key:String(b.data)+'T'+String(b.hora)+'#'+String(b.nsr||'').padStart(9,'0')};
-  const nsr=String(b.nsr||'').padStart(9,'0'), c=b.criadoEm||b.timestamp;
-  if(c&&b.hora){
-    const d=new Date(c);
-    if(!isNaN(d)){
-      const partes=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Belem',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d);
-      const v=t=>partes.find(p=>p.type===t)?.value||'', civil=v('year')+'-'+v('month')+'-'+v('day');
-      const dif=Math.abs(toMin(v('hour')+':'+v('minute'))-toMin(b.hora));
-      if(dif<=1||dif>=1439) return {civil,key:civil+'T'+b.hora+'#'+nsr};
-    }
-  }
-  return {civil:b.data,key:String(b.data)+'T'+String(b.hora)+'#'+nsr};
-}
-let __jIdx={sig:'',map:null};
-function indiceJornadas(){
-  const all=get('batidas',[])||[];
-  const sig=all.length+'|'+all.map(b=>(b.nsr||'')+(b.excluida?'x':'')+(b.data||'')+(b.hora||'')+(b.jornada||'')+(b.jornadaManual?'m':'')+(b.criadoEm||'')).join(',');
-  if(__jIdx.sig===sig&&__jIdx.map) return __jIdx.map;
-  const map=new Map(), cnt={};
-  all.filter(b=>!b.excluida).map(b=>({b,i:instanteBatida(b)})).sort((x,y)=>x.i.key.localeCompare(y.i.key)).forEach(({b,i})=>{
-    let j=b.data;
-    if(b.fonte==='MANUAL'&&b.jornadaManual&&b.jornada) j=b.jornada;
-    else if(b.jornada&&b.jornada!==b.data) j=b.jornada;
-    else if(i.civil!==b.data) j=b.data; // legado: madrugada já gravada com a data da jornada
-    else if(toMin(b.hora)<360){
-      const ontem=addDias(b.data,-1),k=b.pin+'|'+ontem,n=cnt[k]||0;
-      const h=horarioEscala(b.pin,b.data), escMadrugada=h&&toMin(h)<360;
-      if(n%2===1&&n<4&&!escMadrugada) j=ontem;
-    }
-    const k=b.pin+'|'+j; cnt[k]=(cnt[k]||0)+1; map.set(b,j); map.set(b.pin+'#'+b.nsr,j);
-  });
-  __jIdx={sig,map}; return map;
-}
-function jornadaDe(b){const m=indiceJornadas();return m.get(b)||m.get(b.pin+'#'+b.nsr)||b.jornada||b.data;}
-const ordemJornada=(a,b)=>instanteBatida(a).key.localeCompare(instanteBatida(b).key);
-function batidasJornada(pin,iso){const bs=get('batidas',[]).filter(b=>!b.excluida&&b.pin===pin&&jornadaDe(b)===iso).sort(ordemJornada);if(new Set(bs.map(b=>b.tipo)).size===bs.length)return bs;const tipos=['Entrada','Saída Intervalo','Entrada Intervalo','Saída'];return bs.map((b,i)=>({...b,tipo:tipos[i]||b.tipo}));}
+/* Etapa 2: aliases globais da jornada; carimbos civis e regras permanecem no domínio. */
+function instanteBatida(b){return NUCLEO_OPERACIONAL.instanteBatida(b);}
+function indiceJornadas(){return NUCLEO_OPERACIONAL.indiceJornadas();}
+function jornadaDe(b){return NUCLEO_OPERACIONAL.jornadaDe(b);}
+const ordemJornada=(a,b)=>NUCLEO_OPERACIONAL.ordemJornada(a,b);
+function batidasJornada(pin,iso){return NUCLEO_OPERACIONAL.batidasJornada(pin,iso);}
 function jornadaAtualISO(pin){
   const agora=getHoraOficial(), hoje=isoOf(agora), ontem=addDias(hoje,-1);
   if(agora.getHours()<6){
@@ -1989,13 +1960,34 @@ function salvarFunc(i){
 function delFunc(i){const fs=get('funcionarios',[]);const f=fs[i];if(!f)return;if(!confirm('Excluir o colaborador '+f.nome+'?\n\nA ficha, o PIN e a escala dele saem da lista. As batidas já registradas ficam guardadas no histórico.\n\nEsta ação não pode ser desfeita.'))return;log(`Excluiu empregado ${fs[i].nome}`);fs.splice(i,1);set('funcionarios',fs);abaFunc();}
 
 /* ============================== CÁLCULO — NÚCLEO ============================== */
-const feriadoDe = iso => get('feriados',[]).find(f=>f.data===iso);
-function escalaDaSemana(iso,pin){
-  const all=Object.values(get('escalas',{})||{}).filter(e=>e&&e.semanaInicio<=iso&&(e.semanaFim||addDias(e.semanaInicio,6))>=iso)
-    .sort((a,b)=>b.semanaInicio.localeCompare(a.semanaInicio));
-  if(pin){const c=all.find(e=>(e.folgas||[]).some(x=>x.pin===pin&&x.dia===iso));if(c)return c;}
-  return all[0]||null;
-}
+const NUCLEO_OPERACIONAL=PontoProOperacional.obter('domain.nucleo').criar({get:(k,d)=>get(k,d),funcPorPin:p=>funcPorPin(p),cargaEscala:c=>cargaEscala(c)});
+const feriadoDe=iso=>NUCLEO_OPERACIONAL.feriadoDe(iso);
+const buscaNaEscala=(pin,data)=>NUCLEO_OPERACIONAL.buscaNaEscala(pin,data);
+const trabalhadoDia=(f,bs)=>NUCLEO_OPERACIONAL.trabalhadoDia(f,bs);
+const difMin=(a,b)=>NUCLEO_OPERACIONAL.difMin(a,b);
+const GRUPOS_OCORRENCIAS=NUCLEO_OPERACIONAL.GRUPOS_OCORRENCIAS;
+const TIPOS_ESC=NUCLEO_OPERACIONAL.TIPOS_ESC;
+function escalaDaSemana(iso,pin){return NUCLEO_OPERACIONAL.escalaDaSemana(iso,pin);}
+function folgaEscala(pin,iso){return NUCLEO_OPERACIONAL.folgaEscala(pin,iso);}
+function horarioEscala(pin,iso){return NUCLEO_OPERACIONAL.horarioEscala(pin,iso);}
+function previstoDia(f,iso){return NUCLEO_OPERACIONAL.previstoDia(f,iso);}
+function batidasDia(pin,iso){return NUCLEO_OPERACIONAL.batidasDia(pin,iso);}
+function paresBatidas(bs){return NUCLEO_OPERACIONAL.paresBatidas(bs);}
+function minutosTrabalhados(bs,f){return NUCLEO_OPERACIONAL.minutosTrabalhados(bs,f);}
+function calculaNoturna(bs,horaFim){return NUCLEO_OPERACIONAL.calculaNoturna(bs,horaFim);}
+function tiposTratamentoLote(){return NUCLEO_OPERACIONAL.tiposTratamentoLote();}
+function regraOcorrencia(tipo){return NUCLEO_OPERACIONAL.regraOcorrencia(tipo);}
+function ocorrenciaDia(pin,data){return NUCLEO_OPERACIONAL.ocorrenciaDia(pin,data);}
+function validarPeriodoOcorrencia(tipo,ini,fim,pin,periodoId){return NUCLEO_OPERACIONAL.validarPeriodoOcorrencia(tipo,ini,fim,pin,periodoId);}
+function trabalhoApuradoDia(f,data,bs){return NUCLEO_OPERACIONAL.trabalhoApuradoDia(f,data,bs);}
+function descontoDsrDia(pin,data,prev){return NUCLEO_OPERACIONAL.descontoDsrDia(pin,data,prev);}
+function atrasoDia(pin,data,bs,prev){return NUCLEO_OPERACIONAL.atrasoDia(pin,data,bs,prev);}
+function movimentoBancoDia(pin,data,prev,trab,atraso=0){return NUCLEO_OPERACIONAL.movimentoBancoDia(pin,data,prev,trab,atraso);}
+function dadosFolha(pin,ini,fim){return NUCLEO_OPERACIONAL.dadosFolha(pin,ini,fim);}
+function resumoMensalFolha(d){return NUCLEO_OPERACIONAL.resumoMensalFolha(d);}
+function calcBanco(pin,ini,fim){return NUCLEO_OPERACIONAL.calcBanco(pin,ini,fim);}
+function classificacaoTratamento(l,oc,bs,hoje){return NUCLEO_OPERACIONAL.classificacaoTratamento(l,oc,bs,hoje);}
+function lerCelulaEscala(v){return NUCLEO_OPERACIONAL.lerCelulaEscala(v);}
 function inicioSemana(iso){
   const base=get('config',{inicioSemana:1}).inicioSemana??1;
   const d=new Date(iso+'T12:00:00'); const diff=(d.getDay()-base+7)%7; d.setDate(d.getDate()-diff); return isoOf(d);
