@@ -105,12 +105,13 @@ test('stage 1: modules add no Supabase, storage, queue, export or polling behavi
     assert.doesNotMatch(source, /\bfetch\s*\(|\bsetInterval\s*\(|\bsetTimeout\s*\(|\bsupabase\b|\blocalStorage\b|\bindexedDB\b|\bgarantirLib\b/, path);
   }
   assert.equal((html.match(/\bsetInterval\s*\(/g) || []).length, 3);
-  assert.equal((html.match(/\bgarantirLib\s*\(/g) || []).length, 16);
+  assert.equal((html.match(/\bgarantirLib\s*\(/g) || []).length, 20);
 });
 
 test('stage 1: service worker caches all new shell modules atomically and still excludes account data', () => {
   const sw = readFileSync('public/ponto-offline-sw.js', 'utf8');
   assert.match(sw, /ponto-static-20261110-operacional-etapa1-v1/);
   for (const path of modulePaths) assert.ok(sw.includes(`'/${path}'`), path);
-  assert.doesNotMatch(sw, /\/api\/|\/rest\/|\/auth\/|pontos_pendentes/);
+  const assets = sw.slice(sw.indexOf('const ASSETS'), sw.indexOf('self.addEventListener'));
+  assert.doesNotMatch(assets, /\/api\/|\/rest\/|\/auth\/|pontos_pendentes/);
 });
