@@ -61,7 +61,8 @@ test('baseline queue: IndexedDB and legacy fallback deduplicate by NSR and prese
   assert.equal(h.uploaded.size, 2);
   assert.equal(h.uploaded.get('empresa-ficticia@example.invalid|1').timestamp, original.criadoEm);
   assert.equal(h.uploaded.get('empresa-ficticia@example.invalid|1').dados.data, original.data);
-  assert.deepEqual(h.conflictOptions, [{ onConflict: 'email_dono,nsr' }]);
+  assert.equal(h.conflictOptions.length, 1);
+  assert.equal(h.conflictOptions[0].onConflict, 'email_dono,nsr');
   assert.equal(h.queue.length, 0);
   assert.deepEqual(h.pending, []);
   assert.equal(JSON.stringify(h.localPunches), originalCopy);
@@ -90,13 +91,16 @@ test('baseline queue: concurrent retries cannot send the same pending batch twic
     h.batches.push(rows);
     return new Promise(resolve => { release = resolve; });
   } }) };
-  const first = h.run();
-  const second = h.run();
-  assert.equal(await second, 0);
-  await Promise.resolve();
-  await Promise.resolve();
+  const pair = runInNewContext(source + `;(async()=>{
+    const first=sincronizarPendentes();
+    const second=sincronizarPendentes();
+    return {first,second};
+  })()`, h.context);
+  assert.equal(await pair.second, 0);
+  for (let i = 0; i < 10 && !release; i++) await Promise.resolve();
+  assert.ok(release, 'o primeiro envio alcançou o Supabase simulado');
   release({ data: [] });
-  assert.equal(await first, 1);
+  assert.equal(await pair.first, 1);
   assert.equal(h.batches.length, 1);
   assert.equal(h.queue.length, 0);
 });

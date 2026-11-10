@@ -55,6 +55,7 @@ test('baseline egress: first cloud load reads seven resources, cached reload fiv
   assert.deepEqual(pointDates, ['2026-10-31']);
   assert.deepEqual(logLimits, [50]);
   assert.equal(queueSyncs, 1);
+  assert.equal(stored.size, 2, 'empregador e feriados foram gravados no cache estável');
 
   reads.length = 0;
   await api.carregarNuvem();
