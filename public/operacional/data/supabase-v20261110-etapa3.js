@@ -92,9 +92,9 @@
   }
   async function migrarTudoSunmiParaSupabase(forcar){
     if(!S.sb||!S.getConta())return null;
-    const conta=S.getConta(),flag=`${conta}_migracao_feita`;
+    const flag=`${S.getConta()}_migracao_feita`;
     if(!forcar&&S.localStorage.getItem(flag))return null;
-    const ler=nome=>{const out=[];for(const k of [S.K(nome),`${conta}_${nome}`,`${conta}:${nome}`,nome]){try{const v=S.localStorage.getItem(k);if(v)out.push(JSON.parse(v));}catch(e){}}return out;};
+    const ler=nome=>{const out=[];for(const k of [S.K(nome),`${S.getConta()}_${nome}`,`${S.getConta()}:${nome}`,nome]){try{const v=S.localStorage.getItem(k);if(v)out.push(JSON.parse(v));}catch(e){}}return out;};
     const arr=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.values(v):[]);
     const todos=nome=>ler(nome).flatMap(arr);
     try{
@@ -108,15 +108,15 @@
       for(let i=0;i<rows.length;i+=500)S.chk(await S.sb.from('pontos').upsert(rows.slice(i,i+500),{onConflict:'email_dono,nsr'}));
       const ml=new Map();
       [...todos('logs'),...todos('historico'),...todos('historico_acoes')].filter(x=>x&&(x.acao||x.texto))
-        .forEach(x=>{const o={email_dono:conta,quando:String(x.quando||x.data||new Date().toISOString()),por:x.por||x.gerenciador||'Sistema',acao:x.acao||x.texto};ml.set(o.quando+'|'+o.acao,o);});
+        .forEach(x=>{const o={email_dono:S.getConta(),quando:String(x.quando||x.data||new Date().toISOString()),por:x.por||x.gerenciador||'Sistema',acao:x.acao||x.texto};ml.set(o.quando+'|'+o.acao,o);});
       const lgs=[...ml.values()];
       for(let i=0;i<lgs.length;i+=500)S.chk(await S.sb.from('logs').upsert(lgs.slice(i,i+500),{onConflict:'email_dono,quando,acao',ignoreDuplicates:true}));
       const escRows=[];
       [...ler('escalas'),...ler('escala')].forEach(v=>{
-        if(Array.isArray(v))v.forEach(e=>e&&e.semanaInicio&&escRows.push({email_dono:conta,semana:e.semanaInicio,dados:e}));
-        else if(v&&typeof v==='object')Object.entries(v).forEach(([s,e])=>e&&typeof e==='object'&&escRows.push({email_dono:conta,semana:e.semanaInicio||s,dados:e}));});
+        if(Array.isArray(v))v.forEach(e=>e&&e.semanaInicio&&escRows.push({email_dono:S.getConta(),semana:e.semanaInicio,dados:e}));
+        else if(v&&typeof v==='object')Object.entries(v).forEach(([s,e])=>e&&typeof e==='object'&&escRows.push({email_dono:S.getConta(),semana:e.semanaInicio||s,dados:e}));});
       if(escRows.length)S.chk(await S.sb.from('escala').upsert(escRows,{onConflict:'email_dono,semana'}));
-      const emp=ler('empregador')[0];if(emp&&typeof emp==='object')S.chk(await S.sb.from('empregador').upsert({email_dono:conta,dados:emp},{onConflict:'email_dono'}));
+      const emp=ler('empregador')[0];if(emp&&typeof emp==='object')S.chk(await S.sb.from('empregador').upsert({email_dono:S.getConta(),dados:emp},{onConflict:'email_dono'}));
       S.localStorage.setItem(flag,new Date().toISOString());
       const msg=`Migração: ${funcs.length} func, ${rows.length} batidas, ${lgs.length} logs`;
       if(forcar)S.log(msg);
