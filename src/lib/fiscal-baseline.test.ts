@@ -27,12 +27,11 @@ test('baseline AFD type 3 keeps NSR order, civil date/time and excludes only exc
     hhmm: (d: Date) => d.toISOString().slice(11, 16),
   }) as string;
   const lines = content.trim().split('\r\n');
-  assert.equal(lines.length, 3);
+  assert.equal(lines.length, 4);
   assert.ok(lines[1].startsWith('0000000013' + '09112026' + '2359'));
   assert.ok(lines[2].startsWith('0000000023' + '10112026' + '0010'));
-  assert.equal(lines[3 - 1].slice(0, 9), '000000002');
-  assert.equal(lines[2].includes('000000003'), false);
-  assert.equal(lines[2].endsWith('999999999000000002Ponto Pro Gestão'), true);
+  assert.equal(lines.some(line => line.startsWith('0000000033')), false);
+  assert.equal(lines[3], '999999999000000002Ponto Pro Gestão');
   assert.equal(JSON.stringify(punches), original);
 });
 
