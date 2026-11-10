@@ -58,8 +58,8 @@ test('baseline AEJ retains overnight civil timestamps, journey sequence and occu
   const lines = download!.content.trim().split('\r\n');
   const marks = lines.filter(x => x.startsWith('05|'));
   assert.equal(marks.length, 2);
-  assert.ok(marks[0].includes('2026-11-09T23:59:00-0300|E|1|O'), marks[0]);
-  assert.ok(marks[1].includes('2026-11-10T00:10:00-0300|S|1|O'), marks[1]);
+  assert.ok(marks[0].includes('2026-11-09T23:59:00-0300|1|E|1|O'), marks[0]);
+  assert.ok(marks[1].includes('2026-11-10T00:10:00-0300|1|S|1|O'), marks[1]);
   assert.equal(lines.filter(x => x.startsWith('06|')).length, 1);
   assert.equal(lines.at(-1), '99|1|1|1|1|2|1|1');
   assert.equal(JSON.stringify(punches), original);
