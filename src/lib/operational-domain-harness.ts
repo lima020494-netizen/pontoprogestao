@@ -38,7 +38,7 @@ export function createDomainContext(overrides: Record<string, any> = {}) {
     setItem: (key: string, value: unknown) => { memoria.set(key, String(value)); },
     removeItem: (key: string) => { memoria.delete(key); },
   };
-  const dataApi = context.window.PontoProOperacional.obter('data.nucleo')({
+  const dataApi = context.window.PontoProOperacional.obter('data.nucleo').criar({
     sb: overrides.sb || null, localStorage, indexedDB: overrides.indexedDB,
     getConta: () => context.CONTA ?? null,
     getShareData: () => context.SHARE_DATA ?? null,

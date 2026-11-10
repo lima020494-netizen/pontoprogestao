@@ -4,12 +4,14 @@
 
   function criar(dependencias={}){
   const S={...dependencias};
-  Object.assign(S,PontoProOperacional.obter('data.armazenamento')(S));
-  Object.assign(S,PontoProOperacional.obter('data.indexeddb')(S));
-  Object.assign(S,PontoProOperacional.obter('data.fila-offline')(S));
-  Object.assign(S,PontoProOperacional.obter('data.supabase')(S));
+  Object.assign(S,namespace.obter('data.armazenamento').criar(S));
+  Object.assign(S,namespace.obter('data.indexeddb').criar(S));
+  Object.assign(S,namespace.obter('data.fila-offline').criar(S));
+  Object.assign(S,namespace.obter('data.supabase').criar(S));
   Object.assign(S,dependencias.aliases||{});
   return S;
+
+  }
 
   namespace.definir('data.nucleo', Object.freeze({ criar }));
 })(window.PontoProOperacional);

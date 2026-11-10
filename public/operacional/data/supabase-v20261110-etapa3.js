@@ -125,5 +125,7 @@
   }
   return {linhaFunc,linhaPonto,janelaNuvemDesde,lerPontosNuvem,garantirHistorico,carregarNuvem,nuvemPush,nuvemPushAgora,migrarTudoSunmiParaSupabase};
 
+  }
+
   namespace.definir('data.supabase', Object.freeze({ criar }));
 })(window.PontoProOperacional);

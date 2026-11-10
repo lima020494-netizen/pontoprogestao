@@ -28,5 +28,7 @@
   function filaPonto(nsr){const b=S.get('batidas',[]).find(x=>x.nsr===nsr);(b?S.filaAdd(b):Promise.resolve(S.salvaPendentes([...S.pendentesLS(),nsr]))).then(()=>S.sincronizarPendentes());}
   return {filaListar,filaAdd,filaRemover,pendentesLS,pendentes,salvaPendentes,sincronizarPendentes,filaPonto,get sincronizando(){return SINC;}};
 
+  }
+
   namespace.definir('data.fila-offline', Object.freeze({ criar }));
 })(window.PontoProOperacional);

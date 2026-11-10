@@ -26,5 +26,7 @@
   }
   return {IDB,IDB_PRONTO,idbAbrir,idbTx,CACHE_ESTAVEL_MS,CACHE_LEITURAS,CACHE_VERSOES,cacheEstavelTx,cacheEstavelInvalidar,lerEstavel};
 
+  }
+
   namespace.definir('data.indexeddb', Object.freeze({ criar }));
 })(window.PontoProOperacional);

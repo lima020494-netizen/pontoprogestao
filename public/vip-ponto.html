@@ -38,6 +38,12 @@ function garantirLib(grupo){
 <script src="/operacional/domain/jornada-v20261110-etapa2.js"></script>
 <script src="/operacional/domain/banco-v20261110-etapa2.js"></script>
 <script src="/operacional/domain/nucleo-v20261110-etapa2.js"></script>
+<!-- Etapa 3: dados e offline; autenticação e cliente Supabase permanecem no shell. -->
+<script src="/operacional/data/armazenamento-v20261110-etapa3.js"></script>
+<script src="/operacional/data/indexeddb-v20261110-etapa3.js"></script>
+<script src="/operacional/data/fila-offline-v20261110-etapa3.js"></script>
+<script src="/operacional/data/supabase-v20261110-etapa3.js"></script>
+<script src="/operacional/data/nucleo-v20261110-etapa3.js"></script>
 <script src="/ponto-offline-register.js" defer></script>
 <style>
 /* ===================== DESIGN SYSTEM ===================== */
@@ -916,186 +922,47 @@ const SUPA_URL='https://kvbidsfnisegtqjagsld.supabase.co';
 const SUPA_KEY='sb_publishable_3YjKTF1rODb9lczyeRillA_Sm1BgP5g'; // chave publishable (pública)
 const sb = window.supabase ? window.supabase.createClient(SUPA_URL,SUPA_KEY) : null;
 let NUVEM_OK=false;
-/* Fila offline robusta em IndexedDB (batida completa); localStorage só como reserva se IDB faltar */
-const IDB={db:null,mem:[],ok:false};
-function idbAbrir(){return new Promise(res=>{try{const r=indexedDB.open('vipponto',2);
-  r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('fila')){const s=r.result.createObjectStore('fila',{keyPath:'id'});s.createIndex('conta','conta');}if(!r.result.objectStoreNames.contains('config_cache'))r.result.createObjectStore('config_cache',{keyPath:'id'});};
-  r.onsuccess=()=>{IDB.db=r.result;IDB.ok=true;res(true);};r.onerror=()=>res(false);}catch(e){res(false);}});}
-const IDB_PRONTO=idbAbrir();
-function idbTx(modo,fn){return IDB_PRONTO.then(ok=>ok?new Promise((res,rej)=>{const t=IDB.db.transaction('fila',modo),s=t.objectStore('fila');const out=fn(s);
-  t.oncomplete=()=>res(out&&out.result);t.onerror=()=>rej(t.error);}):Promise.reject('sem IDB'));}
-/* Cache de leitura, nunca de autorização ou batidas. Expira em cinco minutos. */
-const CACHE_ESTAVEL_MS=5*60*1000,CACHE_LEITURAS=new Map(),CACHE_VERSOES=new Map();
-async function cacheEstavelTx(modo,fn){if(!await IDB_PRONTO)throw new Error('sem IDB');return new Promise((res,rej)=>{const t=IDB.db.transaction('config_cache',modo),r=fn(t.objectStore('config_cache'));t.oncomplete=()=>res(r?.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);});}
-async function cacheEstavelInvalidar(conta,chave){const id=conta+'|'+chave;CACHE_VERSOES.set(id,(CACHE_VERSOES.get(id)||0)+1);try{await cacheEstavelTx('readwrite',s=>s.delete(id));}catch(e){}}
-async function lerEstavel(conta,chave,consultar,forcar=false){
-  const id=conta+'|'+chave,versao=CACHE_VERSOES.get(id)||0;
-  if(CACHE_LEITURAS.has(id))return CACHE_LEITURAS.get(id);
-  const carga=(async()=>{
-    if(!forcar){try{const c=await cacheEstavelTx('readonly',s=>s.get(id));if(c&&c.expira>Date.now()&&versao===(CACHE_VERSOES.get(id)||0))return c.valor;}catch(e){}}
-    const valor=chk(await consultar());
-    if(versao===(CACHE_VERSOES.get(id)||0))try{await cacheEstavelTx('readwrite',s=>s.put({id,expira:Date.now()+CACHE_ESTAVEL_MS,valor}));}catch(e){}
-    return valor;
-  })();CACHE_LEITURAS.set(id,carga);
-  try{return await carga;}finally{CACHE_LEITURAS.delete(id);}
-}
-async function filaListar(){if(!CONTA) return [];try{const l=await idbTx('readonly',s=>s.index('conta').getAll(CONTA))||[];IDB.mem=l.map(x=>x.nsr);return l.map(x=>x.b);}catch(e){return [];}}
-async function filaAdd(b){try{await idbTx('readwrite',s=>s.put({id:CONTA+'|'+b.nsr,conta:CONTA,nsr:b.nsr,b}));IDB.mem=[...new Set([...IDB.mem,b.nsr])];}
-  catch(e){salvaPendentes([...pendentesLS(),b.nsr]);}}
-async function filaRemover(nsrs){try{await idbTx('readwrite',s=>nsrs.forEach(n=>s.delete(CONTA+'|'+n)));IDB.mem=IDB.mem.filter(n=>!nsrs.includes(n));}catch(e){}}
-const pendentesLS=()=>{try{return JSON.parse(localStorage.getItem(K('pontos_pendentes'))||'[]');}catch(e){return [];}};
-const pendentes=()=>[...new Set([...pendentesLS(),...IDB.mem])];
-const salvaPendentes=l=>localStorage.setItem(K('pontos_pendentes'),JSON.stringify([...new Set(l)]));
-const chk=r=>{if(r&&r.error)throw r.error;return r;};
-const linhaFunc=f=>{const d=Object.assign({},f);delete d.jornada;return {email_dono:CONTA,pin:f.pin,nome:f.nome||'(sem nome)',cpf:f.cpf||null,cargo:f.cargo||null,
-  departamento:f.departamento||null,escala:f.escala||null,status:f.status||'Ativo',ativo:f.status!=='Desligado',
-  inicio_vigencia_banco_horas:(f.inicioVigenciaBancoHoras||f.bancoInicio)||null,intervalo:f.intervalo||null,dados:d};};
-const linhaPonto=b=>({email_dono:CONTA,nsr:b.nsr,pin:b.pin,data:b.data,hora:b.hora,tipo:b.tipo,timestamp:b.criadoEm||new Date().toISOString(),origem:b.fonte||'LOCAL',dados:b});
-
+/* ---------- dados, cache e fila offline: módulos da Etapa 3 ---------- */
 let NUVEM_DESDE='';
-function janelaNuvemDesde(){return addDias(hojeISO().slice(0,8)+'01',-1);} // mês corrente + véspera (virada noturna)
-async function lerPontosNuvem(conta,desde,ate){
-  const rows=[],tamanho=1000;
-  for(let inicio=0;;inicio+=tamanho){
-    let q=sb.from('pontos').select('nsr,dados').eq('email_dono',conta).gte('dados->>data',desde);
-    if(ate)q=q.lt('dados->>data',ate);
-    const {data,error}=await q.order('nsr',{ascending:true}).range(inicio,inicio+tamanho-1);
-    if(error)throw error;
-    rows.push(...(data||[]));if((data||[]).length<tamanho)return rows;
-  }
-}
-async function garantirHistorico(dataIni){ // inclui a véspera e a vigência para reconciliar saldo anterior
-  if(!sb||!CONTA||!dataIni||!NUVEM_DESDE)return;
-  const inicios=get('funcionarios',[]).map(f=>f.inicioVigenciaBancoHoras||f.bancoInicio||f.admissao||dataIni);
-  const desde=addDias([dataIni,...inicios].filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).sort()[0]||dataIni,-1);
-  if(desde>=NUVEM_DESDE)return;
-  const conta=CONTA,rows=await lerPontosNuvem(conta,desde,NUVEM_DESDE);
-  if(CONTA!==conta)return;
-  const mapa=new Map(get('batidas',[]).map(b=>[b.nsr,b]));
-  rows.forEach(r=>r.dados&&mapa.set(r.nsr,r.dados));
-  set('batidas',[...mapa.values()]);
-}
-async function carregarNuvem(forcar=false){
-  if(!sb||!CONTA||CARREGANDO) return;
-  CARREGANDO=true;
-  const conta=CONTA;
-  try{
-    NUVEM_DESDE=janelaNuvemDesde();
-    await sincronizarPendentes();
-    const rs=await Promise.all([
-      lerEstavel(conta,'empregador',()=>sb.from('empregador').select('dados').eq('email_dono',conta).maybeSingle(),forcar),
-      sb.from('funcionarios').select('pin,dados').eq('email_dono',CONTA),
-      lerPontosNuvem(CONTA,NUVEM_DESDE).then(data=>({data})),
-      lerEstavel(conta,'feriados',()=>sb.from('feriados').select('dados,data,nome,tipo').eq('conta',conta),forcar),
-      sb.from('dados').select('chave,valor').eq('conta',CONTA),
-      sb.from('logs').select('quando,por,acao').eq('email_dono',CONTA).order('quando',{ascending:false}).limit(50),
-      sb.from('escala').select('semana,dados').eq('email_dono',CONTA)]);
-    rs.forEach(chk);
-    if(CONTA!==conta)return;
-    const [emp,fun,pon,fer,gen,lg,es]=rs;
-    (gen.data||[]).forEach(r=>{if(!['funcionarios','batidas','empregador','feriados','logs'].includes(r.chave)) set(r.chave,r.valor);});
-    if(emp.data&&emp.data.dados) set('empregador',emp.data.dados);
-    set('funcionarios',(fun.data||[]).map(r=>{const d=Object.assign({pin:r.pin},r.dados||{});delete d.jornada;return d;}));
-    const filaB=await filaListar(), pend=new Set(pendentes()), mapa=new Map();
-    (pon.data||[]).forEach(r=>r.dados&&mapa.set(r.nsr,r.dados));
-    get('batidas',[]).filter(b=>pend.has(b.nsr)).forEach(b=>mapa.set(b.nsr,b)); // nunca perde batida offline
-    filaB.forEach(b=>mapa.set(b.nsr,b));
-    const todas=[...mapa.values()]; set('batidas',todas);
-    const maxN=todas.reduce((m,b)=>Math.max(m,Number(b.nsr)||0),0); if(maxN>(get('nsr',0)||0)) set('nsr',maxN);
-    set('feriados',(fer.data||[]).map(r=>r.dados||{data:r.data,nome:r.nome,tipo:r.tipo}));
-    localStorage.setItem(K('logs'),JSON.stringify(lg.data||[]));LOGS_SESSAO.add(CONTA);
-    const escs={}; (es.data||[]).forEach(r=>{if(r.semana&&r.dados)escs[r.semana]=r.dados;});
-    if(Object.keys(escs).length) set('escalas',escs);
-    NUVEM_OK=true;
-  }catch(e){ NUVEM_OK=false; console.warn('Nuvem indisponível — usando dados do aparelho.',e); }
-  finally{CARREGANDO=false;}
-  if(typeof atualizaStatus==='function') atualizaStatus();
-}
-const NUVEM_TIMERS={};
-function nuvemPush(k,v){
-  if(!sb||!CONTA) return;
-  clearTimeout(NUVEM_TIMERS[k]);
-  NUVEM_TIMERS[k]=setTimeout(()=>nuvemPushAgora(k,v),400);
-}
-async function nuvemPushAgora(k,v){
-  if(['batidas','logs','pontos_pendentes','ntpOffset'].includes(k)) return; // batidas vão pela fila; logs direto
-  try{
-    if(k==='empregador') chk(await sb.from('empregador').upsert({email_dono:CONTA,dados:v,atualizado_em:new Date().toISOString()},{onConflict:'email_dono'}));
-    else if(k==='funcionarios'){
-      if(v.length) chk(await sb.from('funcionarios').upsert(v.map(linhaFunc),{onConflict:'email_dono,pin'}));
-      let q=sb.from('funcionarios').delete().eq('email_dono',CONTA);
-      if(v.length) q=q.not('pin','in',`(${v.map(f=>'"'+f.pin+'"').join(',')})`);
-      chk(await q);
-    }
-    else if(k==='escalas'){const rows=Object.entries(v||{}).map(([s,d])=>({email_dono:CONTA,semana:s,dados:d}));
-      if(rows.length) chk(await sb.from('escala').upsert(rows,{onConflict:'email_dono,semana'}));}
-    else if(k==='feriados'){ chk(await sb.from('feriados').delete().eq('conta',CONTA));
-      if(v.length) chk(await sb.from('feriados').upsert(v.map(f=>({conta:CONTA,data:f.data,nome:f.nome,tipo:f.tipo,dados:f})),{onConflict:'conta,data,nome'})); }
-    else chk(await sb.from('dados').upsert({conta:CONTA,chave:k,valor:v,atualizado_em:new Date().toISOString()},{onConflict:'conta,chave'}));
-    if(['empregador','feriados'].includes(k))await cacheEstavelInvalidar(CONTA,k);
-    NUVEM_OK=true;
-  }catch(e){ NUVEM_OK=false; console.warn('Falha ao sincronizar com a nuvem:',k,e); }
-}
-/* Fila de batidas pendentes: sobe tudo quando houver internet */
-let SINC=false;
-async function sincronizarPendentes(){
-  if(!sb||!CONTA||SINC) return 0;
-  SINC=true;
-  try{
-    const filaB=await filaListar(), lsN=pendentesLS(), mapa=new Map();
-    if(lsN.length){const s=new Set(lsN);get('batidas',[]).filter(b=>s.has(b.nsr)).forEach(b=>mapa.set(b.nsr,b));}
-    filaB.forEach(b=>mapa.set(b.nsr,b));
-    if(!mapa.size) return 0;
-    const rows=[...mapa.values()].map(linhaPonto), enviados=[...mapa.keys()];
-    for(let i=0;i<rows.length;i+=500) chk(await sb.from('pontos').upsert(rows.slice(i,i+500),{onConflict:'email_dono,nsr'}));
-    await filaRemover(enviados); salvaPendentes(pendentesLS().filter(n=>!enviados.includes(n))); NUVEM_OK=true; return rows.length;
-  }catch(e){ NUVEM_OK=false; return 0; }
-  finally{ SINC=false; if(typeof atualizaStatus==='function') atualizaStatus(); }
-}
-function filaPonto(nsr){const b=get('batidas',[]).find(x=>x.nsr===nsr);(b?filaAdd(b):Promise.resolve(salvaPendentes([...pendentesLS(),nsr]))).then(sincronizarPendentes);}
+const DATA_NUCLEO=PontoProOperacional.obter('data.nucleo').criar({
+  sb,localStorage,indexedDB:typeof indexedDB==='undefined'?null:indexedDB,
+  getConta:()=>CONTA,getShareData:()=>SHARE_DATA,
+  getCarregando:()=>CARREGANDO,setCarregando:v=>{CARREGANDO=v;},
+  setNuvemOk:v=>{NUVEM_OK=v;},getNuvemDesde:()=>NUVEM_DESDE,setNuvemDesde:v=>{NUVEM_DESDE=v;},
+  hojeISO:()=>hojeISO(),addDias:(d,n)=>addDias(d,n),
+  atualizaStatus:()=>{if(typeof atualizaStatus==='function')atualizaStatus();},
+  logsSessao:()=>LOGS_SESSAO,log:mensagem=>log(mensagem)
+});
+const IDB=DATA_NUCLEO.IDB,IDB_PRONTO=DATA_NUCLEO.IDB_PRONTO;
+const CACHE_SESSAO=DATA_NUCLEO.CACHE_SESSAO,CACHE_ESTAVEL_MS=DATA_NUCLEO.CACHE_ESTAVEL_MS,CACHE_LEITURAS=DATA_NUCLEO.CACHE_LEITURAS,CACHE_VERSOES=DATA_NUCLEO.CACHE_VERSOES;
+const chk=DATA_NUCLEO.chk,linhaFunc=DATA_NUCLEO.linhaFunc,linhaPonto=DATA_NUCLEO.linhaPonto;
+function idbAbrir(){return DATA_NUCLEO.idbAbrir();}
+function idbTx(modo,fn){return DATA_NUCLEO.idbTx(modo,fn);}
+function cacheEstavelTx(modo,fn){return DATA_NUCLEO.cacheEstavelTx(modo,fn);}
+function cacheEstavelInvalidar(conta,chave){return DATA_NUCLEO.cacheEstavelInvalidar(conta,chave);}
+function lerEstavel(conta,chave,consultar,forcar=false){return DATA_NUCLEO.lerEstavel(conta,chave,consultar,forcar);}
+function filaListar(){return DATA_NUCLEO.filaListar();}
+function filaAdd(b){return DATA_NUCLEO.filaAdd(b);}
+function filaRemover(nsrs){return DATA_NUCLEO.filaRemover(nsrs);}
+const pendentesLS=()=>DATA_NUCLEO.pendentesLS();
+const pendentes=()=>DATA_NUCLEO.pendentes();
+const salvaPendentes=l=>DATA_NUCLEO.salvaPendentes(l);
+function janelaNuvemDesde(){return DATA_NUCLEO.janelaNuvemDesde();}
+function lerPontosNuvem(conta,desde,ate){return DATA_NUCLEO.lerPontosNuvem(conta,desde,ate);}
+function garantirHistorico(dataIni){return DATA_NUCLEO.garantirHistorico(dataIni);}
+function carregarNuvem(forcar=false){return DATA_NUCLEO.carregarNuvem(forcar);}
+function nuvemPush(k,v){return DATA_NUCLEO.nuvemPush(k,v);}
+function nuvemPushAgora(k,v){return DATA_NUCLEO.nuvemPushAgora(k,v);}
+function sincronizarPendentes(){return DATA_NUCLEO.sincronizarPendentes();}
+function filaPonto(nsr){return DATA_NUCLEO.filaPonto(nsr);}
+function migrarTudoSunmiParaSupabase(forcar){return DATA_NUCLEO.migrarTudoSunmiParaSupabase(forcar);}
+const contas=()=>DATA_NUCLEO.contas();
+const salvaContas=c=>DATA_NUCLEO.salvaContas(c);
+
 window.addEventListener('online',async()=>{await sincronizarPendentes();if(CONTA&&!CARREGANDO)await carregarNuvem(true);});
 // Retentativa da fila preservada; não recarrega dados da empresa em standby/quiosque.
 setInterval(()=>{if(CONTA)sincronizarPendentes();},120000);
 async function atualizarDadosNuvem(){await carregarNuvem(true);if(GERENCIADOR&&MODO_GESTOR){await atualizarAvisoSuporte();irAba(ABA);}toast(NUVEM_OK?'Dados atualizados.':'Sem conexão: mantendo dados do aparelho.',2000);}
-
-/* Migração automática: sobe tudo que estava só no aparelho (SUNMI) */
-async function migrarTudoSunmiParaSupabase(forcar){
-  if(!sb||!CONTA) return null;
-  const flag=`${CONTA}_migracao_feita`;
-  if(!forcar&&localStorage.getItem(flag)) return null;
-  const ler=nome=>{const out=[];for(const k of [K(nome),`${CONTA}_${nome}`,`${CONTA}:${nome}`,nome]){try{const v=localStorage.getItem(k);if(v)out.push(JSON.parse(v));}catch(e){}}return out;};
-  const arr=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.values(v):[]);
-  const todos=nome=>ler(nome).flatMap(arr);
-  try{
-    const mf=new Map(); todos('funcionarios').filter(f=>f&&f.pin).forEach(f=>mf.set(String(f.pin),Object.assign({},f,{pin:String(f.pin),inicioVigenciaBancoHoras:f.inicioVigenciaBancoHoras||f.bancoInicio})));
-    const funcs=[...mf.values()];
-    if(funcs.length) chk(await sb.from('funcionarios').upsert(funcs.map(linhaFunc),{onConflict:'email_dono,pin'}));
-    const mp=new Map();
-    [...todos('batidas'),...todos('pontos'),...todos('pontos_pendentes')].filter(b=>b&&typeof b==='object'&&b.nsr)
-      .forEach(b=>{const n=String(b.nsr).padStart(9,'0');mp.set(n,Object.assign({},b,{nsr:n}));});
-    const rows=[...mp.values()].map(linhaPonto);
-    for(let i=0;i<rows.length;i+=500) chk(await sb.from('pontos').upsert(rows.slice(i,i+500),{onConflict:'email_dono,nsr'}));
-    const ml=new Map();
-    [...todos('logs'),...todos('historico'),...todos('historico_acoes')].filter(x=>x&&(x.acao||x.texto))
-      .forEach(x=>{const o={email_dono:CONTA,quando:String(x.quando||x.data||new Date().toISOString()),por:x.por||x.gerenciador||'Sistema',acao:x.acao||x.texto};ml.set(o.quando+'|'+o.acao,o);});
-    const lgs=[...ml.values()];
-    for(let i=0;i<lgs.length;i+=500) chk(await sb.from('logs').upsert(lgs.slice(i,i+500),{onConflict:'email_dono,quando,acao',ignoreDuplicates:true}));
-    const escRows=[];
-    [...ler('escalas'),...ler('escala')].forEach(v=>{
-      if(Array.isArray(v)) v.forEach(e=>e&&e.semanaInicio&&escRows.push({email_dono:CONTA,semana:e.semanaInicio,dados:e}));
-      else if(v&&typeof v==='object') Object.entries(v).forEach(([s,e])=>e&&typeof e==='object'&&escRows.push({email_dono:CONTA,semana:e.semanaInicio||s,dados:e}));});
-    if(escRows.length) chk(await sb.from('escala').upsert(escRows,{onConflict:'email_dono,semana'}));
-    const emp=ler('empregador')[0]; if(emp&&typeof emp==='object') chk(await sb.from('empregador').upsert({email_dono:CONTA,dados:emp},{onConflict:'email_dono'}));
-    // Sobre é global em app_config; dados legados da empresa não substituem essa fonte.
-    localStorage.setItem(flag,new Date().toISOString());
-    const msg=`Migração: ${funcs.length} func, ${rows.length} batidas, ${lgs.length} logs`;
-    if(forcar) log(msg);
-    return msg;
-  }catch(e){ console.warn('Migração falhou',e); return 'Migração falhou: '+(e.message||e); }
-}
-
-const contas    = () => { try{ return JSON.parse(localStorage.getItem('vip:contas')||'[]'); }catch(e){ return []; } };
-const salvaContas = c => localStorage.setItem('vip:contas',JSON.stringify(c));
 
 /* ---------- log de auditoria ---------- */
 let GERENCIADOR = null;                              // gerenciador autenticado na sessão
@@ -3004,7 +2871,7 @@ PontoProOperacional.obter('boot.contexto').ligar({
   escalas:()=>get('escalas',{}),
   feriados:()=>get('feriados',[]),
   ocorrencias:()=>get('ocorrencias',[]),
-  sincronizacao:()=>({online:NUVEM_OK,carregando:CARREGANDO,enviando:SINC,historicoDesde:NUVEM_DESDE}),
+  sincronizacao:()=>({online:NUVEM_OK,carregando:CARREGANDO,enviando:DATA_NUCLEO.sincronizando,historicoDesde:NUVEM_DESDE}),
 });
 (async function boot(){
   localStorage.removeItem('vip:sessao');

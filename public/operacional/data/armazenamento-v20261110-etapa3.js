@@ -27,5 +27,7 @@
   const salvaContas=c=>S.localStorage.setItem('vip:contas',JSON.stringify(c));
   return {CACHE_SESSAO,K,get,set,chk,contas,salvaContas};
 
+  }
+
   namespace.definir('data.armazenamento', Object.freeze({ criar }));
 })(window.PontoProOperacional);
