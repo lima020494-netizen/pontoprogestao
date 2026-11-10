@@ -91,7 +91,7 @@ test('baseline queue: concurrent retries cannot send the same pending batch twic
     h.batches.push(rows);
     return new Promise(resolve => { release = resolve; });
   } }) };
-  const pair = runInNewContext(source + `;(async()=>{
+  const pair = await runInNewContext(source + `;(async()=>{
     const first=sincronizarPendentes();
     const second=sincronizarPendentes();
     return {first,second};
