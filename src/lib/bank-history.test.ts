@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runWithDomain as runInNewContext } from './operational-domain-harness.ts';
 
 const html=readFileSync('public/vip-ponto.html','utf8');
 const slice=(a:string,b:string)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a)));
@@ -15,7 +15,7 @@ function calculate(start='2026-10-03',excluded=false){
  const data:Record<string,unknown>={batidas:punches,funcionarios:[f],empregador:{hEntrada:'08:30',fatorBancoDomFeriado:1},feriados:[],escalas:{},ocorrencias:[{pin:'1',data:'2026-10-01',tipo:'Folga compensatória'},{pin:'1',data:'2026-10-02',tipo:'Folga compensatória'}]};
  const original=JSON.stringify(punches);
  const ctx={...helpers,get:(k:string,fallback:unknown)=>data[k]??fallback,funcPorPin:()=>f,horarioEscala:()=>null};
- const result=runInNewContext(slice('function instanteBatida','function jornadaAtualISO')+slice('const feriadoDe =','/* ============================== MÓDULO 3')+`;dadosFolha('1','2026-10-01','2026-10-03')`,ctx);
+ const result=runInNewContext(`;dadosFolha('1','2026-10-01','2026-10-03')`,ctx);
  assert.equal(JSON.stringify(punches),original,'raw types, timestamps and NSRs are never rewritten');
  return result;
 }

@@ -1,10 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runWithDomain as runInNewContext } from './operational-domain-harness.ts';
 
-const html = readFileSync('public/vip-ponto.html', 'utf8');
-const source = html.slice(html.indexOf('function resumoMensalFolha('), html.indexOf('const gerarFolhaMTE='));
+const source = '';
 const data = {
   linhas: [{ previsto: 480, noturno: 60 }, { previsto: 480, noturno: 90 }, { previsto: 0, noturno: 0 }],
   tot: { trabalhado: 1020, extras: 180, faltas: 1, faltantes: 120 },

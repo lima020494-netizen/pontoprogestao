@@ -1,19 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { runInNewContext } from "node:vm";
+import { runWithDomain } from './operational-domain-harness.ts';
 
 process.env["TZ"] = "America/Sao_Paulo";
 
 function jornada(rows: [string, string, string, string][], dia: string, explicit=false, early=false) {
-  const source = readFileSync("public/vip-ponto.html", "utf8");
-  const start = source.indexOf("function instanteBatida");
-  const end = source.indexOf("\n", source.indexOf("function batidasJornada"));
   const batidas = rows.map(([data, hora, nsr, criadoEm]) => ({ pin: "1", data, hora, nsr, criadoEm, jornada:explicit?data:undefined }));
-  const helpers = `const pad=n=>String(n).padStart(2,'0');const isoOf=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
-const hhmm=d=>pad(d.getHours())+':'+pad(d.getMinutes());const toMin=h=>{if(!h)return 0;const [a,b]=h.split(':').map(Number);return a*60+(b||0);};
-const addDias=(iso,n)=>{const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return isoOf(d);};const horarioEscala=()=>${early?'"00:00"':'null'};const get=()=>batidas;`;
-  return runInNewContext(`${helpers}${source.slice(start, end)}; batidasJornada('1', '${dia}').map(b=>b.hora)`, { batidas }) as string[];
+  return runWithDomain(`;batidasJornada('1', '${dia}').map(b=>b.hora)`, {
+    get: () => batidas,
+    horarioEscala: () => early ? '00:00' : null,
+  }) as string[];
 }
 
 test("legacy after-midnight exit stored with the shift date stays last, in punch order", () => {
