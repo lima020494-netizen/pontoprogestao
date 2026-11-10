@@ -34,7 +34,7 @@ test('baseline egress: first cloud load reads seven resources, cached reload fiv
   } };
   const context: Record<string, any> = {
     CONTA: 'empresa-ficticia@example.invalid', CARREGANDO: false, NUVEM_OK: false,
-    sb, hojeISO: () => '2026-11-10', addDias,
+    stored, sb, hojeISO: () => '2026-11-10', addDias,
     sincronizarPendentes: async () => { queueSyncs++; },
     get: (k: string, fallback: unknown) => localData[k] ?? fallback,
     set: (k: string, value: unknown) => { localData[k] = value; },
