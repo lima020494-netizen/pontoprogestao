@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runWithDomain as runInNewContext } from './operational-domain-harness.ts';
 
 const html=readFileSync('public/vip-ponto.html','utf8');
-const classification=html.slice(html.indexOf('function classificacaoTratamento('),html.indexOf('function subBatidas('));
-const rules=html.slice(html.indexOf('const GRUPOS_OCORRENCIAS='),html.indexOf('function trabalhoApuradoDia('));
+const classification='';
+const rules='';
 const prepare=html.slice(html.indexOf('function validarAuditoriaTratamento('),html.indexOf('async function salvarOcorrencia('));
 const addDias=(d:string,n:number)=>new Date(Date.parse(d)+n*86400000).toISOString().slice(0,10);
 function classify(day:string,prev=480,worked=0,count=0,oc?:Record<string,unknown>){

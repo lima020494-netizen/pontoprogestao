@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runWithDomain as runInNewContext } from './operational-domain-harness.ts';
 
 const html = readFileSync('public/vip-ponto.html', 'utf8');
 const slice = (start: string, end: string) => html.slice(html.indexOf(start), html.indexOf(end, html.indexOf(start)));
@@ -11,8 +11,7 @@ function manual(hora='00:20', tipo='Saída', previous=true, authorize='Gestor', 
   fields['ib-anterior']={value:'',checked:previous};
   const logs:string[]=[], errors:string[]=[];
   const ctx={rows,TIPOS:['Entrada','Saída Intervalo','Entrada Intervalo','Saída'],$: (id:string)=>fields[id], get:(key:string)=>key==='batidas'?rows:0,set:(_:string,v:Record<string,unknown>[])=>{rows.splice(0,rows.length,...v)},toMin:(h:string)=>Number(h.slice(0,2))*60+Number(h.slice(3)),addDias:(d:string,n:number)=>new Date(Date.parse(d)+n*86400000).toISOString().slice(0,10),horarioEscala:()=>null,funcPorPin:()=>({nome:'Teste',cpf:'000'}),proximoNSR:()=> '5',filaPonto:()=>{},log:(s:string)=>logs.push(s),alert:(s:string)=>errors.push(s),toast:(s:string)=>errors.push(s),GERENCIADOR:{nome:'Gestor'},brOf:(s:string)=>s,fecharModal:()=>{},window:{},subBatidas:()=>{}};
-  runInNewContext(slice('function instanteBatida','function jornadaAtualISO')+slice('function reordenarJornada','/* Pares de batidas')+slice('function salvarBatidaManual','function lancarOcorrencia'),ctx);
-  runInNewContext('salvarBatidaManual()',ctx);
+  runInNewContext(slice('function reordenarJornada','function miniResumoFolha')+slice('function salvarBatidaManual','function lancarOcorrencia')+';salvarBatidaManual()',ctx);
   return {rows,logs,errors,ctx};
 }
 test('00:20 manual exit closes October 31 16:00 shift and preserves November 1 civil date',()=>{

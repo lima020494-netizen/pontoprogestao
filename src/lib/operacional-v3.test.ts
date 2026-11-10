@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runWithDomain as runInNewContext } from './operational-domain-harness.ts';
 const html=readFileSync('public/vip-ponto.html','utf8');
-const source=html.slice(html.indexOf('const feriadoDe ='),html.indexOf('/* ============================== MÓDULO 3'));
+const source='';
 function env(tipo='',company:Record<string,unknown>={},day='2026-10-13',hours:string[]=[],rest=false){
  const f={pin:'1',status:'Ativo',escala:'6x1',admissao:day},ocorrencias=tipo?[{pin:'1',data:day,tipo}]:[];
  const data:Record<string,unknown>={ocorrencias,empregador:company,feriados:company['holiday']?[{data:day,nome:'Feriado'}]:[],escalas:rest?{a:{semanaInicio:day,semanaFim:day,folgas:[{pin:'1',dia:day,tipo:'DSR'}]}}:{}};

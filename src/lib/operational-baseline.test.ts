@@ -1,12 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runWithDomain as runInNewContext } from './operational-domain-harness.ts';
 
 const html = readFileSync('public/vip-ponto.html', 'utf8');
-const slice = (a: string, b: string) => html.slice(html.indexOf(a), html.indexOf(b, html.indexOf(a)));
-const journeySource = slice('function instanteBatida', 'function jornadaAtualISO');
-const domainSource = slice('const feriadoDe =', '/* ============================== MÓDULO 3');
+const journeySource = '';
+const domainSource = '';
 const addDias = (d: string, n: number) => new Date(Date.parse(d + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 const format = (n: number) => `${String(Math.floor(Math.abs(n) / 60)).padStart(2, '0')}:${String(Math.abs(n) % 60).padStart(2, '0')}`;
 const helpers = {

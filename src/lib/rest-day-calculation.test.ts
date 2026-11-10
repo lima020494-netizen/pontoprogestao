@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runWithDomain as runInNewContext } from './operational-domain-harness.ts';
 
 const html = readFileSync('public/vip-ponto.html', 'utf8');
-const source = html.slice(html.indexOf('const feriadoDe ='), html.indexOf('/* ============================== MÓDULO 3'));
+const source = '';
 const employee = { pin: '1', nome: 'Teste', status: 'Ativo', escala: '5x2', admissao: '2026-10-01', bancoInicio: '2026-10-01' };
 function calculate(day: string, options: { holiday?: boolean; rest?: string; hours?: [string, string]; shift?: string } = {}) {
   const punches = options.hours?.map((hora, i) => ({ pin: '1', data: day, hora, tipo: i ? 'Saída' : 'Entrada', nsr: String(i + 1), criadoEm: `${day}T${hora}:00` })) || [];
@@ -66,8 +66,7 @@ test('ordinary missing work is a wage deduction, never a bank debit', () => {
   assert.equal(d.tot.faltantes, 480); // horas da falta para desconto salarial, fora do banco
 });
 test('multiple explicit rest days do not imply compensatory debit', () => {
-  const start = html.indexOf('function calcBanco('), end = html.indexOf('/* ============================== MÓDULO 3');
-  const result = runInNewContext(`${html.slice(start, end)};calcBanco('1','2026-10-13','2026-10-19')`, {
+  const result = runInNewContext(`;calcBanco('1','2026-10-13','2026-10-19')`, {
     funcPorPin: () => ({ ...employee, bancoInicio: '2026-10-13' }),
     batidasDia: () => [], previstoDia: () => 0, trabalhadoDia: () => 0,
     movimentoBancoDia: () => ({ saldo: 0, abonado: false, compensacao: false }),trabalhoApuradoDia:()=>0,atrasoDia:()=>0,

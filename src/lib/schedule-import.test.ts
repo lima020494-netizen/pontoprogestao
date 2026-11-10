@@ -2,21 +2,19 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { createDomainContext } from './operational-domain-harness.ts';
 
 const html = readFileSync(new URL('../../public/vip-ponto.html', import.meta.url), 'utf8');
-const types = html.match(/const TIPOS_ESC=\[[^;]+;/);
-assert.ok(types);
-const start = html.indexOf('function lerCelulaEscala(');
+const start = html.indexOf('function previewImport(');
 const end = html.indexOf('function mostrarImport(', start);
 assert.ok(start >= 0 && end > start);
 let result: { items: Array<{ tipo: string }>; errors: string[] };
-const ctx = vm.createContext({
-  pad: (v: string) => String(v).padStart(2, '0'),
+const ctx = vm.createContext(createDomainContext({
   normData: (v: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? String(v) : '',
   get: () => [{ pin: '1234', nome: 'Teste' }],
   mostrarImport: (items: Array<{ tipo: string }>, errors: string[]) => { result = { items, errors }; },
-});
-vm.runInContext(types[0] + html.slice(start, end), ctx);
+}));
+vm.runInContext(html.slice(start, end), ctx);
 
 for (const [input, expected] of [
   ['DSR', 'DSR'], ['Trabalhado', 'Trabalhado'],

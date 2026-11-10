@@ -1,10 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runWithDomain as runInNewContext } from './operational-domain-harness.ts';
 
-const html=readFileSync('public/vip-ponto.html','utf8');
-const source=html.slice(html.indexOf('const feriadoDe ='),html.indexOf('/* ============================== MÓDULO 3'));
+const source='';
 function calculate(tipo:string,hours?:[string,string],previous=false,rest=false){
   const day='2026-10-13',f={pin:'1',status:'Ativo',escala:'5x2',admissao:day};
   const punches=(hours||[]).map((hora,i)=>({pin:'1',data:day,hora,tipo:i?'Saída':'Entrada',nsr:String(i+1),criadoEm:`${day}T${hora}:00`}));
