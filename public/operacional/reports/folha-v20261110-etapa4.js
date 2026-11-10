@@ -9,8 +9,8 @@ function miniResumoFolha(d){
     [['Horas Extras 50%',S.toHHMM(d.tot.extras50||0)],['Horas Extras 100%',S.toHHMM(d.tot.extras100||0)],['Faltas',r[3][1]]],
     [['Saldo Anterior',S.toSaldo(d.banco.anterior)],['Saldo do Mês',r[5][1]],['Saldo Acumulado',S.toSaldo(d.banco.atual)]]];
 }
-const FOLHA_RODAPE('Ponto Pro Gestão v1.0 · Sistema de Tratamento de Ponto · Emissão conforme Portaria MTE nº 671/2021';
-const FOLHA_CIENCIA('Declaro ciência das marcações e dos tratamentos apresentados neste espelho de ponto.';
+const FOLHA_RODAPE='Ponto Pro Gestão v1.0 · Sistema de Tratamento de Ponto · Emissão conforme Portaria MTE nº 671/2021';
+const FOLHA_CIENCIA='Declaro ciência das marcações e dos tratamentos apresentados neste espelho de ponto.';
 function modeloEspelho(d){
   const head=['Dia','E1','S1','E2','S2','Prevista','Trabalhadas','Extras','Faltas','Saldo','Ocorrência'];
   const notas=[],porDia={},curto=t=>String(t||'').replace(/\s*-\s*Autorizado por:.*$/i,'').replace(/^\s*Motivo:\s*/i,'').replace(/\s+/g,' ').trim();
@@ -47,10 +47,10 @@ function totaisCartaoFolha(d){
 }
 function corCelulaFolha(col,value){if(col===7)return 'sheet-credit';if(col===8)return 'sheet-debit';if(col===9)return /^-/.test(value)?'sheet-debit':/^\+/.test(value)?'sheet-credit':'';if(col===10){if(/AFASTADO|AFASTAMENTO|MATERNIDADE/.test(value))return 'sheet-away';if(/FALTA/.test(value)&&!/JUSTIFICADA|ABONADA/.test(value)||/SUSPENSÃO/.test(value))return 'sheet-debit';if(/DSR|FOLGA/.test(value))return 'sheet-rest';if(/ATESTADO|AFASTAMENTO/.test(value))return 'sheet-credit';}return '';}
 function bancoCartaoFolha(d){return [['Crédito',S.toHHMM(d.banco.creditos),'sheet-credit'],['Débito',S.toHHMM(d.banco.debitos),'sheet-debit'],['Saldo do Mês',S.toSaldo(d.banco.creditos-d.banco.debitos),d.banco.creditos-d.banco.debitos<0?'sheet-debit':'sheet-credit'],['Saldo Acumulado',S.toSaldo(d.banco.atual),d.banco.atual<0?'sheet-debit':'sheet-credit']];}
-const gerarFolhaMTE((pin,ini,fim)=>S.dadosFolha(pin,ini,fim); // consulta S.buscaNaEscala() em cada dia
+const gerarFolhaMTE=(pin,ini,fim)=>S.dadosFolha(pin,ini,fim); // consulta S.buscaNaEscala() em cada dia
 
-const LEGENDA('FALTA = dia sem batida e sem folga/feriado | FOLGA = folga prevista em escala | FERIADO = feriado cadastrado | _ = batida tratada/movida com motivo obrigatório | *N = hora noturna reduzida 22h-05h (Art. 73 CLT)';
-const preLegenda(f=>f&&f.intervalo&&f.intervalo.preAssinalado?`Intervalo pré-assinalado ${f.intervalo.inicio||'12:00'}-${f.intervalo.fim||'13:00'} - Art. 71`:'';
+const LEGENDA='FALTA = dia sem batida e sem folga/feriado | FOLGA = folga prevista em escala | FERIADO = feriado cadastrado | _ = batida tratada/movida com motivo obrigatório | *N = hora noturna reduzida 22h-05h (Art. 73 CLT)';
+const preLegenda=f=>f&&f.intervalo&&f.intervalo.preAssinalado?`Intervalo pré-assinalado ${f.intervalo.inicio||'12:00'}-${f.intervalo.fim||'13:00'} - Art. 71`:'';
 
 function cabecalhoFolhaHTML(f,ini,fim){
   const e=S.get('empregador',{})||{};

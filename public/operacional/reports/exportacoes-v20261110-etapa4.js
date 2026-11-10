@@ -169,7 +169,7 @@ async function loteXML(){
 }
 
 
-const MANUAL([
+const MANUAL=[
  ['1. Primeiro acesso','Crie sua conta. Os limites são definidos pelo plano ativo. A senha precisa de 8 caracteres com maiúscula, minúscula, número e símbolo (!@#$%&_). Depois preencha o cadastro do Empregador: CNPJ/CPF, razão social, nome fantasia, endereço, horário padrão e logo. Cadastre gerenciadores até o limite contratado, cada um com PIN próprio.'],
  ['2. Bater o ponto','Na tela inicial o empregado digita o PIN de 4 números. Cada número aparece por 1 segundo e vira bolinha. O nome e as batidas do dia aparecem; toque em ✓ REGISTRAR. O sistema usa a hora oficial do servidor (🟢 NTP OK), gera o NSR e imprime o comprovante. Depois de 2 segundos a confirmação desaparece e a tela fica livre.'],
  ['3. Comprovante','A cada batida o comprovante fica disponível. A impressão depende da impressora integrada do terminal (POS), do serviço de impressão direta, de uma impressora Bluetooth BLE compatível ou da opção do navegador. O envio não comprova a saída física do papel. Se não imprimir, toque na batida no histórico para reimprimir ou enviar por e-mail.'],
@@ -192,10 +192,10 @@ async function manualPDF(){
   S.pdfRodapesPadrao(doc,S.getConta()||'Manual público');doc.save('Manual_Ponto_Pro_Gestao.pdf');
 }
 
-const MESES(['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 
-const EMAIL_SERVICO_ATIVO(false;
+const EMAIL_SERVICO_ATIVO=false;
 async function enviarArquivoPorEmail({para,assunto,nome,blob,mime,base64}){
   if(S.EMAIL_SERVICO_ATIVO&&S.getSb()){
     try{const {error}=await S.getSb().functions.invoke('send-pdf',{body:{to:para,subject:assunto,filename:nome,pdf_base64:base64}});
@@ -232,7 +232,7 @@ async function pdfPins(){
 }
 
 
-const csvDe((lista,cols)=>'\uFEFF'+cols.join(';')+'\n'+lista.map(o=>cols.map(c=>String(o[c]??'').replace(/[;\r\n]/g,' ')).join(';')).join('\n');
+const csvDe=(lista,cols)=>'\uFEFF'+cols.join(';')+'\n'+lista.map(o=>cols.map(c=>String(o[c]??'').replace(/[;\r\n]/g,' ')).join(';')).join('\n');
 async function enviarBackupPorEmail(para){
   await S.garantirLib('zip');
   const zip=new JSZip();
