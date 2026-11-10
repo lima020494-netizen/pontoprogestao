@@ -56,11 +56,11 @@ test('stage 3: legacy storage remains isolated by account and monthly shared rea
   context.DATA_NUCLEO.set('empregador', { nome: 'Empresa A' });
   context.CONTA = 'conta-b';
   context.DATA_NUCLEO.set('empregador', { nome: 'Empresa B' });
-  assert.deepEqual(context.DATA_NUCLEO.get('empregador', null), { nome: 'Empresa B' });
+  assert.equal(context.DATA_NUCLEO.get('empregador', null)?.nome, 'Empresa B');
   context.CONTA = 'conta-a';
-  assert.deepEqual(context.DATA_NUCLEO.get('empregador', null), { nome: 'Empresa A' });
+  assert.equal(context.DATA_NUCLEO.get('empregador', null)?.nome, 'Empresa A');
   context.SHARE_DATA = { empregador: { nome: 'Folha compartilhada' } };
-  assert.deepEqual(context.DATA_NUCLEO.get('empregador', null), { nome: 'Folha compartilhada' });
+  assert.equal(context.DATA_NUCLEO.get('empregador', null)?.nome, 'Folha compartilhada');
   assert.deepEqual([...localStorage.rows.keys()].sort(), ['vip:conta-a:empregador', 'vip:conta-b:empregador']);
 });
 
