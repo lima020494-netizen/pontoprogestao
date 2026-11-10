@@ -66,7 +66,7 @@ test('stage 2: real shared modules reproduce every mixed-month baseline total wi
     ocorrencias: [{ pin: '1', data: '2026-10-05', tipo: 'Folga compensatória' }, { pin: '1', data: '2026-10-06', tipo: 'Atestado médico' }],
   };
   const original = JSON.stringify(punches);
-  const context = createDomainContext({ get: (key: string, fallback: unknown) => data[key] ?? fallback, funcPorPin: () => f });
+  const context: any = createDomainContext({ get: (key: string, fallback: unknown) => data[key] ?? fallback, funcPorPin: () => f });
   const sheet = context.dadosFolha('1', '2026-10-01', '2026-10-08');
   assert.equal(sheet.linhas.reduce((n: number, l: any) => n + l.previsto, 0), 2640);
   assert.equal(sheet.tot.trabalhado, 1920);
@@ -90,7 +90,7 @@ test('stage 2: real shared modules reproduce every mixed-month baseline total wi
 });
 
 test('stage 2: schedule aliases and occurrence catalog retain all approved options and rules', () => {
-  const context = createDomainContext({ get: (key: string, fallback: unknown) => key === 'empregador' ? { empresaCidada: true } : fallback });
+  const context: any = createDomainContext({ get: (key: string, fallback: unknown) => key === 'empregador' ? { empresaCidada: true } : fallback });
   for (const alias of ['Folga Compensada', 'Folga Domingo', 'folga Compensanda', ' Folga   compensatória ', 'FOLGA']) {
     assert.equal(context.lerCelulaEscala(alias).tipo, 'Folga Compensada');
   }
@@ -105,7 +105,7 @@ test('stage 2: schedule aliases and occurrence catalog retain all approved optio
 
 test('stage 2: treatment priorities and bank occurrence rules remain concrete', () => {
   const data: Record<string, any> = { empregador: {}, ocorrencias: [] };
-  const context = createDomainContext({ get: (key: string, fallback: unknown) => data[key] ?? fallback });
+  const context: any = createDomainContext({ get: (key: string, fallback: unknown) => data[key] ?? fallback });
   const interval = context.classificacaoTratamento({ data: '2026-11-01', previsto: 480, trabalhado: 480 }, null, [{}, {}], '2026-11-02');
   assert.equal(interval.titulo, 'Intervalo não registrado');
   assert.equal(interval.cor, 'orange');
