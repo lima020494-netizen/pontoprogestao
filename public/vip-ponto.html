@@ -1992,166 +1992,9 @@ function inicioSemana(iso){
   const base=get('config',{inicioSemana:1}).inicioSemana??1;
   const d=new Date(iso+'T12:00:00'); const diff=(d.getDay()-base+7)%7; d.setDate(d.getDate()-diff); return isoOf(d);
 }
-function folgaEscala(pin,iso){
-  const e=escalaDaSemana(iso,pin); if(!e) return null;
-  const f=(e.folgas||[]).find(x=>x.pin===pin&&x.dia===iso);
-  return f&&f.tipo!=='Trabalhado'?f:null;
-}
-function horarioEscala(pin,iso){
-  const e=escalaDaSemana(iso,pin); if(!e) return null;
-  const f=(e.folgas||[]).find(x=>x.pin===pin&&x.dia===iso);
-  return f&&f.tipo==='Trabalhado'?(f.horarioEntrada||null):null;
-}
-function previstoDia(f,iso){
-  if(f.status==='Desligado'&&iso>f.dataDesligamento) return 0;
-  if(iso<f.admissao) return 0;
-  if(f.status==='Férias'&&iso>=f.feriasIni&&iso<=f.feriasFim) return 0;
-  if(f.status==='Afastamento'&&iso>=f.afastDe&&iso<=f.afastAte) return 0;
-  if(feriadoDe(iso)) return 0;
-  const diaEscala=buscaNaEscala(f.pin,iso);
-  if(diaEscala) return diaEscala.tipo==='Trabalhado'?cargaEscala(f.escala):0;
-  const d=dow(iso);
-  if(f.escala==='5x2'&&(d===0||d===6)) return 0;
-  if(f.escala==='6x1'&&d===0) return 0;
-  if(f.escala==='4x3'&&(d===0||d===6)) return 0;
-  return cargaEscala(f.escala);
-}
-function batidasDia(pin,iso){return batidasJornada(pin,iso);}
 /* Reordena as marcações da jornada por horário e reclassifica E1/S1/E2/S2 sem gerar logs em cascata. */
 function reordenarJornada(pin,iso){const all=get('batidas',[]),bs=all.filter(b=>!b.excluida&&b.pin===pin&&jornadaDe(b)===iso).sort(ordemJornada),mud=[];
   bs.forEach((b,i)=>{const t=b.fonte==='MANUAL'&&b.jornadaManual&&TIPOS.includes(b.tipoManual)?b.tipoManual:TIPOS[i]||b.tipo;if(b.tipo!==t){b.tipo=t;mud.push(b.nsr);}});if(mud.length){set('batidas',all);mud.forEach(n=>filaPonto(n));}}
-/* Pares de batidas (máx. 4: Entrada | Intervalo Saída | Intervalo Volta | Saída) */
-function paresBatidas(bs){
-  const g=tp=>bs.filter(b=>b.tipo===tp)[0];
-  const e1=g('Entrada'),s1=g('Saída Intervalo'),e2=g('Entrada Intervalo'),s2=g('Saída');
-  if(e1&&s1&&e2&&s2) return [[e1.hora,s1.hora],[e2.hora,s2.hora]];
-  const fim=s2||s1; return e1&&fim?[[e1.hora,fim.hora]]:[];
-}
-const difMin=(a,b)=>{let d=toMin(b)-toMin(a);if(d<0)d+=1440;return d;}; // virada noturna
-function minutosTrabalhados(bs,f){
-  const pares=paresBatidas(bs);
-  let t=pares.reduce((s,[a,b])=>s+difMin(a,b),0);
-  // Intervalo pré-assinalado (Art. 71 CLT): (Saída − Entrada) − intervalo, sem alerta de falta de intervalo
-  const iv=f&&f.intervalo;
-  if(iv&&iv.preAssinalado&&pares.length===1&&t>0) t=Math.max(0,t-difMin(iv.inicio||'12:00',iv.fim||'13:00'));
-  return t;
-}
-/* Hora noturna reduzida (Art. 73 CLT): 22h–05h, hora de 52m30s (×1,142857) */
-function calculaNoturna(bs,horaFim){
-  let min=0;
-  (typeof bs==='string'?[[bs,horaFim]]:paresBatidas(bs)).forEach(([a,b])=>{let s=toMin(a),e=toMin(b);if(e<s)e+=1440;for(let m=s;m<e;m++){const h=m%1440;if(h>=1320||h<300)min++;}});
-  const reduzida=Math.round(min*1.142857);
-  return {min,reduzida,adicional:reduzida-min};
-}
-const trabalhadoDia=(f,bs)=>minutosTrabalhados(bs,f)+calculaNoturna(bs).adicional;
-const buscaNaEscala=(pin,data)=>{const e=escalaDaSemana(data,pin);return e?((e.folgas||[]).find(x=>x.pin===pin&&x.dia===data)||null):null;};
-/* Shared occurrence rules: no synthetic fiscal punches, wages or eSocial transmission. */
-const GRUPOS_OCORRENCIAS=[
- {nome:'Grupo 1 — Abonam o dia (sem desconto/débito)',itens:[['Atestado médico','Atestado Médico (1 a 15 dias)',15],['Licença Gala','Licença Gala (Casamento) — 3 dias',3],['Licença Nojo','Licença Nojo (Falecimento) — 2 dias',2],['Licença Paternidade','Nascimento Filho / Paternidade — 5 ou 20 dias',5],['Doação de Sangue','Doação de Sangue — 1 dia/ano',1],['Alistamento Eleitoral','Alistamento Eleitoral — 2 dias',2],['Falta Justificada','Falta Justificada pela Empresa',15]]},
- {nome:'Grupo 2 — Afastamentos INSS (início e fim)',itens:[['Afastamento INSS','Afastamento INSS — Auxílio por Incapacidade / Acidente (>15 dias)'],['Licença Maternidade','Licença Maternidade — 120 ou 180 dias']]},
- {nome:'Grupo 3 — Compensações e descansos',itens:[['Folga compensatória','Folga Compensatória (Banco de Horas)'],['Férias','Férias (início e fim)'],['Folga de Feriado/DSR Trabalhado','Folga de Feriado / DSR Trabalhado']]},
- {nome:'Grupo 4 — Ajustes operacionais',itens:[['Trabalho Externo / Viagem','Trabalho Externo / Viagem (jornada prevista)'],['Esquecimento de Marcação','Esquecimento de Marcação'],['Suspensão Disciplinar','Suspensão Disciplinar (desconta dia + DSR)'],['Falta','Falta não justificada']]}
-];
-/* Em massa ficam disponíveis todos os abonos, licenças, compensações e ajustes, incluindo a batida esquecida, que é inserida em cada dia selecionado. */
-function tiposTratamentoLote(){return GRUPOS_OCORRENCIAS.flatMap(g=>g.itens).map(([v])=>v).filter(v=>v!=='Falta');}
-function regraOcorrencia(tipo){
- const t=String(tipo||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
- const afastado=t==='afastamento inss'||t==='licenca maternidade';
- const abonado=afastado||t==='ferias'||t.startsWith('atestado medico')||/^falta (justificada|abonada)(?:\s*\/\s*(?:justificada|abonada))?$/.test(t)||['licenca gala','licenca nojo','licenca paternidade','doacao de sangue','alistamento eleitoral'].includes(t);
- const compensacao=['folga compensatoria','compensacao de banco','folga de feriado/dsr trabalhado'].includes(t);
- return {abonado,afastado,compensacao,falta:t==='falta',externo:t==='trabalho externo / viagem',suspensao:t==='suspensao disciplinar',manual:t==='esquecimento de marcacao',codigo:t==='afastamento inss'?'03':'',etiqueta:t==='afastamento inss'?'AFASTADO INSS - AUXÍLIO DOENÇA':t==='licenca maternidade'?'LICENÇA MATERNIDADE':String(tipo||'').toUpperCase(),pagador:t==='afastamento inss'?'Empresa: primeiros 15 dias; INSS: a partir do 16º, sujeito à concessão':t==='licenca maternidade'?'Empresa / compensação previdenciária conforme enquadramento':abonado?'Empresa / sem desconto':''};
-}
-function ocorrenciaDia(pin,data){return (get('ocorrencias',[])||[]).find(o=>o.pin===pin&&o.data===data);}
-function validarPeriodoOcorrencia(tipo,ini,fim,pin,periodoId){
- if(!/^\d{4}-\d{2}-\d{2}$/.test(ini||'')||!/^\d{4}-\d{2}-\d{2}$/.test(fim||'')||!Number.isFinite(Date.parse(ini))||!Number.isFinite(Date.parse(fim))||ini>fim)return 'Informe início e fim válidos.';
- const dias=Math.round((Date.parse(fim)-Date.parse(ini))/86400000)+1,cidada=!!get('empregador',{}).empresaCidada;
- if(dias>366)return 'O período deve ter até 366 dias.';
- if(tipo==='Afastamento INSS'&&dias<=15)return 'Auxílio INSS exige período superior a 15 dias.';
- if(tipo==='Licença Maternidade'&&dias!==(cidada?180:120))return 'Licença maternidade exige '+(cidada?180:120)+' dias nesta empresa.';
- const item=GRUPOS_OCORRENCIAS.flatMap(g=>g.itens).find(x=>x[0]===tipo),limite=tipo==='Licença Paternidade'&&cidada?20:item?.[2];
- if(limite&&dias>limite)return 'Limite deste motivo: '+limite+' dia(s).';
- if(tipo==='Doação de Sangue'&&(get('ocorrencias',[])||[]).some(o=>o.pin===pin&&o.tipo===tipo&&o.data.slice(0,4)===ini.slice(0,4)&&o.periodoId!==periodoId))return 'Já existe doação de sangue registrada neste ano.';
- return '';
-}
-function trabalhoApuradoDia(f,data,bs){return regraOcorrencia(ocorrenciaDia(f.pin,data)?.tipo).externo?Math.max(440,trabalhadoDia(f,bs)):trabalhadoDia(f,bs);}
-function descontoDsrDia(pin,data,prev){
- if(prev!==0)return 0;
- const f=funcPorPin(pin)||{},diaEscala=buscaNaEscala(pin,data),e=get('empregador',{})||{},dsr=diaEscala?/DSR|DOMINGO/i.test(diaEscala.tipo):dow(data)===0&&(e.dsr==='Sim'||f.escala==='6x1');
- if(!dsr)return 0;
- const ini=addDias(data,-6);return (get('ocorrencias',[])||[]).some(o=>o.pin===pin&&o.data>=ini&&o.data<=data&&regraOcorrencia(o.tipo).suspensao)?cargaEscala(f.escala):0;
-}
-/* Atraso de entrada: métrica operacional exclusiva do Dashboard. Nunca debita banco nem aparece na folha. */
-function atrasoDia(pin,data,bs,prev){
- if(!(prev>0)||!bs.length)return 0;
- const ent=bs.filter(b=>b.tipo==='Entrada')[0];if(!ent)return 0;
- const inicio=horarioEscala(pin,data)||(get('empregador',{})||{}).hEntrada||'08:00';
- let at=toMin(ent.hora)-toMin(inicio);if(at<-720)at+=1440;else if(at>720)at-=1440;
- return at>10?at:0;
-}
-function movimentoBancoDia(pin,data,prev,trab,atraso=0){
- const oc=ocorrenciaDia(pin,data),regra=regraOcorrencia(oc?.tipo),e=get('empregador',{})||{};
- const fator=Number(e.fatorBancoDomFeriado)===1?1:2,multiplica=trab>0&&(!!feriadoDe(data)||dow(data)===0);
- // Falta injustificada (lançada ou dia previsto sem batida): desconto salarial na folha/holerite, saldo neutro no banco.
- const falta=regra.falta||(trab===0&&prev>0&&!oc?.tipo);
- const credito=(multiplica?Math.round(trab*fator):trab)-prev;
- // O banco só debita saída antecipada/expediente parcial não abonado — nunca atraso de entrada.
- const deficit=Math.max(0,prev-trab-Math.min(atraso,Math.max(0,prev-trab)));
- const saldo=regra.abonado?Math.max(0,credito):regra.compensacao?-440:regra.externo?0:falta?0:(credito>0?credito:-deficit);
- const faltantes=regra.compensacao||regra.abonado||regra.externo?0:falta?prev:deficit;
- return {...regra,saldo:saldo||0,faltantes};
-}
-/* Linhas da folha + totais + banco de horas */
-function dadosFolha(pin,ini,fim){
-  const f=funcPorPin(pin)||{}; const linhas=[];
-  let tot={faltas:0,faltasJust:0,faltasInj:0,folgas:0,feriados:0,extras:0,extras50:0,extras100:0,faltantes:0,trabalhado:0,atrasos:0};
-  const just=[];
-  for(let d=ini; d<=fim; d=addDias(d,1)){
-    const bs=batidasDia(pin,d), prev=previstoDia(f,d), trab=trabalhoApuradoDia(f,d,bs), noct=calculaNoturna(bs);
-    const atrasoMin=atrasoDia(pin,d,bs,prev); // só Dashboard; folha e banco não exibem nem debitam atraso
-    const movimento=movimentoBancoDia(pin,d,prev,trab,atrasoMin);
-    const fer=feriadoDe(d), folga=folgaEscala(pin,d);
-    let oc='', cls='';
-    const por=b=>b?(b.hora):'';
-    const g=tp=>bs.filter(b=>b.tipo===tp)[0];
-    if(f.status==='Desligado'&&d>f.dataDesligamento){oc='DESLIGADO';cls='t-deslig';}
-    else if(f.status==='Férias'&&d>=f.feriasIni&&d<=f.feriasFim){oc='FÉRIAS';cls='t-ferias';}
-    else if(f.status==='Afastamento'&&d>=f.afastDe&&d<=f.afastAte){oc='AFASTAMENTO';cls='t-afast';just.push(`${brOf(d)} - AFASTAMENTO - ${(f.motivoAfast||'').toUpperCase()}`);}
-    else if(folga){oc=folga.tipo.toUpperCase();cls='t-folga';tot.folgas++;}
-    else if(fer){oc='FERIADO';cls='t-feriado';tot.feriados++;just.push(`${brOf(d)} - FERIADO - ${fer.nome}`);}
-    const ocorr=ocorrenciaDia(pin,d);
-    if(ocorr){ oc=movimento.etiqueta;if(ocorr.motivo){const periodo=ocorr.periodoId?`${brOf(ocorr.inicio)} a ${brOf(ocorr.fim)}`:brOf(d),nota=`${periodo} - ${ocorr.tipo.toUpperCase()} - ${ocorr.motivo}${ocorr.autorizadoPor?' - Autorizado por: '+ocorr.autorizadoPor:''}`;if(!just.includes(nota))just.push(nota);} cls=movimento.afastado?'t-afast':ocorr.tipo==='Falta'||movimento.suspensao?'t-falta':'t-folga';
-      if(ocorr.tipo==='Falta'||movimento.suspensao){tot.faltas++;tot.faltasInj++;}
-      else tot.folgas++;
-    }
-    if(!bs.length&&prev>0&&(!oc||oc==='FERIADO')){oc='FALTA';cls='t-falta';tot.faltas++;tot.faltasInj++;}
-    if(!oc&&!bs.length&&prev===0){oc='FOLGA';cls='t-folga';tot.folgas++;}
-    if(atrasoMin>0)tot.atrasos++;
-    if(bs.length||movimento.externo){
-      tot.trabalhado+=trab;
-      if(prev>0){ if(trab>prev){tot.extras+=trab-prev;tot.extras50+=trab-prev;} }
-      else {tot.extras+=trab;tot.extras100+=trab;} // trabalho em folga/feriado credita
-    }
-    tot.faltantes+=movimento.faltantes;
-    // movimentações/observações de tratamento
-    const mov=bs.filter(b=>b.movimento).map(b=>`_${b.hora} ${b.movimento}`).join(' | ');
-    bs.filter(b=>b.movimento).forEach(b=>just.push(`${brOf(d)} ${b.hora} - ${b.movimento}`));
-    linhas.push({data:d,dia:DIAS[dow(d)],e1:por(g('Entrada')),e2:por(g('Saída Intervalo')),e3:por(g('Entrada Intervalo')),e4:por(g('Saída')),
-      noturno:noct.min,trabalhado:trab,previsto:prev,saldo:d<(f.inicioVigenciaBancoHoras||f.bancoInicio||f.admissao||ini)?0:movimento.saldo,
-      descontoDia:movimento.suspensao?prev:0,descontoDsr:descontoDsrDia(pin,d,prev),
-      atrasoMin,ocorrencia:oc||(f.intervalo?.preAssinalado?'INTERVALO PRÉ-ASSINALADO ART. 71':''),cls,fonte:bs[0]?bs[0].fonte:'—',mov,nsr:bs.map(b=>b.nsr).join(' / ')});
-  }
-  linhas.filter(l=>l.descontoDia||l.descontoDsr).forEach(l=>just.push(`${brOf(l.data)} - Suspensão: desconto dia ${toHHMM(l.descontoDia)}, DSR ${toHHMM(l.descontoDsr)} (minutos para fechamento; não cálculo salarial).`));
-  const banco=calcBanco(pin,ini,fim);
-  return {f,ini,fim,linhas,tot,just,banco};
-}
-function resumoMensalFolha(d){return [
-  ['Horas Previstas no Mês',toHHMM(d.linhas.reduce((n,l)=>n+l.previsto,0))],
-  ['Horas Efetivamente Trabalhadas',toHHMM(d.tot.trabalhado)],
-  ['Total de Horas Extras',toHHMM(d.tot.extras)],
-  ['Total de Faltas / Horas Faltantes',`${d.tot.faltas} falta(s) / ${toHHMM(d.tot.faltantes)}`],
-  ['Adicional Noturno do Período',toHHMM(d.linhas.reduce((n,l)=>n+l.noturno,0))],
-  ['Saldo do Mês (Banco de Horas)',toSaldo(d.banco.creditos-d.banco.debitos)]
-];}
 function miniResumoFolha(d){
   const r=resumoMensalFolha(d);
   return [[['Horas Previstas',r[0][1]],['Horas Realizadas',r[1][1]],['Adicional Noturno',r[4][1]]],
@@ -2197,31 +2040,6 @@ function totaisCartaoFolha(d){
 function corCelulaFolha(col,value){if(col===7)return 'sheet-credit';if(col===8)return 'sheet-debit';if(col===9)return /^-/.test(value)?'sheet-debit':/^\+/.test(value)?'sheet-credit':'';if(col===10){if(/AFASTADO|AFASTAMENTO|MATERNIDADE/.test(value))return 'sheet-away';if(/FALTA/.test(value)&&!/JUSTIFICADA|ABONADA/.test(value)||/SUSPENSÃO/.test(value))return 'sheet-debit';if(/DSR|FOLGA/.test(value))return 'sheet-rest';if(/ATESTADO|AFASTAMENTO/.test(value))return 'sheet-credit';}return '';}
 function bancoCartaoFolha(d){return [['Crédito',toHHMM(d.banco.creditos),'sheet-credit'],['Débito',toHHMM(d.banco.debitos),'sheet-debit'],['Saldo do Mês',toSaldo(d.banco.creditos-d.banco.debitos),d.banco.creditos-d.banco.debitos<0?'sheet-debit':'sheet-credit'],['Saldo Acumulado',toSaldo(d.banco.atual),d.banco.atual<0?'sheet-debit':'sheet-credit']];}
 const gerarFolhaMTE=(pin,ini,fim)=>dadosFolha(pin,ini,fim); // consulta buscaNaEscala() em cada dia
-function calcBanco(pin,ini,fim){
-  const f=funcPorPin(pin)||{};
-  const soma=(de,ate)=>{
-    let cred=0,deb=0,det=[],dias=[];
-    for(let d=de; d<=ate; d=addDias(d,1)){
-      const bs=batidasDia(pin,d),prev=previstoDia(f,d),trab=trabalhoApuradoDia(f,d,bs);
-      const movimento=movimentoBancoDia(pin,d,prev,trab,atrasoDia(pin,d,bs,prev));
-      dias.push({data:d,previsto:prev,trabalhado:trab,saldo:movimento.saldo,ocorrencia:typeof ocorrenciaDia==='function'?ocorrenciaDia(pin,d)?.tipo||'':'',vigente:true});
-      if(movimento.saldo>0){cred+=movimento.saldo;det.push(`Crédito - Hora Extra dia ${brOf(d)} - Previsto ${toHHMM(prev)} / Realizado ${toHHMM(trab)} / Banco ${toHHMM(movimento.saldo)}`);}
-      else if(movimento.saldo<0){deb-=movimento.saldo;det.push(`${movimento.compensacao?'Débito - Folga Compensatória':'Débito - Carga incompleta'} dia ${brOf(d)} - ${toHHMM(-movimento.saldo)}`);}
-    }
-    // Descanso cadastrado não prova compensação: nunca inferir débito por quantidade de folgas.
-    // Créditos usam o fator configurado; banco não representa remuneração salarial.
-    return {cred,deb,det,dias};
-  };
-  const vig=f.inicioVigenciaBancoHoras||f.bancoInicio||f.admissao||ini; // só conta a partir da vigência
-  const ant=vig<ini?soma(vig,addDias(ini,-1)):{cred:0,deb:0,det:[]};
-  const per=vig>fim?{cred:0,deb:0,det:[`Banco de horas vigente a partir de ${brOf(vig)}`]}:soma(vig>ini?vig:ini,fim);
-  const anterior=ant.cred-ant.deb;
-  const dias=[];
-  for(let d=ini;d<=fim&&d<vig;d=addDias(d,1)){const bs=batidasDia(pin,d);dias.push({data:d,previsto:previstoDia(f,d),trabalhado:trabalhoApuradoDia(f,d,bs),saldo:0,ocorrencia:typeof ocorrenciaDia==='function'?ocorrenciaDia(pin,d)?.tipo||'':'',vigente:false});}
-  dias.push(...(per.dias||[]));
-  return {anterior,creditos:per.cred,debitos:per.deb,atual:anterior+per.cred-per.deb,detalhes:per.det,dias,vigencia:vig};
-}
-
 /* ============================== MÓDULO 3 — GERENCIAMENTO ============================== */
 let SUB='dash';
 function abaPonto(){
@@ -2261,24 +2079,6 @@ function statusGestaoDia(linha,ocorrencia){
   return ['Incompleto','incompleto'];
 }
 let TRAT_VISAO='pendentes',TRAT_SELECAO=new Set(),TRAT_LINHAS=[],TRAT_CARGA=0;
-function classificacaoTratamento(l,oc,bs,hoje){
- const r=regraOcorrencia(oc?.tipo),passado=l.data<hoje;
- const solicitacao=oc?.status==='pendente';
- const impar=bs.length%2===1,erro=bs.length>4;
- const falta=passado&&l.previsto>0&&!bs.length&&(!oc||r.falta);
- const parcial=passado&&l.previsto>0&&l.trabalhado<l.previsto&&!r.abonado&&!r.compensacao&&!r.externo&&!falta;
- const intervalo=passado&&l.previsto>360&&bs.length===2&&!r.abonado&&!r.compensacao&&!r.externo;
- const pendente=solicitacao||erro||falta||(passado&&(impar||intervalo||parcial));
- if(erro)return {cor:'red',titulo:'Revisar marcações',pendente,falta,impar,solicitacao};
- if(solicitacao)return {cor:'blue',titulo:'Solicitação pendente',pendente,falta,impar,solicitacao};
- if(falta)return {cor:'red',titulo:'Falta não tratada',pendente,falta,impar,solicitacao};
- if(impar)return {cor:'orange',titulo:passado?'Batidas ímpares':'Jornada em andamento',pendente,falta,impar,solicitacao};
- if(intervalo)return {cor:'orange',titulo:'Intervalo não registrado',pendente,falta,impar,solicitacao};
- if(parcial)return {cor:'orange',titulo:'Revisar jornada',pendente,falta,impar,solicitacao};
- if(r.abonado)return {cor:'blue',titulo:oc.tipo,pendente,falta,impar,solicitacao};
- if(l.trabalhado>0&&l.previsto===0)return {cor:'purple',titulo:'Trabalho em descanso / feriado',pendente,falta,impar,solicitacao};
- return {cor:'green',titulo:oc?.tipo||(l.previsto===0?'Descanso':'Concluído'),pendente,falta,impar,solicitacao};
-}
 function subBatidas(){
  if(!$('sub-body')){if(ABA==='folha')gerarFolha();return;}
  const fs=get('funcionarios',[]).filter(f=>f.status!=='Desligado'),salvo=window.__batFilt||{},fim=salvo.fim||hojeISO(),ini=salvo.ini||fim.slice(0,8)+'01';
@@ -2547,7 +2347,6 @@ function subEscala(){
   <div class="tbl-wrap"><table><tr><th>Registro</th></tr>${hist.map(h=>`<tr><td>${esc(h.texto)}</td></tr>`).join('')||'<tr><td class="muted">Sem alterações.</td></tr>'}</table></div></section>`;
 }
 const ESC_TRAVA_DIAS=30;
-const TIPOS_ESC=['Trabalhado','DSR','Folga Compensada']; // 'Folga Domingo' legado é exibido como Folga Compensada
 function setEscPeriodo(n){window.__escDias=Number(n);const i=$('escala-inicio').value||window.__escIni;window.__escIni=i;window.__escFim=addDias(i,Number(n)-1);subEscala();}
 function escIniChange(v){if(v)$('escala-fim').value=addDias(v,(window.__escDias||7)-1);}
 function filtrarEscala(){const i=$('escala-inicio').value,f=$('escala-fim').value;
@@ -2618,12 +2417,6 @@ async function importarEscala(inp){
   inp.value='';
 }
 function normData(v){v=String(v||'').trim();let m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)return `${m[3]}-${pad(m[2])}-${pad(m[1])}`;m=v.match(/^\d{4}-\d{2}-\d{2}/);return m?m[0]:'';}
-function lerCelulaEscala(v){v=String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toUpperCase();
-  if(!v||v==='TRABALHADO')return {tipo:'Trabalhado',horarioEntrada:''};
-  const m=v.match(/^(\d{1,2}):(\d{2})(?:\s*[-–às]+\s*(\d{1,2}):(\d{2}))?$/);
-  if(m)return {tipo:'Trabalhado',horarioEntrada:pad(m[1])+':'+m[2],horarioSaida:m[3]?pad(m[3])+':'+m[4]:''};
-  const t=TIPOS_ESC.find(tipo=>tipo.toUpperCase()===v)||{FOLGA:'Folga Compensada','FOLGA COMPENSANDA':'Folga Compensada','FOLGA COMPENSATORIA':'Folga Compensada','FOLGA DE DOMINGO':'Folga Compensada','FOLGA DOMINGO':'Folga Compensada'}[v];
-  return t?{tipo:t,horarioEntrada:''}:null;}
 function previewImport(rows){
   const hdr=(rows[0]||[]).map(x=>String(x??'').trim());
   if(hdr.length>2&&normData(hdr[2])){ // grade: ID | Nome | datas...
