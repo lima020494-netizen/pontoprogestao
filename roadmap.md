@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Etapa 0 da modularização: registrar linha de base e reforçar testes de cálculos, fila offline e consumo do Supabase, sem alterar motor, regras ou dados e sem publicar. Etapas 1–7 aguardam autorização explícita após a apresentação dos resultados.
+
 - [x] Reduzir egress: removido polling de identidade/suporte e recarga periódica do quiosque; preservada retentativa e envio imediato da fila. Auditoria paginada em 50 por fonte, backup completo sob demanda. Empregador/feriados e identidade usam cache IndexedDB por conta com validade de 5 min, invalidação ao salvar e atualização explícita no Terminal/reconexão. 180 testes passaram; cache real e upgrade preservando fila conferidos no navegador, sem erros; build OK. Somente preview; sincronização autenticada externa e economia real de egress não verificadas. Auditoria 6.2 continua bloqueada por conexão expirada conforme abaixo.
 
 - [x] Revisar Banco de Horas: consulta somente leitura confirmou 84 registros da Penina, vigência em 03/10 e todas as batidas de 01/02 excluídas com ocorrências de compensação. Corrigidos extrato sem histórico, paginação, resumo/PDF/CSV calculados antes da carga e saldo diário fora da vigência; extrato mostra todos os dias e vigência. Tipos legados repetidos normalizados apenas na leitura. 174 testes passaram, scripts/build OK e cópia real conferida em desktop/390px sem erros. Sem alteração de registros ou publicação; sessão autenticada da cliente não disponível no Supabase externo, por isso login/sincronização de ponta a ponta não verificados.
