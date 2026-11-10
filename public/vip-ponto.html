@@ -901,14 +901,13 @@ const hojeISO = () => isoOf(getHoraOficial());
 function toast(msg,ms=5000){const t=document.createElement('div');t.className='toast';t.innerHTML=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
 function baixar(nome,conteudo,tipo){const b=new Blob([conteudo],{type:tipo||'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=nome;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);}
 
-/* ---------- storage isolado por conta (RLS local) ---------- */
+/* ---------- storage isolado por conta: aliases da Etapa 3 ---------- */
 let CONTA=null;                                     // e-mail da conta logada
-const K  = k => `vip:${CONTA}:${k}`;
+const K = (k) => DATA_NUCLEO.K(k);
 let SHARE_DATA=null;
-const CACHE_SESSAO=new Map();
-const get = (k,d) => { if(SHARE_DATA&&Object.prototype.hasOwnProperty.call(SHARE_DATA,k))return SHARE_DATA[k];try{const chave=K(k),raw=localStorage.getItem(chave);if(!raw){CACHE_SESSAO.delete(chave);return d;}const cache=CACHE_SESSAO.get(chave);if(cache?.raw===raw)return cache.valor;const valor=JSON.parse(raw);CACHE_SESSAO.set(chave,{raw,valor});return valor;}catch(e){return d;} };
 let CARREGANDO=false; // evita eco de gravação durante a carga da nuvem
-const set = (k,v) => { localStorage.setItem(K(k),JSON.stringify(v)); if(!CARREGANDO){if(['empregador','feriados'].includes(k))cacheEstavelInvalidar(CONTA,k);nuvemPush(k,v);} };
+const get = (k,d) => DATA_NUCLEO.get(k,d);
+const set = (k,v) => DATA_NUCLEO.set(k,v);
 
 /* ---------- Supabase — FONTE PRINCIPAL; localStorage = cache offline ----------
    Tabelas: empregador, funcionarios, pontos, logs, escala (isoladas por email_dono)
