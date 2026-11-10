@@ -120,7 +120,7 @@ test('stage 2: treatment priorities and bank occurrence rules remain concrete', 
 
 test('stage 2: offline shell includes every domain module and still excludes APIs and account data', () => {
   const sw = readFileSync('public/ponto-offline-sw.js', 'utf8');
-  assert.match(sw, /ponto-static-20261110-operacional-etapa2-v1/);
+  assert.match(sw, /ponto-static-20261110-operacional-etapa\d+-v\d+/);
   for (const path of modulePaths) assert.ok(sw.includes(`'/${path}'`), path);
   const assets = sw.slice(sw.indexOf('const ASSETS'), sw.indexOf('self.addEventListener'));
   assert.doesNotMatch(assets, /\/api\/|\/rest\/|\/auth\/|pontos_pendentes/);

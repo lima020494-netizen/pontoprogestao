@@ -2,16 +2,22 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
+import { createDataContext } from './operational-domain-harness';
 
 const html = readFileSync('public/vip-ponto.html', 'utf8');
-const cacheCode = html.slice(html.indexOf('const CACHE_ESTAVEL_MS='), html.indexOf('async function filaListar('));
 function cacheHarness() {
   const rows = new Map<string, any>();
   let now = 1000;
-  const context = { Date: { now: () => now }, Map, Error, Promise, chk: (r: any) => { if (r.error) throw r.error; return r; } };
-  const api = runInNewContext(`${cacheCode}
-    cacheEstavelTx=async (modo,fn)=>fn({get:id=>({result:rows.get(id)}),put:r=>{rows.set(r.id,r);return {};},delete:id=>{rows.delete(id);return {};}}).result;
-    ({lerEstavel,cacheEstavelInvalidar})`, { ...context, rows });
+  const context: Record<string, any> = {
+    Date: { now: () => now }, Map, Error, Promise,
+    chk: (r: any) => { if (r.error) throw r.error; return r; },
+    cacheEstavelTx: async (_modo: string, fn: (store: any) => any) => fn({
+      get: (id: string) => ({ result: rows.get(id) }),
+      put: (row: any) => { rows.set(row.id, row); return {}; },
+      delete: (id: string) => { rows.delete(id); return {}; },
+    }).result,
+  };
+  const api = createDataContext(context);
   return { api, advance: (ms: number) => { now += ms; } };
 }
 
@@ -50,9 +56,10 @@ test('failed cloud responses are not cached and concurrent reads share a request
 test('IndexedDB upgrade preserves an existing pending-punch store', () => {
   const created: string[] = [];
   const request: any = { result: { objectStoreNames: { contains: (name: string) => name === 'fila' }, createObjectStore: (name: string) => { created.push(name); return { createIndex() {} }; } } };
-  const source = html.slice(html.indexOf('function idbAbrir('), html.indexOf('const IDB_PRONTO='));
-  const open = runInNewContext(`${source};idbAbrir`, { indexedDB: { open: (_: string, version: number) => { assert.equal(version, 2); return request; } }, IDB: {} });
-  open();request.onupgradeneeded();
+  let opens = 0;
+  createDataContext({ indexedDB: { open: (_: string, version: number) => { opens++; assert.equal(version, 2); return request; } } });
+  assert.equal(opens, 1);
+  request.onupgradeneeded();
   assert.deepEqual(created, ['config_cache']);
 });
 
@@ -72,7 +79,7 @@ test('audit pages load fifty rows and older rows only on explicit next-page requ
 test('periodic retry still sends pending punches but never reloads kiosk company data', async () => {
   let retry = 0, loads = 0;
   const callbacks: Array<() => unknown> = [];
-  const source = html.slice(html.indexOf("window.addEventListener('online',async()=>{await sincronizarPendentes()"), html.indexOf('/* Migração automática:'));
+  const source = html.slice(html.indexOf("window.addEventListener('online',async()=>{await sincronizarPendentes()"), html.indexOf('async function atualizarDadosNuvem'));
   runInNewContext(source, { window: { addEventListener() {} }, setInterval: (cb: () => unknown, ms: number) => { assert.equal(ms,120000);callbacks.push(cb); }, CONTA: 'a', sincronizarPendentes: () => { retry++; }, carregarNuvem: () => { loads++; } });
   await callbacks[0]?.();assert.equal(retry,1);assert.equal(loads,0);
 });
