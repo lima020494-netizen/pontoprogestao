@@ -23,12 +23,12 @@ const moduleFiles = [
 ];
 const modules = moduleFiles.map((path) => source(`public/operacional/${path}`));
 
-export function createDomainContext(overrides: Record<string, any> = {}) {
-  const context: Record<string, any> = { ...overrides, window: overrides.window || {} };
+export function createDomainContext(overrides: any = {}) {
+  const context: any = { ...overrides, window: overrides.window || {} };
   context.window.window = context.window;
   vm.createContext(context);
-  for (const code of modules) vm.runInContext(code, context);
-  const api = context.window.PontoProOperacional.obter('domain.nucleo').criar(overrides);
+  if (!context.window.PontoProOperacional) for (const code of modules) vm.runInContext(code, context);
+  const api = context.window.PontoProOperacional.obter('domain.nucleo').criar({ ...overrides, aliases: overrides });
   Object.assign(context, api, overrides);
   context.NUCLEO_OPERACIONAL = api;
   if (!context.LOGS_SESSAO) context.LOGS_SESSAO = new Set();
@@ -60,7 +60,7 @@ export function createDomainContext(overrides: Record<string, any> = {}) {
   return context;
 }
 
-export function runWithDomain<T>(code: string, overrides: Record<string, any> = {}): T {
+export function runWithDomain<T = any>(code: string, overrides: any = {}): T {
   const context = createDomainContext(overrides);
   return vm.runInContext(code, context) as T;
 }
