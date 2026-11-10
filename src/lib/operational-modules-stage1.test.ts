@@ -13,7 +13,7 @@ const modulePaths = [
 const moduleSource = (path: string) => readFileSync('public/' + path, 'utf8');
 
 function loadModules(paths = modulePaths) {
-  const context: Record<string, any> = { window: {}, console };
+  const context: any = { window: {}, console };
   for (const path of paths) runInNewContext(moduleSource(path), context, { filename: path });
   return context.window.PontoProOperacional;
 }
@@ -33,8 +33,8 @@ test('stage 1: one namespace registers modules once and a repeated loader does n
   for (const name of ['core.formatos', 'boot.contexto', 'boot.compatibilidade']) assert.equal(namespace.tem(name), true);
   assert.throws(() => namespace.definir('core.formatos', {}), /duplicado/);
 
-  const context: Record<string, any> = { window: {} };
-  const source = moduleSource(modulePaths[0]);
+  const context: any = { window: {} };
+  const source = moduleSource(modulePaths[0]!);
   runInNewContext(source, context);
   const first = context.window.PontoProOperacional;
   runInNewContext(source, context);
@@ -42,7 +42,7 @@ test('stage 1: one namespace registers modules once and a repeated loader does n
 });
 
 test('stage 1: extracted formatting, time conversion and CPF mask retain concrete legacy results', () => {
-  const f = loadModules([modulePaths[0], modulePaths[1]]).obter('core.formatos');
+  const f = loadModules([modulePaths[0]!, modulePaths[1]!]).obter('core.formatos');
   assert.equal(f.pad(7), '07');
   assert.equal(f.esc('<a & "b">'), '&lt;a &amp; &quot;b&quot;&gt;');
   assert.equal(f.isoOf(new Date(2026, 10, 10, 8, 7)), '2026-11-10');
@@ -60,9 +60,9 @@ test('stage 1: extracted formatting, time conversion and CPF mask retain concret
 });
 
 test('stage 1: context exposes current account, manager, data and sync state by reference without duplicate writes', () => {
-  const namespace = loadModules([modulePaths[0], modulePaths[2]]);
+  const namespace = loadModules([modulePaths[0]!, modulePaths[2]!]);
   const boot = namespace.obter('boot.contexto');
-  const state: Record<string, any> = { conta: null, gestor: null, empresa: {}, funcionarios: [], escalas: {}, feriados: [], ocorrencias: [], online: false, carregando: false, enviando: false, historicoDesde: '' };
+  const state: any = { conta: null, gestor: null, empresa: {}, funcionarios: [], escalas: {}, feriados: [], ocorrencias: [], online: false, carregando: false, enviando: false, historicoDesde: '' };
   const context = boot.ligar({
     conta: () => state.conta,
     sessao: () => ({ autenticada: Boolean(state.conta), cliente: null }),
