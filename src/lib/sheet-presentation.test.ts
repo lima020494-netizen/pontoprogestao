@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runWithDomain as runInNewContext } from './operational-domain-harness.ts';
 const html=readFileSync('public/vip-ponto.html','utf8');
 const format=(n:number)=>`${String(Math.floor(Math.abs(n)/60)).padStart(2,'0')}:${String(Math.abs(n)%60).padStart(2,'0')}`;
 const d={f:{pin:'1234'},linhas:[{data:'2026-10-12',previsto:0,trabalhado:480,saldo:480,noturno:60,atrasoMin:0,ocorrencia:'FERIADO'}],tot:{extras:480,extras50:0,extras100:480,trabalhado:480,faltas:0,faltantes:0},just:[],banco:{anterior:120,creditos:480,debitos:0,atual:600}};
 const punches=[{tipo:'Entrada',hora:'08:00',fonte:'MANUAL',movimento:'Motivo: esquecimento',nsr:'10'}, {tipo:'Saída',hora:'16:00',fonte:'SERVIDOR',nsr:'11'}];
-function model(){return JSON.parse(JSON.stringify(runInNewContext(html.slice(html.indexOf('function resumoMensalFolha('),html.indexOf('const gerarFolhaMTE='))+';modeloEspelho(d)',{d,batidasDia:()=>punches,toHHMM:format,toSaldo:(n:number)=>(n<0?'-':'+')+format(n),brOf:(s:string)=>s.split('-').reverse().join('/'),preLegenda:()=>''})));}
+function model(){return JSON.parse(JSON.stringify(runInNewContext(html.slice(html.indexOf('function miniResumoFolha('),html.indexOf('const gerarFolhaMTE='))+';modeloEspelho(d)',{d,batidasDia:()=>punches,toHHMM:format,toSaldo:(n:number)=>(n<0?'-':'+')+format(n),brOf:(s:string)=>s.split('-').reverse().join('/'),preLegenda:()=>''})));}
 test('three summary rows preserve eight holiday hours and bank movement without inferring monetary premiums',()=>{
   const m=model();assert.equal(m.resumo.length,3);assert.equal(m.resumo[1][0][1],'00:00');assert.equal(m.resumo[1][1][1],'08:00');
   assert.deepEqual(m.resumo[2].map((x:string[])=>x[1]),['+02:00','+08:00','+10:00']);assert.equal(m.body[0][7],'08:00');
