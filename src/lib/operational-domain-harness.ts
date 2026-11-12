@@ -20,6 +20,9 @@ const moduleFiles = [
   'data/armazenamento-v20261110-etapa3.js', 'data/indexeddb-v20261110-etapa3.js',
   'data/fila-offline-v20261110-etapa3.js', 'data/supabase-v20261110-etapa3.js',
   'data/nucleo-v20261110-etapa3.js',
+  'reports/documentos-v20261110-etapa4.js', 'reports/folha-v20261110-etapa4.js',
+  'reports/fiscal-v20261110-etapa4.js', 'reports/exportacoes-v20261110-etapa4.js',
+  'reports/nucleo-v20261110-etapa4.js',
 ];
 const modules = moduleFiles.map((path) => source(`public/operacional/${path}`));
 
@@ -57,6 +60,11 @@ export function createDomainContext(overrides: any = {}) {
   Object.assign(context, api, dataApi, overrides);
   context.NUCLEO_OPERACIONAL = api;
   context.DATA_NUCLEO = dataApi;
+  context.PontoProOperacional = context.window.PontoProOperacional;
+  context.RELATORIOS_NUCLEO = context.window.PontoProOperacional.obter('reports.nucleo').criar({
+    ...api, ...overrides, getConta: () => context.CONTA, getGerenciador: () => context.GERENCIADOR,
+    aliases: overrides,
+  });
   return context;
 }
 
