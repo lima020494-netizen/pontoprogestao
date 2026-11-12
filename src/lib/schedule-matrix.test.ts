@@ -24,6 +24,9 @@ test('M/T/N preserve canonical worked-day duration and existing hours',()=>{
 test('F and D map to existing neutral rest types, without hours',()=>{
   const {api}=fixture();assert.equal(api.item('F','1','2026-11-09').tipo,'Folga Compensada');assert.equal(api.item('D','1','2026-11-09').tipo,'DSR');assert.equal(api.item('F','1','2026-11-09',{horarioEntrada:'08:00'}).horarioEntrada,'');
 });
+test('unmodified Sunday rest is displayed as D, Saturday rest as F',()=>{
+  const {api}=fixture();assert.equal(api.codigo(f,'2026-11-15'),'D');assert.equal(api.codigo(f,'2026-11-14'),'F');
+});
 test('weekly charge recomputes from 40h to 32h when Monday becomes Folga',()=>{
   const {api,data}=fixture();const dias=Array.from({length:7},(_,i)=>'2026-11-'+String(9+i).padStart(2,'0'));
   assert.equal(api.carga(f,dias),2400);
