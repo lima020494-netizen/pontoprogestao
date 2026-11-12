@@ -1,0 +1,3 @@
+- Compose document modules through `reports.nucleo` with injected shell dependencies and global delegates; this preserves one calculation engine and existing handlers.
+- Matrix chips map to canonical schedule types and retain configured hours; this avoids inventing shift durations or changing payroll calculations.
+- Reuse the existing schedule record when a period overlaps; this prevents duplicate per-day entries from shadowing edits.

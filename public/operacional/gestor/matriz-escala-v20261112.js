@@ -7,7 +7,7 @@
       const it=S.buscaNaEscala(f.pin,d);
       if(it&&it.tipo!=='Trabalhado')return it.tipo==='DSR'?'D':'F';
       if(it&&['M','T','N'].includes(it.turno))return it.turno;
-      if(!it&&S.previstoDia(f,d)===0)return 'F';
+      if(!it&&S.previstoDia(f,d)===0)return new Date(d+'T12:00:00Z').getUTCDay()===0?'D':'F';
       const hora=Number((it?.horarioEntrada||S.get('empregador',{}).hEntrada||'08:00').slice(0,2));
       return hora>=18||hora<6?'N':hora>=12?'T':'M';
     }

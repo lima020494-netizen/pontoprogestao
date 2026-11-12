@@ -781,7 +781,7 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 #gestor-body .matrix-table th{padding:8px 6px;text-align:center;min-width:52px;background:var(--navy);color:var(--card)}
 #gestor-body .matrix-table .matrix-name{position:sticky;left:0;z-index:1;width:180px;min-width:180px;max-width:180px;text-align:left;white-space:normal}
 .matrix-name small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.matrix-load{font-variant-numeric:tabular-nums;min-width:108px!important}
-#gestor-body .shift-chip{width:40px;height:40px;border-radius:6px;padding:0;font-size:14px}
+#gestor-body .shift-chip{width:40px;height:40px;border-radius:6px;padding:0;font-size:14px;background:var(--shift-bg);color:var(--shift-fg);border-color:var(--shift-bg);box-shadow:none}
 .matrix-details{margin-top:14px}.matrix-details summary{cursor:pointer;color:var(--navy);font-weight:700;padding:8px 0}
 .matrix-wrap{max-height:65vh;border:1px solid var(--line);border-radius:6px}
 </style>
@@ -1881,7 +1881,7 @@ const RELATORIOS_NUCLEO=PontoProOperacional.obter('reports.nucleo').criar({
   toHHMM,toSaldo,brOf,esc,isoOf,hhmm,getHoraOficial:()=>getHoraOficial(),hojeISO:()=>hojeISO(),devCfg:()=>devCfg(),logoApp:()=>logoApp(),
   garantirLib:g=>garantirLib(g),garantirHistorico:d=>garantirHistorico(d),log:m=>log(m),toast:(m,t)=>toast(m,t),$:id=>$(id),
   periodoFolhaValido:()=>periodoFolhaValido(),dadosResumoBanco:()=>dadosResumoBanco(),periodoDash:()=>periodoDash(),loteValida:()=>loteValida(),
-  cargaEscala:e=>cargaEscala(e),ordemJornada:(a,b)=>ordemJornada(a,b),jornadaDe:b=>jornadaDe(b),ocorrenciaDia:(p,d)=>ocorrenciaDia(p,d),regraOcorrencia:t=>regraOcorrencia(t),
+  cargaEscala:e=>cargaEscala(e),calcBanco:(p,i,f)=>calcBanco(p,i,f),addDias,ordemJornada:(a,b)=>ordemJornada(a,b),jornadaDe:b=>jornadaDe(b),ocorrenciaDia:(p,d)=>ocorrenciaDia(p,d),regraOcorrencia:t=>regraOcorrencia(t),
   assinaGerenciador:()=>assinaGerenciador(),abrirModal:h=>abrirModal(h),sincronizarDevGlobal:()=>sincronizarDevGlobal(),statusTexto:f=>statusTexto(f),
   comprovanteTexto:b=>comprovanteTexto(b),cpDestaque:l=>cpDestaque(l),cpNegrito:(l,i)=>cpNegrito(l,i),cpfMascarado:c=>cpfMascarado(c),
   buscaNaEscala:(p,d)=>buscaNaEscala(p,d),celulaEscala:i=>celulaEscala(i),diasPeriodo:(i,f)=>diasPeriodo(i,f),logsParaBackup:()=>logsParaBackup()
@@ -2153,14 +2153,17 @@ function alternarTurnoEscala(pin,dia){
  const f=funcPorPin(pin);if(!f)return;
  const ini=window.__escIni,origem=escalaDaSemana(dia,pin),destino=get('escalas',{})[ini];
  if([origem,destino].some(e=>e?.criacaoData&&(Date.now()-new Date(e.criacaoData).getTime())/864e5>ESC_TRAVA_DIAS)){toast('Escala bloqueada após 30 dias.',2000);return;}
- const antigo=buscaNaEscala(pin,dia),c=MATRIZ_ESCALA.proximo(MATRIZ_ESCALA.codigo(f,dia)),{all,e}=escalaObj(ini);
+ const antigo=buscaNaEscala(pin,dia),c=MATRIZ_ESCALA.proximo(MATRIZ_ESCALA.codigo(f,dia));
+ const all=get('escalas',{})||{},chave=antigo&&origem?origem.semanaInicio:ini;
+ const e=antigo&&origem?all[chave]:escalaObj(ini).e;
+ all[chave]=e;
  if(c==='F'||c==='D'){
   const qtd=Object.values(all).flatMap(x=>x.folgas||[]).filter(x=>x.pin===pin&&x.tipo!=='Trabalhado'&&x.dia!==dia&&inicioSemana(x.dia)===inicioSemana(dia));
   if(new Set(qtd.map(x=>x.dia)).size>=3){toast('Máximo de 3 folgas por colaborador na semana.',2500);return;}
  }
  const item=MATRIZ_ESCALA.item(c,pin,dia,antigo||{}),i=e.folgas.findIndex(x=>x.pin===pin&&x.dia===dia);
  if(i>=0)e.folgas[i]=item;else e.folgas.push(item);
- set('escalas',all);histEscala(ini,pin,dia,antigo?.turno||antigo?.tipo||'Padrão',c);subEscala();
+ set('escalas',all);histEscala(chave,pin,dia,antigo?.turno||antigo?.tipo||'Padrão',c);subEscala();
 }
 async function pdfEscalaEquipe(){try{await MATRIZ_ESCALA.pdf(window.__escIni,window.__escFim);}catch(e){toast('Não foi possível gerar o PDF. Tente novamente.',3000);}}
 function mesEscala(v){if(!/^\d{4}-\d{2}$/.test(v))return;window.__escDias='mes';window.__escIni=v+'-01';window.__escFim=addDias(v+'-01',new Date(Number(v.slice(0,4)),Number(v.slice(5,7)),0).getDate()-1);subEscala();}
