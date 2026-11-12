@@ -1,5 +1,5 @@
 /* Only the kiosk shell and public static files. Never cache API/auth/company responses. */
-const CACHE = 'ponto-static-20261110-operacional-etapa3-v1';
+const CACHE = 'ponto-static-20261112-matriz-v1';
 const SHELL = '/vip-ponto.html';
 const ASSETS = [SHELL, '/jspdf-2.5.1.umd.min.js', '/jspdf.plugin.autotable.min.js',
   '/jszip-3.10.1.min.js', '/xlsx-0.18.5.full.min.js', '/supabase-2.117.3.min.js',
@@ -11,6 +11,9 @@ const ASSETS = [SHELL, '/jspdf-2.5.1.umd.min.js', '/jspdf.plugin.autotable.min.j
   '/operacional/data/armazenamento-v20261110-etapa3.js', '/operacional/data/indexeddb-v20261110-etapa3.js',
   '/operacional/data/fila-offline-v20261110-etapa3.js', '/operacional/data/supabase-v20261110-etapa3.js',
   '/operacional/data/nucleo-v20261110-etapa3.js',
+  '/operacional/reports/documentos-v20261110-etapa4.js', '/operacional/reports/folha-v20261110-etapa4.js',
+  '/operacional/reports/fiscal-v20261110-etapa4.js', '/operacional/reports/exportacoes-v20261110-etapa4.js',
+  '/operacional/reports/nucleo-v20261110-etapa4.js', '/operacional/gestor/matriz-escala-v20261112.js',
   '/qrcode-generator.min.js', '/ponto-offline-register.js', '/vip-logo.png',
   '/favicon-v20261028.png', '/favicon.ico', '/pwa-icon-192-v20261028.png', '/pwa-icon-512-v20261028.png', '/pwa-icon-maskable-192-v20261028.png', '/pwa-icon-maskable-512-v20261028.png', '/apple-touch-icon-v20261028.png', '/manifest.webmanifest'];
 self.addEventListener('install', event => {

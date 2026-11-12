@@ -16,8 +16,8 @@ function modeloEspelho(d){
   const notas=[],porDia={},curto=t=>String(t||'').replace(/\s*-\s*Autorizado por:.*$/i,'').replace(/^\s*Motivo:\s*/i,'').replace(/\s+/g,' ').trim();
   const nota=(dia,texto)=>{const t=`${S.brOf(dia)}: ${texto}`;let i=notas.indexOf(t);if(i<0){notas.push(t);i=notas.length-1;}(porDia[dia]=porDia[dia]||new Set()).add(i+1);};
   const rows=d.linhas.map(l=>{
-    const bs=S.batidasDia(d.f.pin,l.data),marca=tipo=>{const b=bs.find(x=>x.tipo===tipo);if(!b)return '--:--';const tratada=!!(b.manual||b.movimento||b.fonte==='S.MANUAL');
-      if(tratada){const m=curto(b.movimento||b.motivo).replace(/^\d{4}-\d\d-\d\d \d\d:\d\d \* /,'').replace(/^Marcação Manual\s*-\s*/i,'');nota(l.data,`${b.fonte==='S.MANUAL'||b.manual?'Ajuste manual de marcação':'Reclassificação de marcação'} ${b.hora}${m?' ('+m+')':''}`);}
+    const bs=S.batidasDia(d.f.pin,l.data),marca=tipo=>{const b=bs.find(x=>x.tipo===tipo);if(!b)return '--:--';const tratada=!!(b.manual||b.movimento||b.fonte==='MANUAL');
+      if(tratada){const m=curto(b.movimento||b.motivo).replace(/^\d{4}-\d\d-\d\d \d\d:\d\d \* /,'').replace(/^Marcação Manual\s*-\s*/i,'');nota(l.data,`${b.fonte==='MANUAL'||b.manual?'Ajuste manual de marcação':'Reclassificação de marcação'} ${b.hora}${m?' ('+m+')':''}`);}
       return b.hora+(tratada?'*':'');};
     return {l,cells:[S.brOf(l.data).slice(0,5),marca('Entrada'),marca('Saída Intervalo'),marca('Entrada Intervalo'),marca('Saída'),S.toHHMM(l.previsto),S.toHHMM(l.trabalhado),S.toHHMM(Math.max(0,l.trabalhado-l.previsto)),S.toHHMM(Math.max(0,-l.saldo)),l.saldo?S.toSaldo(l.saldo):'00:00',l.ocorrencia||(bs.length%2?'INCOMPLETO':bs.length?'TRABALHADO':'—')]};
   });

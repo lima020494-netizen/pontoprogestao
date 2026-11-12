@@ -83,7 +83,7 @@ function gerarAEJ(ini,fim){
   const hc=`${e.hEntrada||'08:00'}`.replace(':','');
   add('04',['1',S.padL(S.cargaEscala('5x2'),4),(e.hEntrada||'08:00').replace(':',''),(e.hSaiInt||'12:00').replace(':',''),(e.hEntInt||'14:00').replace(':',''),(e.hSaida||'18:00').replace(':','')]);
   fs.forEach((f,i)=>{
-    const bs=S.get('batidas',[]).filter(b=>!b.excluida&&b.pin===f.pin&&b.data>=ini&&b.data<=fim).sort(ordemJornada);
+    const bs=S.get('batidas',[]).filter(b=>!b.excluida&&b.pin===f.pin&&b.data>=ini&&b.data<=fim).sort(S.ordemJornada);
     const seq={};bs.forEach(b=>{const jd=S.jornadaDe(b);seq[jd]=(seq[jd]||0)+1;const n=seq[jd];
       add('05',[i+1,S.dtTZ(b.data,b.hora),'1',/Entrada/.test(b.tipo)?'E':'S',Math.ceil(n/2),b.manual?'I':'O','1',b.movimento||b.motivo||'']);});
     S.get('ocorrencias',[]).filter(o=>o.pin===f.pin&&o.data>=ini&&o.data<=fim).forEach(o=>add('06',[i+1,o.data,o.tipo==='Falta'?'2':'1',S.padL(S.cargaEscala(f.escala),4),o.motivo||o.tipo]));

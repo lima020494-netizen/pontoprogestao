@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runWithDomain as runInNewContext } from './operational-domain-harness.ts';
 
 const html = readFileSync('public/vip-ponto.html', 'utf8');
 const slice = (a: string, b: string) => html.slice(html.indexOf(a), html.indexOf(b, html.indexOf(a)));
@@ -36,7 +36,7 @@ test('baseline AFD type 3 keeps NSR order, civil date/time and excludes only exc
 });
 
 test('baseline AEJ retains overnight civil timestamps, journey sequence and occurrence totals', () => {
-  const source = slice('function gerarAEJ', '/* ===================== ATESTADO TÉCNICO');
+  const source = slice('function gerarAEJ', 'async function atestadoTecnico');
   const original = JSON.stringify(punches);
   const downloads: { nome: string; content: string }[] = [];
   const data: Record<string, unknown> = {

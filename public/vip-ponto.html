@@ -50,6 +50,7 @@ function garantirLib(grupo){
 <script src="/operacional/reports/fiscal-v20261110-etapa4.js"></script>
 <script src="/operacional/reports/exportacoes-v20261110-etapa4.js"></script>
 <script src="/operacional/reports/nucleo-v20261110-etapa4.js"></script>
+<script src="/operacional/gestor/matriz-escala-v20261112.js"></script>
 <script src="/ponto-offline-register.js" defer></script>
 <style>
 /* ===================== DESIGN SYSTEM ===================== */
@@ -770,6 +771,19 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 #gestor-body td.dept-head,#gestor-body tr:hover td.dept-head{background:var(--navy2);color:#fff;font-weight:800}
 #gestor-body .pacote-hero label,#gestor-body .pacote-hero .muted,#gestor-body .pacote-hero small{color:#dbeafe}
 #gestor-body .ind .ind-ico,#gestor-body .ind .ind-val,#gestor-body .ind .ind-lbl,#gestor-body .ind .ind-sub{color:#fff}
+
+/* Matriz de turnos: superfícies semânticas e dimensões estáveis. */
+:root{--shift-m-bg:#e0f2fe;--shift-m-fg:#075985;--shift-t-bg:#fef3c7;--shift-t-fg:#854d0e;--shift-n-bg:#e2e8f0;--shift-n-fg:#334155;--shift-f-bg:#fce7f3;--shift-f-fg:#9d174d;--shift-d-bg:#dcfce7;--shift-d-fg:#166534}
+.shift-M{--shift-bg:var(--shift-m-bg);--shift-fg:var(--shift-m-fg)}.shift-T{--shift-bg:var(--shift-t-bg);--shift-fg:var(--shift-t-fg)}.shift-N{--shift-bg:var(--shift-n-bg);--shift-fg:var(--shift-n-fg)}.shift-F{--shift-bg:var(--shift-f-bg);--shift-fg:var(--shift-f-fg)}.shift-D{--shift-bg:var(--shift-d-bg);--shift-fg:var(--shift-d-fg)}
+.shift-chip,.esc-legenda [class^="shift-"]{background:var(--shift-bg);color:var(--shift-fg);border-color:var(--shift-bg)}
+#gestor-body .matrix-table{width:max-content;min-width:100%;table-layout:fixed}
+#gestor-body .matrix-table td{padding:6px;border:1px solid var(--line);vertical-align:middle;text-align:center;min-width:52px;background:var(--card)}
+#gestor-body .matrix-table th{padding:8px 6px;text-align:center;min-width:52px;background:var(--navy);color:var(--card)}
+#gestor-body .matrix-table .matrix-name{position:sticky;left:0;z-index:1;width:180px;min-width:180px;max-width:180px;text-align:left;white-space:normal}
+.matrix-name small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.matrix-load{font-variant-numeric:tabular-nums;min-width:108px!important}
+#gestor-body .matrix-table .btn.shift-chip{width:40px;height:40px;border-radius:6px;padding:0;font-size:14px;background:var(--shift-bg);color:var(--shift-fg);border-color:var(--shift-bg);box-shadow:none}
+.matrix-details{margin-top:14px}.matrix-details summary{cursor:pointer;color:var(--navy);font-weight:700;padding:8px 0}
+.matrix-wrap{max-height:65vh;border:1px solid var(--line);border-radius:6px}
 </style>
 </head>
 <body>
@@ -1867,7 +1881,7 @@ const RELATORIOS_NUCLEO=PontoProOperacional.obter('reports.nucleo').criar({
   toHHMM,toSaldo,brOf,esc,isoOf,hhmm,getHoraOficial:()=>getHoraOficial(),hojeISO:()=>hojeISO(),devCfg:()=>devCfg(),logoApp:()=>logoApp(),
   garantirLib:g=>garantirLib(g),garantirHistorico:d=>garantirHistorico(d),log:m=>log(m),toast:(m,t)=>toast(m,t),$:id=>$(id),
   periodoFolhaValido:()=>periodoFolhaValido(),dadosResumoBanco:()=>dadosResumoBanco(),periodoDash:()=>periodoDash(),loteValida:()=>loteValida(),
-  cargaEscala:e=>cargaEscala(e),ordemJornada:(a,b)=>ordemJornada(a,b),jornadaDe:b=>jornadaDe(b),ocorrenciaDia:(p,d)=>ocorrenciaDia(p,d),regraOcorrencia:t=>regraOcorrencia(t),
+  cargaEscala:e=>cargaEscala(e),calcBanco:(p,i,f)=>calcBanco(p,i,f),addDias,ordemJornada:(a,b)=>ordemJornada(a,b),jornadaDe:b=>jornadaDe(b),ocorrenciaDia:(p,d)=>ocorrenciaDia(p,d),regraOcorrencia:t=>regraOcorrencia(t),
   assinaGerenciador:()=>assinaGerenciador(),abrirModal:h=>abrirModal(h),sincronizarDevGlobal:()=>sincronizarDevGlobal(),statusTexto:f=>statusTexto(f),
   comprovanteTexto:b=>comprovanteTexto(b),cpDestaque:l=>cpDestaque(l),cpNegrito:(l,i)=>cpNegrito(l,i),cpfMascarado:c=>cpfMascarado(c),
   buscaNaEscala:(p,d)=>buscaNaEscala(p,d),celulaEscala:i=>celulaEscala(i),diasPeriodo:(i,f)=>diasPeriodo(i,f),logsParaBackup:()=>logsParaBackup()
@@ -2134,6 +2148,25 @@ async function salvarOcorrencia(){
  }catch(e){if($('oc-erro'))$('oc-erro').textContent='Não foi possível salvar. Confira o anexo e tente novamente.';}finally{if(btn)btn.disabled=false;}
 }
 document.addEventListener('keydown',e=>{const modal=$('modal-generico');if(!modal?.classList.contains('treatment-drawer')||modal.classList.contains('hidden'))return;if(e.key==='Escape'){e.preventDefault();fecharModal();window.__tratLote=null;}if(e.key==='Tab'){const items=[...modal.querySelectorAll('button,input,select,textarea')].filter(x=>!x.disabled&&x.getClientRects().length),first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}});
+const MATRIZ_ESCALA=PontoProOperacional.obter('gestor.matrizEscala').criar({get,buscaNaEscala,previstoDia,inicioSemana,garantirLib,diasPeriodo,brOf,toHHMM,toast,pdfCabecalhoPadrao,pdfTabelaPadrao,pdfRodapesPadrao});
+function alternarTurnoEscala(pin,dia){
+ const f=funcPorPin(pin);if(!f)return;
+ const ini=window.__escIni,origem=escalaDaSemana(dia,pin),destino=get('escalas',{})[ini];
+ if([origem,destino].some(e=>e?.criacaoData&&(Date.now()-new Date(e.criacaoData).getTime())/864e5>ESC_TRAVA_DIAS)){toast('Escala bloqueada após 30 dias.',2000);return;}
+ const antigo=buscaNaEscala(pin,dia),c=MATRIZ_ESCALA.proximo(MATRIZ_ESCALA.codigo(f,dia));
+ const all=get('escalas',{})||{},chave=antigo&&origem?origem.semanaInicio:ini;
+ const e=antigo&&origem?all[chave]:escalaObj(ini).e;
+ all[chave]=e;
+ if(c==='F'||c==='D'){
+  const qtd=Object.values(all).flatMap(x=>x.folgas||[]).filter(x=>x.pin===pin&&x.tipo!=='Trabalhado'&&x.dia!==dia&&inicioSemana(x.dia)===inicioSemana(dia));
+  if(new Set(qtd.map(x=>x.dia)).size>=3){toast('Máximo de 3 folgas por colaborador na semana.',2500);return;}
+ }
+ const item=MATRIZ_ESCALA.item(c,pin,dia,antigo||{}),i=e.folgas.findIndex(x=>x.pin===pin&&x.dia===dia);
+ if(i>=0)e.folgas[i]=item;else e.folgas.push(item);
+ set('escalas',all);histEscala(chave,pin,dia,antigo?.turno||antigo?.tipo||'Padrão',c);subEscala();
+}
+async function pdfEscalaEquipe(){try{await MATRIZ_ESCALA.pdf(window.__escIni,window.__escFim);}catch(e){toast('Não foi possível gerar o PDF. Tente novamente.',3000);}}
+function mesEscala(v){if(!/^\d{4}-\d{2}$/.test(v))return;window.__escDias='mes';window.__escIni=v+'-01';window.__escFim=addDias(v+'-01',new Date(Number(v.slice(0,4)),Number(v.slice(5,7)),0).getDate()-1);subEscala();}
 /* Escala — período flexível (7, 15 ou 30 dias) */
 function subEscala(){
   const cfg=get('config',{inicioSemana:1});
@@ -2161,6 +2194,8 @@ function subEscala(){
       }).join('')+'</tr>';
     });
   });
+  const semanas=MATRIZ_ESCALA.semanas(dias);
+  const matriz=fs.map(f=>`<tr><td class="matrix-name"><strong>${esc(f.nome)}</strong><small>${esc(f.departamento||f.funcao||'')}</small></td>${dias.map(d=>{const c=MATRIZ_ESCALA.codigo(f,d),t=MATRIZ_ESCALA.TURNOS.find(t=>t.codigo===c),origem=escalaDaSemana(d,f.pin),bloqueada=travada||!!(origem?.criacaoData&&(Date.now()-new Date(origem.criacaoData).getTime())/864e5>ESC_TRAVA_DIAS);return `<td><button class="btn shift-chip shift-${c}" ${bloqueada?'disabled':''} aria-label="${esc(f.nome)} ${brOf(d)}: ${t.nome}" title="${esc(t.nome)} · ${toHHMM(previstoDia(f,d))}" data-pin="${esc(f.pin)}" data-dia="${d}" onclick="alternarTurnoEscala(this.dataset.pin,this.dataset.dia)">${c}</button></td>`;}).join('')}${semanas.map(g=>`<td class="matrix-load"><strong>${toHHMM(MATRIZ_ESCALA.carga(f,g.dias))}</strong></td>`).join('')}</tr>`).join('');
   const hist=get('logsEscala',[]).filter(h=>h.semana===ini);
   const PADRAO={'5x2':'TTTTTFD','6x1':'TTTTTTD','4x3':'TTTTFFD','12x36':'AAAAAAA','22x10':'AAAAAAA'},SEM=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const cards=ESCALAS.map(([c,n,m])=>{const q=fs.filter(f=>(f.escala||'5x2')===c).length;if(!q)return '';return `<article class="jornada-card"><header><span class="jornada-tipo">${esc(c)}</span><div><strong>${esc(n)}</strong><small>${toHHMM(m)} por dia · ${q} colaborador(es)</small></div></header><ol class="semana">${[...PADRAO[c]].map((t,i)=>`<li class="dia-${t}"><b>${SEM[i]}</b><span>${t==='T'?'Trab.':t==='D'?'DSR':t==='F'?'Folga':'Alt.'}</span></li>`).join('')}</ol></article>`;}).join('');
@@ -2168,7 +2203,8 @@ function subEscala(){
   ${cards?`<div class="jornada-grid">${cards}</div>`:''}
   <section class="mod-card"><div class="row"><h3>Escala ${brOf(ini)} a ${brOf(fim)} ${travada?'<span class="lock">🔒 bloqueada após 30 dias</span>':`<span class="muted" style="font-size:13px">🔓 editável por mais ${diasRest} dia(s)</span>`}</h3></div>
   <div class="grid g4">
-    <div><label>Período</label><select id="escala-dias" onchange="setEscPeriodo(this.value)">${[7,15,30].map(n=>`<option value="${n}" ${nd===n?'selected':''}>${n} dias</option>`).join('')}</select></div>
+    <div><label>Período</label><select id="escala-dias" onchange="setEscPeriodo(this.value)">${[7,15,30].map(n=>`<option value="${n}" ${nd===n?'selected':''}>${n===7?'Semana':n+' dias'}</option>`).join('')}<option value="mes" ${nd==='mes'?'selected':''}>Mês completo</option></select></div>
+    <div><label>Mês</label><input type="month" value="${ini.slice(0,7)}" onchange="mesEscala(this.value)"/></div>
     <div><label>Início</label><input type="date" id="escala-inicio" value="${ini}" onchange="escIniChange(this.value)"/></div>
     <div><label>Fim</label><input type="date" id="escala-fim" value="${fim}"/></div>
     <div style="display:flex;align-items:flex-end;gap:6px"><button class="btn" onclick="filtrarEscala()">Filtrar</button></div>
@@ -2178,23 +2214,26 @@ function subEscala(){
     <button class="btn sm ghost" onclick="navSemana(-1)">◀ Anterior</button>
     <button class="btn sm ghost" onclick="navSemana(1)">Próximo ▶</button>
     <button class="btn sm" onclick="salvarEscala('${ini}','${fim}')" ${travada?'disabled':''}>Salvar escala</button>
+    <button class="btn sm" onclick="pdfEscalaEquipe()">↓ Baixar Escala em PDF</button>
     <button class="btn sm ghost" onclick="planilhaEscala('${ini}','${fim}','xlsx')">⬇ Planilha da escala (Excel)</button>
     <button class="btn sm ghost" onclick="planilhaEscala('${ini}','${fim}','csv')">⬇ CSV</button>
     <button class="btn sm ghost" onclick="$('imp-esc').click()">⬆ Importar planilha</button>
     <input type="file" id="imp-esc" accept=".csv,.xlsx,.xls" class="hidden" onchange="importarEscala(this)"/>
   </div>
   <div class="muted">A escala prevalece sobre a jornada do cadastro. Edição por 30 dias após criação; depois, bloqueada. Máx. 3 folgas por semana.</div>
-  <div class="esc-legenda"><span class="dia-T">Trabalhado</span><span class="dia-D">DSR</span><span class="dia-F">Folga Compensada</span></div><div class="tbl-wrap"><table class="escala-table"><tr><th>Funcionário</th>${dias.map(d=>`<th>${DIAS[dow(d)].slice(0,3)}<br>${brOf(d).slice(0,5)}</th>`).join('')}</tr>${rows}</table></div>
+  <div class="esc-legenda">${MATRIZ_ESCALA.TURNOS.map(t=>`<span class="shift-${t.codigo}"><b>${t.codigo}</b> ${t.nome}</span>`).join('')}</div>
+  <div class="tbl-wrap matrix-wrap" role="region" aria-label="Escala da equipe" tabindex="0"><table class="matrix-table"><thead><tr><th class="matrix-name">Colaborador</th>${dias.map(d=>`<th>${DIAS[dow(d)].slice(0,3)}<br>${brOf(d).slice(0,5)}</th>`).join('')}${semanas.map(g=>`<th>Carga semanal<br>${brOf(g.dias[0]).slice(0,5)}–${brOf(g.dias.at(-1)).slice(0,5)}</th>`).join('')}</tr></thead><tbody>${matriz||`<tr><td colspan="${dias.length+semanas.length+1}">Nenhum colaborador cadastrado.</td></tr>`}</tbody></table></div>
+  <details class="matrix-details"><summary>Horários e edição detalhada</summary><div class="tbl-wrap"><table class="escala-table"><tr><th>Funcionário</th>${dias.map(d=>`<th>${DIAS[dow(d)].slice(0,3)}<br>${brOf(d).slice(0,5)}</th>`).join('')}</tr>${rows}</table></div></details>
   <div class="hr"></div><h4>Histórico de alterações da escala</h4>
   <div class="tbl-wrap"><table><tr><th>Registro</th></tr>${hist.map(h=>`<tr><td>${esc(h.texto)}</td></tr>`).join('')||'<tr><td class="muted">Sem alterações.</td></tr>'}</table></div></section>`;
 }
 const ESC_TRAVA_DIAS=30;
-function setEscPeriodo(n){window.__escDias=Number(n);const i=$('escala-inicio').value||window.__escIni;window.__escIni=i;window.__escFim=addDias(i,Number(n)-1);subEscala();}
-function escIniChange(v){if(v)$('escala-fim').value=addDias(v,(window.__escDias||7)-1);}
+function setEscPeriodo(n){if(n==='mes')return mesEscala(window.__escIni.slice(0,7));window.__escDias=Number(n);const i=$('escala-inicio').value||window.__escIni;window.__escIni=i;window.__escFim=addDias(i,Number(n)-1);subEscala();}
+function escIniChange(v){if(window.__escDias==='mes')return mesEscala(v.slice(0,7));if(v)$('escala-fim').value=addDias(v,(window.__escDias||7)-1);}
 function filtrarEscala(){const i=$('escala-inicio').value,f=$('escala-fim').value;
   if(!i||!f||f<i)return alert('Período inválido.');if((new Date(f)-new Date(i))/864e5>30)return alert('Máximo de 31 dias.');
   window.__escIni=i;window.__escFim=f;subEscala();}
-function navSemana(n){const nd=window.__escDias||7;window.__escIni=addDias(window.__escIni||inicioSemana(hojeISO()),n*nd);window.__escFim=addDias(window.__escIni,nd-1);subEscala();}
+function navSemana(n){if(window.__escDias==='mes'){const d=new Date(window.__escIni+'T12:00:00');d.setMonth(d.getMonth()+n);return mesEscala(isoOf(d).slice(0,7));}const nd=window.__escDias||7;window.__escIni=addDias(window.__escIni||inicioSemana(hojeISO()),n*nd);window.__escFim=addDias(window.__escIni,nd-1);subEscala();}
 function setInicioSemana(v){const c=get('config',{});c.inicioSemana=Number(v);set('config',c);window.__escIni=null;window.__escFim=null;subEscala();}
 function escalaObj(ini,fim){
   const all=get('escalas',{})||{};

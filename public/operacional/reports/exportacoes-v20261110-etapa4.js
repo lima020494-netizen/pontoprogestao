@@ -15,7 +15,7 @@ async function comprovantePDF(b){
 }
 
 function gradeEscala(ini,fim){
-  const dias=S.diasPeriodo(ini,fim||addDias(ini,6)), fs=S.get('funcionarios',[]).filter(f=>f.status!=='Desligado');
+  const dias=S.diasPeriodo(ini,fim||S.addDias(ini,6)), fs=S.get('funcionarios',[]).filter(f=>f.status!=='Desligado');
   return [['ID (PIN)','Nome',...dias.map(d=>S.brOf(d))],...fs.map(f=>[f.pin,f.nome,...dias.map(d=>S.celulaEscala(S.buscaNaEscala(f.pin,d)))])];
 }
 async function planilhaEscala(ini,fim,fmt){
@@ -57,7 +57,7 @@ async function pdfExtratoBanco(){
   if(!pin||!ini||!fim||ini>fim)return S.toast('Informe um colaborador e período válidos.');
   try{await S.garantirHistorico(ini);}catch(e){return S.toast('Histórico indisponível. Tente novamente antes de exportar.');}
   await S.garantirLib('pdf');
-  const f=S.funcPorPin(pin)||{},b=calcBanco(pin,ini,fim),{jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'});
+  const f=S.funcPorPin(pin)||{},b=S.calcBanco(pin,ini,fim),{jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'});
   const titulo='Extrato Individual do Banco de Horas',sub=`Período ${S.brOf(ini)} a ${S.brOf(fim)} • Vigência do banco: ${S.brOf(b.vigencia)}`;
   let y=S.pdfCabecalhoPadrao(doc,titulo,sub);
   y=S.pdfTabelaPadrao(doc,{y,titulo,sub,head:['Colaborador','CPF','PIN','Cargo'],body:[[f.nome||'—',S.cpfMascarado(f.cpf),pin,f.funcao||'—']],widths:[80,40,20,50]})+4;
@@ -93,7 +93,7 @@ async function pdfDash(){
   S.pdfRodapesPadrao(doc,usuario);doc.save('Dashboard_Frequencia.pdf');
 }
 
-async function baixarPDFFolha(){const p=S.periodoFolhaValido();if(!p||!S.$('fl-pin').value)return;try{await S.garantirHistorico(p.ini);}catch(e){}try{await S.garantirLib('pdf');}catch(e){return S.toast('PDF indisponível. Verifique a conexão e tente novamente.',5000);}try{await pdfFolhas([S.$('fl-pin').value],p.ini,p.fim);}catch(e){S.toast('Não foi possível gerar o PDF. Tente novamente.',5000);}}
+async function baixarPDFFolha(){const p=S.periodoFolhaValido();if(!p||!S.$('fl-pin').value)return;try{await S.garantirHistorico(p.ini);}catch(e){}try{await S.garantirLib('pdf');}catch(e){return S.toast('PDF indisponível. Verifique a conexão e tente novamente.',5000);}try{await S.pdfFolhas([S.$('fl-pin').value],p.ini,p.fim);}catch(e){S.toast('Não foi possível gerar o PDF. Tente novamente.',5000);}}
 
 function dadosFechamentoContador(d,hoje=S.hojeISO()){
   const tot={...d.tot};
@@ -145,7 +145,7 @@ async function pacoteContador(){
 async function lotePDF(){const p=S.loteValida();if(!p)return;const ini=S.$('lt-ini').value;
   try{await S.garantirHistorico(ini);}catch(e){}
   const mes=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][Number(ini.slice(5,7))-1];
-  pdfFolhas(p,ini,S.$('lt-fim').value,`Folhas_MTE_${mes}_${ini.slice(0,4)}.pdf`);}
+  S.pdfFolhas(p,ini,S.$('lt-fim').value,`Folhas_MTE_${mes}_${ini.slice(0,4)}.pdf`);}
 async function lotePDFZip(){
   const p=S.loteValida();if(!p)return;const ini=S.$('lt-ini').value,fim=S.$('lt-fim').value;
   try{await S.garantirHistorico(ini);await S.garantirLib('pdf');await S.garantirLib('zip');await S.garantirLib('xlsx');}catch(e){return S.toast('Exportação indisponível. Verifique a conexão e tente novamente.',5000);}
@@ -239,7 +239,7 @@ async function enviarBackupPorEmail(para){
   zip.file('funcionarios.csv',S.csvDe(S.get('funcionarios',[]),['nome','cpf','cargo','funcao','departamento','admissao','escala','status','inicioVigenciaBancoHoras','email']));
   zip.file('pontos.csv',S.csvDe(S.get('batidas',[]),['nsr','nome','cpf','data','hora','tipo','fonte','movimento']));
   zip.file('escala.csv',S.csvDe(Object.values(S.get('escalas',{})||{}).flatMap(e=>(e.folgas||[]).map(x=>({periodo:`${e.semanaInicio} a ${e.semanaFim}`,funcionario:(S.funcPorPin(x.pin)||{}).nome||'',dia:x.dia,tipo:x.tipo,horario:x.horarioEntrada||''}))),['periodo','funcionario','dia','tipo','horario']));
-  zip.file('logs.csv',S.csvDe(await logsParaBackup(),['quando','por','acao']));
+  zip.file('logs.csv',S.csvDe(await S.logsParaBackup(),['quando','por','acao']));
   const blob=await zip.generateAsync({type:'blob'});
   return S.enviarArquivoPorEmail({para,assunto:'Backup Ponto Pro Gestão',nome:`Backup_Ponto_Pro_Gestao_${S.hojeISO()}.zip`,blob,mime:'application/zip'});
 }
