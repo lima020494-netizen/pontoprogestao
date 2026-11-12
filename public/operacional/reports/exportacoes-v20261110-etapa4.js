@@ -239,7 +239,7 @@ async function enviarBackupPorEmail(para){
   zip.file('funcionarios.csv',S.csvDe(S.get('funcionarios',[]),['nome','cpf','cargo','funcao','departamento','admissao','escala','status','inicioVigenciaBancoHoras','email']));
   zip.file('pontos.csv',S.csvDe(S.get('batidas',[]),['nsr','nome','cpf','data','hora','tipo','fonte','movimento']));
   zip.file('escala.csv',S.csvDe(Object.values(S.get('escalas',{})||{}).flatMap(e=>(e.folgas||[]).map(x=>({periodo:`${e.semanaInicio} a ${e.semanaFim}`,funcionario:(S.funcPorPin(x.pin)||{}).nome||'',dia:x.dia,tipo:x.tipo,horario:x.horarioEntrada||''}))),['periodo','funcionario','dia','tipo','horario']));
-  zip.file('logs.csv',S.csvDe(await logsParaBackup(),['quando','por','acao']));
+  zip.file('logs.csv',S.csvDe(await S.logsParaBackup(),['quando','por','acao']));
   const blob=await zip.generateAsync({type:'blob'});
   return S.enviarArquivoPorEmail({para,assunto:'Backup Ponto Pro Gestão',nome:`Backup_Ponto_Pro_Gestao_${S.hojeISO()}.zip`,blob,mime:'application/zip'});
 }
