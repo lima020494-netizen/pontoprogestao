@@ -28,7 +28,7 @@ test('stage 2: domain files have no DOM, cloud, storage, queue, export or pollin
     assert.doesNotMatch(source, /\bdocument\b|\blocalStorage\b|\bindexedDB\b|\bfetch\s*\(|\bsupabase\b|\bsetInterval\s*\(|\bsetTimeout\s*\(|\bgarantirLib\b|\bfilaPonto\b|\bnuvemPush\b/, path);
   }
   assert.equal((html.match(/\bsetInterval\s*\(/g) || []).length, 3);
-  assert.equal((html.match(/\bgarantirLib\s*\(/g) || []).length, 20);
+  assert.equal((html.match(/\bgarantirLib\s*\(/g) || []).length, 4);
 });
 
 test('stage 2: every extracted rule has one delegating global and inline handlers remain compatible', () => {
@@ -39,7 +39,7 @@ test('stage 2: every extracted rule has one delegating global and inline handler
     assert.ok(html.includes(`NUCLEO_OPERACIONAL.${name}(`), name);
   }
   assert.doesNotMatch(html, /let __jIdx=/);
-  assert.equal((html.match(/on(?:click|change|input|submit|keydown|keyup)=/g) || []).length, 202);
+  assert.equal((html.match(/on(?:click|change|input|submit|keydown|keyup)=/g) || []).length, 205);
 });
 
 test('stage 2: real shared modules reproduce every mixed-month baseline total without rewriting punches', () => {
@@ -120,7 +120,7 @@ test('stage 2: treatment priorities and bank occurrence rules remain concrete', 
 
 test('stage 2: offline shell includes every domain module and still excludes APIs and account data', () => {
   const sw = readFileSync('public/ponto-offline-sw.js', 'utf8');
-  assert.match(sw, /ponto-static-20261110-operacional-etapa\d+-v\d+/);
+  assert.match(sw, /ponto-static-20261112-matriz-v1/);
   for (const path of modulePaths) assert.ok(sw.includes(`'/${path}'`), path);
   const assets = sw.slice(sw.indexOf('const ASSETS'), sw.indexOf('self.addEventListener'));
   assert.doesNotMatch(assets, /\/api\/|\/rest\/|\/auth\/|pontos_pendentes/);
