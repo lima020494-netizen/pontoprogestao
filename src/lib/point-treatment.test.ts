@@ -30,8 +30,8 @@ test('batch records reason and authorizer on every selected day',()=>{const resu
 test('absence cannot be submitted as an allowance',()=>{assert.match(batch(days,'Gestor','Documento válido',[],'Falta').erro,/não é um abono/);});
 test('attachments reject unsupported files and size over one MiB',()=>{const ctx={};assert.equal(runInNewContext(prepare+';validarAnexoTratamento({type:"application/pdf",size:1048576})',ctx),'');assert.match(runInNewContext(prepare+';validarAnexoTratamento({type:"application/pdf",size:1048577})',ctx),/1 MB/);assert.match(runInNewContext(prepare+';validarAnexoTratamento({type:"text/html",size:1})',ctx),/PDF/);});
 const listRules=html.slice(html.indexOf('const normBusca='),html.indexOf('function buscarTratamento('));
-function tratList(busca:string,linhas:unknown[],visao='pendentes'){
- return runInNewContext(listRules+';listaTratamento().map(x=>x.key)',{window:{__tratBusca:busca},TRAT_LINHAS:linhas,TRAT_VISAO:visao,TRAT_FILTRO:''}) as string[];
+function tratList(busca:string,linhas:unknown[],visao='pendentes',filtro=''){
+ return runInNewContext(listRules+';listaTratamento().map(x=>x.key)',{window:{__tratBusca:busca},TRAT_LINHAS:linhas,TRAT_VISAO:visao,TRAT_FILTRO:filtro}) as string[];
 }
 const linhasPeriodo=[
  {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-03'},st:{pendente:false},key:'1|2026-10-03'},
