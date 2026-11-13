@@ -2214,22 +2214,7 @@ function subEscala(){
   const diasRest=esc_.criacaoData?Math.max(0,Math.ceil(ESC_TRAVA_DIAS-(Date.now()-new Date(esc_.criacaoData).getTime())/864e5)):ESC_TRAVA_DIAS;
   const travada=esc_.criacaoData?((Date.now()-new Date(esc_.criacaoData).getTime())/864e5)>ESC_TRAVA_DIAS:false;
   const fs=get('funcionarios',[]).filter(f=>f.status!=='Desligado');
-  const deps=[...new Set(fs.map(f=>f.departamento))];
   const dias=[]; for(let d=ini;d<=fim&&dias.length<31;d=addDias(d,1)) dias.push(d);
-  let rows='';
-  deps.forEach(dp=>{
-    const lista=fs.filter(f=>f.departamento===dp);
-    rows+=`<tr><td class="dept-head" colspan="${dias.length+1}">${esc(dp)} · ${lista.length} funcionário(s)</td></tr>`;
-    lista.forEach(f=>{
-      rows+=`<tr><td><b>${esc(f.nome)}</b><div class="muted">${esc(f.funcao)}</div></td>`+dias.map(d=>{
-        const it=buscaNaEscala(f.pin,d)||{tipo:'Trabalhado',horarioEntrada:''};
-        const tc=it.tipo==='DSR'?'D':it.tipo==='Trabalhado'?'T':'F';
-        return `<td class="esc-cel dia-${tc}"><select ${travada?'disabled':''} onchange="this.parentNode.className='esc-cel dia-'+(this.value==='DSR'?'D':this.value==='Trabalhado'?'T':'F');setCelula('${ini}','${f.pin}','${d}',this.value)">
-          ${TIPOS_ESC.map(t=>`<option ${(it.tipo==='Folga Domingo'?'Folga Compensada':it.tipo)===t?'selected':''}>${t}</option>`).join('')}</select>
-          ${it.tipo==='Trabalhado'?`<input ${travada?'disabled':''} type="time" value="${it.horarioEntrada||''}" onchange="setHora('${ini}','${f.pin}','${d}',this.value)" style="margin-top:4px"/>`:''}</td>`;
-      }).join('')+'</tr>';
-    });
-  });
   const semanas=MATRIZ_ESCALA.semanas(dias);
   const matriz=fs.map(f=>`<tr><td class="matrix-name"><strong>${esc(f.nome)}</strong><small>${esc(f.departamento||f.funcao||'')}</small></td>${dias.map(d=>{const c=MATRIZ_ESCALA.codigo(f,d),t=MATRIZ_ESCALA.TURNOS.find(t=>t.codigo===c),origem=escalaDaSemana(d,f.pin),bloqueada=travada||!!(origem?.criacaoData&&(Date.now()-new Date(origem.criacaoData).getTime())/864e5>ESC_TRAVA_DIAS);return `<td><button class="btn shift-chip shift-${c}" ${bloqueada?'disabled':''} aria-label="${esc(f.nome)} ${brOf(d)}: ${t.nome}" title="${esc(t.nome)} · ${toHHMM(previstoDia(f,d))}" data-pin="${esc(f.pin)}" data-dia="${d}" onclick="alternarTurnoEscala(this.dataset.pin,this.dataset.dia)">${c}</button></td>`;}).join('')}${semanas.map(g=>`<td class="matrix-load"><strong>${toHHMM(MATRIZ_ESCALA.carga(f,g.dias))}</strong></td>`).join('')}</tr>`).join('');
   const hist=get('logsEscala',[]).filter(h=>h.semana===ini);
