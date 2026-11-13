@@ -31,7 +31,7 @@ test('absence cannot be submitted as an allowance',()=>{assert.match(batch(days,
 test('attachments reject unsupported files and size over one MiB',()=>{const ctx={};assert.equal(runInNewContext(prepare+';validarAnexoTratamento({type:"application/pdf",size:1048576})',ctx),'');assert.match(runInNewContext(prepare+';validarAnexoTratamento({type:"application/pdf",size:1048577})',ctx),/1 MB/);assert.match(runInNewContext(prepare+';validarAnexoTratamento({type:"text/html",size:1})',ctx),/PDF/);});
 const listRules=html.slice(html.indexOf('const normBusca='),html.indexOf('function buscarTratamento('));
 function tratList(busca:string,linhas:unknown[],visao='pendentes'){
- return runInNewContext(listRules+';listaTratamento().map(x=>x.key)',{window:{__tratBusca:busca},TRAT_LINHAS:linhas,TRAT_VISAO:visao}) as string[];
+ return runInNewContext(listRules+';listaTratamento().map(x=>x.key)',{window:{__tratBusca:busca},TRAT_LINHAS:linhas,TRAT_VISAO:visao,TRAT_FILTRO:''}) as string[];
 }
 const linhasPeriodo=[
  {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-03'},st:{pendente:false},key:'1|2026-10-03'},

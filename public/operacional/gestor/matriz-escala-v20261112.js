@@ -42,7 +42,7 @@
         return {setor,turno,min,dias:dias.map(d=>{const qtd=lista.filter(f=>codigo(f,d)===turno).length;return {dia:d,qtd,status:!min?'neutro':qtd>=min?'ok':'falta'};})};
       }));
     }
-    return {TURNOS,codigo,proximo,item,semanas,carga,pdf,minimos,cobertura};
+    return {TURNOS,turnoPorHorario,codigo,proximo,item,semanas,carga,pdf,minimos,cobertura};
   }
   namespace.definir('gestor.matrizEscala',Object.freeze({criar}));
 })(window.PontoProOperacional);
