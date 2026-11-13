@@ -42,7 +42,7 @@ test('quick click persists one canonical cell and recalculates once',()=>{
   Object.assign(ctx,{MATRIZ_ESCALA:api,inicioSemana,ESC_TRAVA_DIAS:30,set:(k:string,v:any)=>{data[k]=v;writes++;},histEscala:()=>{},subEscala:()=>{renders++;},toast:()=>{}});
   ctx.window.__escIni='2026-11-09';ctx.window.__escFim='2026-11-15';
   vm.runInContext(html.slice(html.indexOf('function escalaObj('),html.indexOf('function setCelula(')),ctx);
-  vm.runInContext(html.slice(html.indexOf('function alternarTurnoEscala('),html.indexOf('async function pdfEscalaEquipe(')),ctx);
+  vm.runInContext(html.slice(html.indexOf('function registrarItemEscala('),html.indexOf('async function pdfEscalaEquipe(')),ctx);
   vm.runInContext("alternarTurnoEscala('1','2026-11-09')",ctx);
   assert.equal(data.escalas['2026-11-09'].folgas[0].turno,'T');assert.equal(writes,1);assert.equal(renders,0);
 });
@@ -51,7 +51,7 @@ test('quick time editor saves entry and exit once without rebuilding the whole s
   Object.assign(ctx,{MATRIZ_ESCALA:api,inicioSemana,ESC_TRAVA_DIAS:30,set:(k:string,v:any)=>{data[k]=v;writes++;},histEscala:()=>{},subEscala:()=>{renders++;},toast:()=>{},fecharModal:()=>{closed++;}});
   ctx.window.__escIni='2026-11-09';ctx.window.__escFim='2026-11-15';
   vm.runInContext(html.slice(html.indexOf('function escalaObj('),html.indexOf('function setCelula(')),ctx);
-  vm.runInContext(html.slice(html.indexOf('function alternarTurnoEscala('),html.indexOf('async function pdfEscalaEquipe(')),ctx);
+  vm.runInContext(html.slice(html.indexOf('function registrarItemEscala('),html.indexOf('async function pdfEscalaEquipe(')),ctx);
   const erro=vm.runInContext("salvarHorarioMatriz('1','2026-11-09','18:30','03:00')",ctx);
   assert.equal(erro,'');const item=data.escalas['2026-11-09'].folgas[0];
   assert.equal(item.tipo,'Trabalhado');assert.equal(item.turno,'N');assert.equal(item.horarioEntrada,'18:30');assert.equal(item.horarioSaida,'03:00');
