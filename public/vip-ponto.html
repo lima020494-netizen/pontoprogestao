@@ -2158,21 +2158,40 @@ async function salvarOcorrencia(){
 }
 document.addEventListener('keydown',e=>{const modal=$('modal-generico');if(!modal?.classList.contains('treatment-drawer')||modal.classList.contains('hidden'))return;if(e.key==='Escape'){e.preventDefault();fecharModal();window.__tratLote=null;}if(e.key==='Tab'){const items=[...modal.querySelectorAll('button,input,select,textarea')].filter(x=>!x.disabled&&x.getClientRects().length),first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}});
 const MATRIZ_ESCALA=PontoProOperacional.obter('gestor.matrizEscala').criar({get,buscaNaEscala,previstoDia,inicioSemana,garantirLib,diasPeriodo,brOf,toHHMM,toast,pdfCabecalhoPadrao,pdfTabelaPadrao,pdfRodapesPadrao});
+function registrarItemEscala(pin,dia,item,de,para){
+ const f=funcPorPin(pin);if(!f)return 'Colaborador não encontrado.';
+ const ini=window.__escIni,origem=escalaDaSemana(dia,pin),destino=get('escalas',{})[ini];
+ if([origem,destino].some(e=>e?.criacaoData&&(Date.now()-new Date(e.criacaoData).getTime())/864e5>ESC_TRAVA_DIAS)){const erro='Escala bloqueada após 30 dias.';toast(erro,2000);return erro;}
+ const all=get('escalas',{})||{},chave=origem?.semanaInicio||ini,e=all[chave]||escalaObj(ini).e;all[chave]=e;
+ if(item.tipo!=='Trabalhado'){
+  const qtd=Object.values(all).flatMap(x=>x.folgas||[]).filter(x=>x.pin===pin&&x.tipo!=='Trabalhado'&&x.dia!==dia&&inicioSemana(x.dia)===inicioSemana(dia));
+  if(new Set(qtd.map(x=>x.dia)).size>=3){const erro='Máximo de 3 folgas por colaborador na semana.';toast(erro,2500);return erro;}
+ }
+ const i=e.folgas.findIndex(x=>x.pin===pin&&x.dia===dia);if(i>=0)e.folgas[i]=item;else e.folgas.push(item);
+ set('escalas',all);histEscala(chave,pin,dia,de,para);atualizarMatrizTurno(pin,dia);return '';
+}
 function alternarTurnoEscala(pin,dia){
  const f=funcPorPin(pin);if(!f)return;
- const ini=window.__escIni,origem=escalaDaSemana(dia,pin),destino=get('escalas',{})[ini];
- if([origem,destino].some(e=>e?.criacaoData&&(Date.now()-new Date(e.criacaoData).getTime())/864e5>ESC_TRAVA_DIAS)){toast('Escala bloqueada após 30 dias.',2000);return;}
  const antigo=buscaNaEscala(pin,dia),c=MATRIZ_ESCALA.proximo(MATRIZ_ESCALA.codigo(f,dia));
- const all=get('escalas',{})||{},chave=antigo&&origem?origem.semanaInicio:ini;
- const e=antigo&&origem?all[chave]:escalaObj(ini).e;
- all[chave]=e;
- if(c==='F'||c==='D'){
-  const qtd=Object.values(all).flatMap(x=>x.folgas||[]).filter(x=>x.pin===pin&&x.tipo!=='Trabalhado'&&x.dia!==dia&&inicioSemana(x.dia)===inicioSemana(dia));
-  if(new Set(qtd.map(x=>x.dia)).size>=3){toast('Máximo de 3 folgas por colaborador na semana.',2500);return;}
- }
- const item=MATRIZ_ESCALA.item(c,pin,dia,antigo||{}),i=e.folgas.findIndex(x=>x.pin===pin&&x.dia===dia);
- if(i>=0)e.folgas[i]=item;else e.folgas.push(item);
- set('escalas',all);histEscala(chave,pin,dia,antigo?.turno||antigo?.tipo||'Padrão',c);subEscala();
+ registrarItemEscala(pin,dia,MATRIZ_ESCALA.item(c,pin,dia,antigo||{}),antigo?.turno||antigo?.tipo||'Padrão',c);
+}
+function editarHorarioMatriz(pin,dia){
+ const f=funcPorPin(pin);if(!f)return;const it=buscaNaEscala(pin,dia)||{};
+ abrirModal(`<div class="matrix-editor"><div class="row"><div><h3>Horário da jornada</h3><p class="muted">${esc(f.nome)} · ${brOf(dia)}</p></div><button class="btn sm ghost right" onclick="fecharModal()" aria-label="Fechar">✕</button></div><p class="muted">Para jornadas atípicas, informe os horários sem alterar os demais dias.</p><div class="grid g2"><div><label for="mh-entrada">Entrada</label><input id="mh-entrada" type="time" value="${esc(it.horarioEntrada||'')}"/></div><div><label for="mh-saida">Saída</label><input id="mh-saida" type="time" value="${esc(it.horarioSaida||'')}"/></div></div><p id="mh-erro" class="alert err" role="alert" hidden></p><div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn ghost" onclick="fecharModal()">Cancelar</button><button class="btn" onclick="const erro=salvarHorarioMatriz('${esc(pin)}','${dia}',$('mh-entrada').value,$('mh-saida').value);if(erro){$('mh-erro').textContent=erro;$('mh-erro').hidden=false;}">Salvar horário</button></div></div>`);
+}
+function salvarHorarioMatriz(pin,dia,entrada,saida){
+ const valida=h=>/^([01]\d|2[0-3]):[0-5]\d$/.test(h);if(!valida(entrada)||!valida(saida))return 'Informe Entrada e Saída válidas.';
+ const antigo=buscaNaEscala(pin,dia)||{},c=MATRIZ_ESCALA.turnoPorHorario(entrada),item=MATRIZ_ESCALA.item(c,pin,dia,{...antigo,horarioEntrada:entrada,horarioSaida:saida});
+ const de=antigo.tipo?`${antigo.turno||antigo.tipo} ${antigo.horarioEntrada||''}${antigo.horarioSaida?'–'+antigo.horarioSaida:''}`:'Padrão';
+ const erro=registrarItemEscala(pin,dia,item,de,`${c} ${entrada}–${saida}`);if(!erro){fecharModal();toast('Horário atualizado.',2000);}return erro;
+}
+function atualizarMatrizTurno(pin,dia){
+ if(typeof document==='undefined')return;const f=funcPorPin(pin);if(!f)return;
+ const c=MATRIZ_ESCALA.codigo(f,dia),t=MATRIZ_ESCALA.TURNOS.find(x=>x.codigo===c),it=buscaNaEscala(pin,dia),hora=it?.horarioEntrada?` · ${it.horarioEntrada}${it.horarioSaida?'–'+it.horarioSaida:''}`:'';
+ const btn=[...document.querySelectorAll('.shift-chip')].find(x=>x.dataset.pin===String(pin)&&x.dataset.dia===dia);
+ if(btn){btn.className=`btn shift-chip shift-${c}`;btn.textContent=c;btn.setAttribute('aria-label',`${f.nome} ${brOf(dia)}: ${t.nome}${hora}`);btn.title=`${t.nome}${hora} · ${toHHMM(previstoDia(f,dia))}`;}
+ document.querySelectorAll('[data-carga-pin]').forEach(el=>{if(el.dataset.cargaPin===String(pin))el.textContent=toHHMM(MATRIZ_ESCALA.carga(f,(el.dataset.cargaDias||'').split(',').filter(Boolean)));});
+ const map=$('escala-heatmap');if(map)map.innerHTML=heatmapCobertura(get('funcionarios',[]).filter(x=>x.status!=='Desligado'),diasPeriodo(window.__escIni,window.__escFim));
 }
 function setMinimoCobertura(setor,turno,v){const emp={...(get('empregador',{})||{})},m={...(emp.coberturaMinima||{})};m[setor]={...(m[setor]||{}),[turno]:Math.max(0,Math.min(99,parseInt(v,10)||0))};emp.coberturaMinima=m;set('empregador',emp);log('Cobertura mínima: '+setor+' '+turno+' = '+m[setor][turno]);subEscala();}
 function heatmapCobertura(fs,dias){
