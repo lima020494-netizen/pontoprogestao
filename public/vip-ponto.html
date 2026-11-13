@@ -1947,15 +1947,15 @@ function subBatidas(){
 async function filtrarGestaoBatidas(limpar=true){
  const pin=$('gb-pin')?.value||'',ini=$('gb-ini')?.value||'',fim=$('gb-fim')?.value||'',out=$('gb-conteudo');if(!out||!ini||!fim)return;
  if(ini>fim|| (Date.parse(fim)-Date.parse(ini))/864e5>366){out.textContent='Selecione um período válido de até 366 dias.';return;}
- window.__batFilt={pin,ini,fim};if(limpar)TRAT_SELECAO.clear();const carga=++TRAT_CARGA;
+ window.__batFilt={pin,ini,fim};if(limpar){TRAT_SELECAO.clear();TRAT_FILTRO='';}TRAT_PAGINA=1;const carga=++TRAT_CARGA;
  out.textContent='Carregando registros…';
  try{await garantirHistorico(addDias(ini,-1));if(carga===TRAT_CARGA&&$('gb-conteudo')===out)renderGestaoBatidas();}
  catch(e){if(carga===TRAT_CARGA)out.innerHTML='<div class="alert err">Não foi possível carregar o histórico. <button class="btn ghost" onclick="filtrarGestaoBatidas(false)">Tentar novamente</button></div>';}
 }
 function renderGestaoBatidas(){
  const out=$('gb-conteudo');if(!out)return;
- const {pin,ini,fim}=window.__batFilt||{},hoje=hojeISO(),fs=get('funcionarios',[]).filter(f=>f.status!=='Desligado'&&(!pin||f.pin===pin));
- TRAT_LINHAS=[];for(const f of fs){for(const l of dadosFolha(f.pin,ini,fim).linhas){if(f.admissao&&l.data<f.admissao)continue;const bs=batidasDia(f.pin,l.data),oc=ocorrenciaDia(f.pin,l.data);if(l.data>hoje&&!bs.length&&!oc)continue;TRAT_LINHAS.push({f,l,bs,oc,st:classificacaoTratamento(l,oc,bs,hoje),key:f.pin+'|'+l.data});}}
+ const {pin,ini,fim}=window.__batFilt||{},hoje=hojeISO(),fs=get('funcionarios',[]).filter(f=>f.status!=='Desligado'&&(!pin||f.pin===pin)),dias=diasPeriodo(ini,fim);
+ TRAT_LINHAS=[];for(const f of fs){for(const data of dias){if(f.admissao&&data<f.admissao)continue;const triagem=triagemTratamentoDia(f,data,hoje);if(triagem)TRAT_LINHAS.push({f,...triagem,key:f.pin+'|'+data});}}
  TRAT_LINHAS.sort((a,b)=>b.l.data.localeCompare(a.l.data)||a.f.nome.localeCompare(b.f.nome));
  desenharTratamento();
 }
