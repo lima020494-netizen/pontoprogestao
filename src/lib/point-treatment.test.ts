@@ -111,6 +111,18 @@ test('batch aborts the whole forgotten-punch insert when one selected day cannot
 test('shift over six hours with only two punches flags missing break',()=>{const s=classify('2026-11-01',480,480,2);assert.equal(s.pendente,true);assert.equal(s.cor,'orange');assert.equal(s.titulo,'Intervalo não registrado');});
 test('six-hour shift with two punches does not require a break',()=>{assert.equal(classify('2026-11-01',360,360,2).pendente,false);});
 test('short worked time without allowance stays as review shift',()=>{const s=classify('2026-11-01',480,300,4);assert.equal(s.pendente,true);assert.equal(s.titulo,'Revisar jornada');});
+test('interval and request classifications expose their own instant-filter categories',()=>{
+ const interval=classify('2026-11-01',480,480,2),request=classify('2026-11-01',480,0,0,{tipo:'Atestado médico',status:'pendente'});
+ assert.equal(interval.intervalo,true);assert.equal(request.solicitacao,true);
+});
+test('light daily triage matches the full sheet without calling the monthly calculator',()=>{
+ const f={pin:'1',nome:'Ana',escala:'5x2',status:'Ativo',admissao:'2026-01-01'};
+ const data:Record<string,unknown>={batidas:[],ocorrencias:[],empregador:{},feriados:[],escalas:{}};
+ let fullSheetCalls=0;
+ const ctx={get:(k:string,fallback:unknown)=>data[k]??fallback,funcPorPin:()=>f,dadosFolha:()=>{fullSheetCalls++;throw new Error('full sheet must not run');}};
+ const triage=runInNewContext(';triagemTratamentoDia(f,"2026-11-01","2026-11-02")',{...ctx,f}) as {l:{previsto:number;trabalhado:number};st:{falta:boolean;pendente:boolean}};
+ assert.equal(triage.l.previsto,440);assert.equal(triage.l.trabalhado,0);assert.equal(triage.st.falta,true);assert.equal(triage.st.pendente,true);assert.equal(fullSheetCalls,0);
+});
 test('one form inserts the four punches at once and skips types the day already has',async()=>{
   const dias=[{pin:'1',data:'2026-10-02'},{pin:'1',data:'2026-10-03'}];
   const v={'oc-pin':'1','oc-tipo':'Esquecimento de Marcação','oc-h0':'08:00','oc-h1':'12:00','oc-h2':'13:00','oc-h3':'17:00','oc-motivo':'Lançamento das marcações','oc-autorizou':'Gestor RH'};
