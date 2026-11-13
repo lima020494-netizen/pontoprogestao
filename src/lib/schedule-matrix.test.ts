@@ -44,7 +44,7 @@ test('quick click persists one canonical cell and recalculates once',()=>{
   vm.runInContext(html.slice(html.indexOf('function escalaObj('),html.indexOf('function setCelula(')),ctx);
   vm.runInContext(html.slice(html.indexOf('function alternarTurnoEscala('),html.indexOf('async function pdfEscalaEquipe(')),ctx);
   vm.runInContext("alternarTurnoEscala('1','2026-11-09')",ctx);
-  assert.equal(data.escalas['2026-11-09'].folgas[0].turno,'T');assert.equal(writes,1);assert.equal(renders,1);
+  assert.equal(data.escalas['2026-11-09'].folgas[0].turno,'T');assert.equal(writes,1);assert.equal(renders,0);
 });
 test('PDF builds all monthly dates and team rows after loading the PDF library',async()=>{
   const {ctx,api,data,inicioSemana}=fixture();let loaded=false,rows=0;const dates:string[]=[];

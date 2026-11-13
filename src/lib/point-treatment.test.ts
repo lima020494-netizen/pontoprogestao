@@ -41,6 +41,23 @@ const linhasPeriodo=[
 ];
 test('inbox without a selected collaborator shows only pendencies',()=>{assert.deepEqual([...tratList('',linhasPeriodo)],['1|2026-10-01','2|2026-10-01']);});
 test('selecting a collaborator shows the full period with pendencies on top',()=>{assert.deepEqual([...tratList('Ana — PIN 1',linhasPeriodo)],['1|2026-10-01','1|2026-10-03','1|2026-10-02']);});
+test('KPI filters isolate odd punches, missing breaks and pending requests instantly',()=>{
+ const linhas=[
+  {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-01'},st:{pendente:true,impar:true},key:'impar'},
+  {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-02'},st:{pendente:true,intervalo:true},key:'intervalo'},
+  {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-03'},st:{pendente:true,solicitacao:true},key:'solicitacao'},
+ ];
+ assert.deepEqual([...tratList('',linhas,'todos','impar')],['impar']);
+ assert.deepEqual([...tratList('',linhas,'todos','intervalo')],['intervalo']);
+ assert.deepEqual([...tratList('',linhas,'todos','solicitacao')],['solicitacao']);
+});
+test('lazy list reveals twenty records per page without changing the filtered total',()=>{
+ const linhas=Array.from({length:45},(_,i)=>i);
+ for(const [pagina,total] of [[1,20],[2,40],[3,45]]){
+  const visible=runInNewContext(listRules+';paginaTratamento(linhas).length',{TRAT_PAGINA:pagina,TRAT_LOTE:20,TRAT_LINHAS:[],TRAT_VISAO:'pendentes',TRAT_FILTRO:'',window:{},linhas});
+  assert.equal(visible,total);
+ }
+});
 const drawerRules=html.slice(html.indexOf('function lancarOcorrencia('),html.indexOf('function camposOcorrencia('));
 const saveRules=html.slice(html.indexOf('async function salvarOcorrencia('),html.indexOf("document.addEventListener('keydown',e=>{const modal=$('modal-generico')"));
 const LOTE=[{pin:'1',data:'2026-10-02'}];
@@ -120,7 +137,7 @@ test('light daily triage matches the full sheet without calling the monthly calc
  const data:Record<string,unknown>={batidas:[],ocorrencias:[],empregador:{},feriados:[],escalas:{}};
  let fullSheetCalls=0;
  const ctx={get:(k:string,fallback:unknown)=>data[k]??fallback,funcPorPin:()=>f,dadosFolha:()=>{fullSheetCalls++;throw new Error('full sheet must not run');}};
- const triage=runInNewContext(';triagemTratamentoDia(f,"2026-11-01","2026-11-02")',{...ctx,f}) as {l:{previsto:number;trabalhado:number};st:{falta:boolean;pendente:boolean}};
+ const triage=runInNewContext(';triagemTratamentoDia(f,"2026-11-02","2026-11-03")',{...ctx,f}) as {l:{previsto:number;trabalhado:number};st:{falta:boolean;pendente:boolean}};
  assert.equal(triage.l.previsto,440);assert.equal(triage.l.trabalhado,0);assert.equal(triage.st.falta,true);assert.equal(triage.st.pendente,true);assert.equal(fullSheetCalls,0);
 });
 test('one form inserts the four punches at once and skips types the day already has',async()=>{
