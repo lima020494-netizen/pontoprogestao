@@ -3,6 +3,7 @@
   'use strict';
   const TURNOS=Object.freeze([{codigo:'M',nome:'Manhã'},{codigo:'T',nome:'Tarde'},{codigo:'N',nome:'Noite'},{codigo:'F',nome:'Folga'},{codigo:'D',nome:'DSR'}]);
   function criar(S){
+    function turnoPorHorario(horario){const hora=Number(String(horario||'08:00').slice(0,2));return hora>=18||hora<6?'N':hora>=12?'T':'M';}
     function codigo(f,d){
       const it=S.buscaNaEscala(f.pin,d);
       if(it&&it.tipo!=='Trabalhado')return it.tipo==='DSR'?'D':'F';

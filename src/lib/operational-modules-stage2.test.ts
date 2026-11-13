@@ -32,7 +32,7 @@ test('stage 2: domain files have no DOM, cloud, storage, queue, export or pollin
 });
 
 test('stage 2: every extracted rule has one delegating global and inline handlers remain compatible', () => {
-  const names = ['instanteBatida', 'indiceJornadas', 'jornadaDe', 'batidasJornada', 'escalaDaSemana', 'folgaEscala', 'horarioEscala', 'previstoDia', 'batidasDia', 'paresBatidas', 'minutosTrabalhados', 'calculaNoturna', 'tiposTratamentoLote', 'regraOcorrencia', 'ocorrenciaDia', 'validarPeriodoOcorrencia', 'trabalhoApuradoDia', 'descontoDsrDia', 'atrasoDia', 'movimentoBancoDia', 'dadosFolha', 'resumoMensalFolha', 'calcBanco', 'classificacaoTratamento', 'lerCelulaEscala'];
+  const names = ['instanteBatida', 'indiceJornadas', 'jornadaDe', 'batidasJornada', 'escalaDaSemana', 'folgaEscala', 'horarioEscala', 'previstoDia', 'batidasDia', 'paresBatidas', 'minutosTrabalhados', 'calculaNoturna', 'tiposTratamentoLote', 'regraOcorrencia', 'ocorrenciaDia', 'validarPeriodoOcorrencia', 'trabalhoApuradoDia', 'descontoDsrDia', 'atrasoDia', 'movimentoBancoDia', 'dadosFolha', 'resumoMensalFolha', 'calcBanco', 'classificacaoTratamento', 'triagemTratamentoDia', 'lerCelulaEscala'];
   for (const name of names) {
     const matches = html.match(new RegExp(`function ${name}\\(`, 'g')) || [];
     assert.equal(matches.length, 1, name);
