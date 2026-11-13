@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Evolução Etapa 1: triagem leve do Tratamento de Ponto, KPIs-filtro, paginação e edição unificada da Matriz Visual de escalas, preservando auditoria e cálculos; validar em preview sem publicar.
+
 - [x] Fase 1 da matriz de escalas: chips M/T/N/F/D, semana/mês, carga semanal pela apuração e PDF da equipe com logo; clique e persistência conferidos com dados fictícios no desktop/celular. Horários cadastrados e bloqueio preservados, sem publicar.
 
 - [x] Etapa 0 da modularização: linha de base registrada em docs/etapa-0-linha-de-base.md; 194 testes em 29 arquivos passaram, incluindo 12 novos cenários de cálculo, fila, consumo e AFD/AEJ. Navegador com dados fictícios confirmou upgrade IDB 1→2, duas batidas preservadas offline e envio único na reconexão; cargas mediram 7/5/7 consultas (inicial/cache/forced). Motor e service worker mantiveram os mesmos hashes; nenhum dado real ou regra alterado e nada publicado.
