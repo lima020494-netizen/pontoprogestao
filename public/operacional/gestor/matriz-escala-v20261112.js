@@ -3,13 +3,13 @@
   'use strict';
   const TURNOS=Object.freeze([{codigo:'M',nome:'Manhã'},{codigo:'T',nome:'Tarde'},{codigo:'N',nome:'Noite'},{codigo:'F',nome:'Folga'},{codigo:'D',nome:'DSR'}]);
   function criar(S){
+    function turnoPorHorario(horario){const hora=Number(String(horario||'08:00').slice(0,2));return hora>=18||hora<6?'N':hora>=12?'T':'M';}
     function codigo(f,d){
       const it=S.buscaNaEscala(f.pin,d);
       if(it&&it.tipo!=='Trabalhado')return it.tipo==='DSR'?'D':'F';
       if(it&&['M','T','N'].includes(it.turno))return it.turno;
       if(!it&&S.previstoDia(f,d)===0)return new Date(d+'T12:00:00Z').getUTCDay()===0?'D':'F';
-      const hora=Number((it?.horarioEntrada||S.get('empregador',{}).hEntrada||'08:00').slice(0,2));
-      return hora>=18||hora<6?'N':hora>=12?'T':'M';
+      return turnoPorHorario(it?.horarioEntrada||S.get('empregador',{}).hEntrada||'08:00');
     }
     function proximo(atual){return TURNOS[(TURNOS.findIndex(t=>t.codigo===atual)+1)%TURNOS.length].codigo;}
     function item(c,pin,dia,anterior={}){
@@ -42,7 +42,7 @@
         return {setor,turno,min,dias:dias.map(d=>{const qtd=lista.filter(f=>codigo(f,d)===turno).length;return {dia:d,qtd,status:!min?'neutro':qtd>=min?'ok':'falta'};})};
       }));
     }
-    return {TURNOS,codigo,proximo,item,semanas,carga,pdf,minimos,cobertura};
+    return {TURNOS,turnoPorHorario,codigo,proximo,item,semanas,carga,pdf,minimos,cobertura};
   }
   namespace.definir('gestor.matrizEscala',Object.freeze({criar}));
 })(window.PontoProOperacional);

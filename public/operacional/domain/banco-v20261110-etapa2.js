@@ -142,18 +142,30 @@
       const parcial = passado && l.previsto > 0 && l.trabalhado < l.previsto && !r.abonado && !r.compensacao && !r.externo && !falta;
       const intervalo = passado && l.previsto > 360 && bs.length === 2 && !r.abonado && !r.compensacao && !r.externo;
       const pendente = solicitacao || erro || falta || (passado && (impar || intervalo || parcial));
-      if (erro) return { cor: 'red', titulo: 'Revisar marcações', pendente, falta, impar, solicitacao };
-      if (solicitacao) return { cor: 'blue', titulo: 'Solicitação pendente', pendente, falta, impar, solicitacao };
-      if (falta) return { cor: 'red', titulo: 'Falta não tratada', pendente, falta, impar, solicitacao };
-      if (impar) return { cor: 'orange', titulo: passado ? 'Batidas ímpares' : 'Jornada em andamento', pendente, falta, impar, solicitacao };
-      if (intervalo) return { cor: 'orange', titulo: 'Intervalo não registrado', pendente, falta, impar, solicitacao };
-      if (parcial) return { cor: 'orange', titulo: 'Revisar jornada', pendente, falta, impar, solicitacao };
-      if (r.abonado) return { cor: 'blue', titulo: oc.tipo, pendente, falta, impar, solicitacao };
-      if (l.trabalhado > 0 && l.previsto === 0) return { cor: 'purple', titulo: 'Trabalho em descanso / feriado', pendente, falta, impar, solicitacao };
-      return { cor: 'green', titulo: oc?.tipo || (l.previsto === 0 ? 'Descanso' : 'Concluído'), pendente, falta, impar, solicitacao };
+      const flags = { pendente, falta, impar, solicitacao, intervalo, parcial, erro };
+      if (erro) return { cor: 'red', titulo: 'Revisar marcações', ...flags };
+      if (solicitacao) return { cor: 'blue', titulo: 'Solicitação pendente', ...flags };
+      if (falta) return { cor: 'red', titulo: 'Falta não tratada', ...flags };
+      if (impar) return { cor: 'orange', titulo: passado ? 'Batidas ímpares' : 'Jornada em andamento', ...flags };
+      if (intervalo) return { cor: 'orange', titulo: 'Intervalo não registrado', ...flags };
+      if (parcial) return { cor: 'orange', titulo: 'Revisar jornada', ...flags };
+      if (r.abonado) return { cor: 'blue', titulo: oc.tipo, ...flags };
+      if (l.trabalhado > 0 && l.previsto === 0) return { cor: 'purple', titulo: 'Trabalho em descanso / feriado', ...flags };
+      return { cor: 'green', titulo: oc?.tipo || (l.previsto === 0 ? 'Descanso' : 'Concluído'), ...flags };
+    }
+    /* Triagem do Inbox: um dia por vez, sem montar folha, totais, justificativas ou saldo histórico do mês. */
+    function triagemTratamentoDia(f, data, hoje) {
+      const bs = S.batidasDia(f.pin, data), oc = S.ocorrenciaDia(f.pin, data);
+      if (data > hoje && !bs.length && !oc) return null;
+      const previsto = S.previstoDia(f, data), trabalhado = S.trabalhoApuradoDia(f, data, bs);
+      const atraso = bs.length ? S.atrasoDia(f.pin, data, bs, previsto) : 0;
+      const movimento = S.movimentoBancoDia(f.pin, data, previsto, trabalhado, atraso);
+      const vigencia = f.inicioVigenciaBancoHoras || f.bancoInicio || f.admissao || data;
+      const l = { data, dia: S.DIAS[S.dow(data)], previsto, trabalhado, saldo: data < vigencia ? 0 : movimento.saldo };
+      return { l, bs, oc, st: S.classificacaoTratamento(l, oc, bs, hoje) };
     }
 
-    return { batidasDia, paresBatidas, difMin, minutosTrabalhados, calculaNoturna, trabalhadoDia, trabalhoApuradoDia, descontoDsrDia, atrasoDia, movimentoBancoDia, dadosFolha, resumoMensalFolha, calcBanco, classificacaoTratamento };
+    return { batidasDia, paresBatidas, difMin, minutosTrabalhados, calculaNoturna, trabalhadoDia, trabalhoApuradoDia, descontoDsrDia, atrasoDia, movimentoBancoDia, dadosFolha, resumoMensalFolha, calcBanco, classificacaoTratamento, triagemTratamentoDia };
   }
 
   namespace.definir('domain.banco', Object.freeze({ criar }));

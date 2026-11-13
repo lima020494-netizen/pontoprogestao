@@ -32,14 +32,14 @@ test('stage 2: domain files have no DOM, cloud, storage, queue, export or pollin
 });
 
 test('stage 2: every extracted rule has one delegating global and inline handlers remain compatible', () => {
-  const names = ['instanteBatida', 'indiceJornadas', 'jornadaDe', 'batidasJornada', 'escalaDaSemana', 'folgaEscala', 'horarioEscala', 'previstoDia', 'batidasDia', 'paresBatidas', 'minutosTrabalhados', 'calculaNoturna', 'tiposTratamentoLote', 'regraOcorrencia', 'ocorrenciaDia', 'validarPeriodoOcorrencia', 'trabalhoApuradoDia', 'descontoDsrDia', 'atrasoDia', 'movimentoBancoDia', 'dadosFolha', 'resumoMensalFolha', 'calcBanco', 'classificacaoTratamento', 'lerCelulaEscala'];
+  const names = ['instanteBatida', 'indiceJornadas', 'jornadaDe', 'batidasJornada', 'escalaDaSemana', 'folgaEscala', 'horarioEscala', 'previstoDia', 'batidasDia', 'paresBatidas', 'minutosTrabalhados', 'calculaNoturna', 'tiposTratamentoLote', 'regraOcorrencia', 'ocorrenciaDia', 'validarPeriodoOcorrencia', 'trabalhoApuradoDia', 'descontoDsrDia', 'atrasoDia', 'movimentoBancoDia', 'dadosFolha', 'resumoMensalFolha', 'calcBanco', 'classificacaoTratamento', 'triagemTratamentoDia', 'lerCelulaEscala'];
   for (const name of names) {
     const matches = html.match(new RegExp(`function ${name}\\(`, 'g')) || [];
     assert.equal(matches.length, 1, name);
     assert.ok(html.includes(`NUCLEO_OPERACIONAL.${name}(`), name);
   }
   assert.doesNotMatch(html, /let __jIdx=/);
-  assert.equal((html.match(/on(?:click|change|input|submit|keydown|keyup)=/g) || []).length, 204);
+  assert.equal((html.match(/on(?:click|change|input|submit|keydown|keyup)=/g) || []).length, 208);
 });
 
 test('stage 2: real shared modules reproduce every mixed-month baseline total without rewriting punches', () => {
@@ -120,7 +120,7 @@ test('stage 2: treatment priorities and bank occurrence rules remain concrete', 
 
 test('stage 2: offline shell includes every domain module and still excludes APIs and account data', () => {
   const sw = readFileSync('public/ponto-offline-sw.js', 'utf8');
-  assert.match(sw, /ponto-static-20261113-heatmap-v1/);
+  assert.match(sw, /ponto-static-20261113-triagem-matriz-v1/);
   for (const path of modulePaths) assert.ok(sw.includes(`'/${path}'`), path);
   const assets = sw.slice(sw.indexOf('const ASSETS'), sw.indexOf('self.addEventListener'));
   assert.doesNotMatch(assets, /\/api\/|\/rest\/|\/auth\/|pontos_pendentes/);

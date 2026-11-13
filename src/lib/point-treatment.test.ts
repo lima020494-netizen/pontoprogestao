@@ -30,8 +30,8 @@ test('batch records reason and authorizer on every selected day',()=>{const resu
 test('absence cannot be submitted as an allowance',()=>{assert.match(batch(days,'Gestor','Documento válido',[],'Falta').erro,/não é um abono/);});
 test('attachments reject unsupported files and size over one MiB',()=>{const ctx={};assert.equal(runInNewContext(prepare+';validarAnexoTratamento({type:"application/pdf",size:1048576})',ctx),'');assert.match(runInNewContext(prepare+';validarAnexoTratamento({type:"application/pdf",size:1048577})',ctx),/1 MB/);assert.match(runInNewContext(prepare+';validarAnexoTratamento({type:"text/html",size:1})',ctx),/PDF/);});
 const listRules=html.slice(html.indexOf('const normBusca='),html.indexOf('function buscarTratamento('));
-function tratList(busca:string,linhas:unknown[],visao='pendentes'){
- return runInNewContext(listRules+';listaTratamento().map(x=>x.key)',{window:{__tratBusca:busca},TRAT_LINHAS:linhas,TRAT_VISAO:visao}) as string[];
+function tratList(busca:string,linhas:unknown[],visao='pendentes',filtro=''){
+ return runInNewContext(listRules+';listaTratamento().map(x=>x.key)',{window:{__tratBusca:busca},TRAT_LINHAS:linhas,TRAT_VISAO:visao,TRAT_FILTRO:filtro}) as string[];
 }
 const linhasPeriodo=[
  {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-03'},st:{pendente:false},key:'1|2026-10-03'},
@@ -41,6 +41,23 @@ const linhasPeriodo=[
 ];
 test('inbox without a selected collaborator shows only pendencies',()=>{assert.deepEqual([...tratList('',linhasPeriodo)],['1|2026-10-01','2|2026-10-01']);});
 test('selecting a collaborator shows the full period with pendencies on top',()=>{assert.deepEqual([...tratList('Ana — PIN 1',linhasPeriodo)],['1|2026-10-01','1|2026-10-03','1|2026-10-02']);});
+test('KPI filters isolate odd punches, missing breaks and pending requests instantly',()=>{
+ const linhas=[
+  {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-01'},st:{pendente:true,impar:true},key:'impar'},
+  {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-02'},st:{pendente:true,intervalo:true},key:'intervalo'},
+  {f:{pin:'1',nome:'Ana'},l:{data:'2026-10-03'},st:{pendente:true,solicitacao:true},key:'solicitacao'},
+ ];
+ assert.deepEqual([...tratList('',linhas,'todos','impar')],['impar']);
+ assert.deepEqual([...tratList('',linhas,'todos','intervalo')],['intervalo']);
+ assert.deepEqual([...tratList('',linhas,'todos','solicitacao')],['solicitacao']);
+});
+test('lazy list reveals twenty records per page without changing the filtered total',()=>{
+ const linhas=Array.from({length:45},(_,i)=>i);
+ for(const [pagina,total] of [[1,20],[2,40],[3,45]]){
+  const visible=runInNewContext(listRules+';paginaTratamento(linhas).length',{TRAT_PAGINA:pagina,TRAT_LOTE:20,TRAT_LINHAS:[],TRAT_VISAO:'pendentes',TRAT_FILTRO:'',window:{},linhas});
+  assert.equal(visible,total);
+ }
+});
 const drawerRules=html.slice(html.indexOf('function lancarOcorrencia('),html.indexOf('function camposOcorrencia('));
 const saveRules=html.slice(html.indexOf('async function salvarOcorrencia('),html.indexOf("document.addEventListener('keydown',e=>{const modal=$('modal-generico')"));
 const LOTE=[{pin:'1',data:'2026-10-02'}];
@@ -111,6 +128,18 @@ test('batch aborts the whole forgotten-punch insert when one selected day cannot
 test('shift over six hours with only two punches flags missing break',()=>{const s=classify('2026-11-01',480,480,2);assert.equal(s.pendente,true);assert.equal(s.cor,'orange');assert.equal(s.titulo,'Intervalo não registrado');});
 test('six-hour shift with two punches does not require a break',()=>{assert.equal(classify('2026-11-01',360,360,2).pendente,false);});
 test('short worked time without allowance stays as review shift',()=>{const s=classify('2026-11-01',480,300,4);assert.equal(s.pendente,true);assert.equal(s.titulo,'Revisar jornada');});
+test('interval and request classifications expose their own instant-filter categories',()=>{
+ const interval=classify('2026-11-01',480,480,2),request=classify('2026-11-01',480,0,0,{tipo:'Atestado médico',status:'pendente'});
+ assert.equal(interval.intervalo,true);assert.equal(request.solicitacao,true);
+});
+test('light daily triage matches the full sheet without calling the monthly calculator',()=>{
+ const f={pin:'1',nome:'Ana',escala:'5x2',status:'Ativo',admissao:'2026-01-01'};
+ const data:Record<string,unknown>={batidas:[],ocorrencias:[],empregador:{},feriados:[],escalas:{}};
+ let fullSheetCalls=0;
+ const ctx={get:(k:string,fallback:unknown)=>data[k]??fallback,funcPorPin:()=>f,dadosFolha:()=>{fullSheetCalls++;throw new Error('full sheet must not run');}};
+ const triage=runInNewContext(';triagemTratamentoDia(f,"2026-11-02","2026-11-03")',{...ctx,f}) as {l:{previsto:number;trabalhado:number};st:{falta:boolean;pendente:boolean}};
+ assert.equal(triage.l.previsto,440);assert.equal(triage.l.trabalhado,0);assert.equal(triage.st.falta,true);assert.equal(triage.st.pendente,true);assert.equal(fullSheetCalls,0);
+});
 test('one form inserts the four punches at once and skips types the day already has',async()=>{
   const dias=[{pin:'1',data:'2026-10-02'},{pin:'1',data:'2026-10-03'}];
   const v={'oc-pin':'1','oc-tipo':'Esquecimento de Marcação','oc-h0':'08:00','oc-h1':'12:00','oc-h2':'13:00','oc-h3':'17:00','oc-motivo':'Lançamento das marcações','oc-autorizou':'Gestor RH'};
