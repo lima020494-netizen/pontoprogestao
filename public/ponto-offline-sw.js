@@ -1,5 +1,5 @@
 /* Only the kiosk shell and public static files. Never cache API/auth/company responses. */
-const CACHE = 'ponto-static-20261112-matriz-v1';
+const CACHE = 'ponto-static-20261113-heatmap-v1';
 const SHELL = '/vip-ponto.html';
 const ASSETS = [SHELL, '/jspdf-2.5.1.umd.min.js', '/jspdf.plugin.autotable.min.js',
   '/jszip-3.10.1.min.js', '/xlsx-0.18.5.full.min.js', '/supabase-2.117.3.min.js',

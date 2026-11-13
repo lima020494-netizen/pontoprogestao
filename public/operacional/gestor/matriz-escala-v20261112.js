@@ -33,7 +33,16 @@
       });
       S.pdfRodapesPadrao(doc);doc.save('Escala_Equipe_'+ini+'_'+fim+'.pdf');
     }
-    return {TURNOS,codigo,proximo,item,semanas,carga,pdf};
+    /* Fase 2: cobertura mínima por setor e turno (apenas visual; não altera cálculos). */
+    function minimos(){return (S.get('empregador',{})||{}).coberturaMinima||{};}
+    function cobertura(fs,dias,mins=minimos()){
+      const setores=[...new Set(fs.map(f=>f.departamento||'Sem setor'))].sort();
+      return setores.flatMap(setor=>['M','T','N'].map(turno=>{
+        const lista=fs.filter(f=>(f.departamento||'Sem setor')===setor),min=Number(mins[setor]?.[turno])||0;
+        return {setor,turno,min,dias:dias.map(d=>{const qtd=lista.filter(f=>codigo(f,d)===turno).length;return {dia:d,qtd,status:!min?'neutro':qtd>=min?'ok':'falta'};})};
+      }));
+    }
+    return {TURNOS,codigo,proximo,item,semanas,carga,pdf,minimos,cobertura};
   }
   namespace.definir('gestor.matrizEscala',Object.freeze({criar}));
 })(window.PontoProOperacional);
