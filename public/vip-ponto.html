@@ -775,6 +775,7 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 /* Matriz de turnos: superfícies semânticas e dimensões estáveis. */
 :root{--shift-m-bg:#e0f2fe;--shift-m-fg:#075985;--shift-t-bg:#fef3c7;--shift-t-fg:#854d0e;--shift-n-bg:#e2e8f0;--shift-n-fg:#334155;--shift-f-bg:#fce7f3;--shift-f-fg:#9d174d;--shift-d-bg:#dcfce7;--shift-d-fg:#166534}
 .shift-M{--shift-bg:var(--shift-m-bg);--shift-fg:var(--shift-m-fg)}.shift-T{--shift-bg:var(--shift-t-bg);--shift-fg:var(--shift-t-fg)}.shift-N{--shift-bg:var(--shift-n-bg);--shift-fg:var(--shift-n-fg)}.shift-F{--shift-bg:var(--shift-f-bg);--shift-fg:var(--shift-f-fg)}.shift-D{--shift-bg:var(--shift-d-bg);--shift-fg:var(--shift-d-fg)}
+.heat-card{margin:14px 0}.heat-resumo{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px}.heat-resumo.ok,#gestor-body .heat-table td.heat-ok{background:#dcfce7;color:#14532d}.heat-resumo.falta,#gestor-body .heat-table td.heat-falta{background:#fee2e2;color:#7f1d1d}#gestor-body .heat-table td.heat-neutro{background:#f1f5f9;color:#475569}#gestor-body .heat-table td.heat-cel{text-align:center;font-weight:700;min-width:40px}.heat-cel small{font-weight:400;opacity:.8}.heat-min{width:56px;padding:4px 6px;text-align:center}
 .shift-chip,.esc-legenda [class^="shift-"]{background:var(--shift-bg);color:var(--shift-fg);border-color:var(--shift-bg)}
 #gestor-body .matrix-table{width:max-content;min-width:100%;table-layout:fixed}
 #gestor-body .matrix-table td{padding:6px;border:1px solid var(--line);vertical-align:middle;text-align:center;min-width:52px;background:var(--card)}
@@ -1186,7 +1187,7 @@ function salvarEmpregador(){
     logradouro:v('e-log'),numero:v('e-num'),bairro:v('e-bairro'),cidade:v('e-cidade'),uf:v('e-uf'),cep:v('e-cep'),
     complemento:v('e-compl'),atividade:v('e-ativ'),dsr:v('e-dsr'),hEntrada:v('e-h1'),hSaiInt:v('e-h2'),hEntInt:v('e-h3'),hSaida:v('e-h4'),hSabEntrada:v('e-sab-entrada'),hSabSaida:v('e-sab-saida'),
     fatorBancoDomFeriado:Number(v('e-fator-banco'))===1?1:2,empresaCidada:v('e-cidada')==='sim',
-    logo:LOGO_TMP||(get('empregador',{})||{}).logo||''};
+    logo:LOGO_TMP||(get('empregador',{})||{}).logo||'',coberturaMinima:(get('empregador',{})||{}).coberturaMinima||{}};
   const falta=['doc','razao','fantasia','email','logradouro','numero','bairro','cidade','uf','cep'].filter(k=>!o[k]);
   if(falta.length) return $('e-msg').innerHTML='<div class="alert err">Preencha todos os campos obrigatórios (*).</div>';
   const soNum=o.doc.replace(/\D/g,'');
@@ -2165,6 +2166,14 @@ function alternarTurnoEscala(pin,dia){
  if(i>=0)e.folgas[i]=item;else e.folgas.push(item);
  set('escalas',all);histEscala(chave,pin,dia,antigo?.turno||antigo?.tipo||'Padrão',c);subEscala();
 }
+function setMinimoCobertura(setor,turno,v){const emp={...(get('empregador',{})||{})},m={...(emp.coberturaMinima||{})};m[setor]={...(m[setor]||{}),[turno]:Math.max(0,Math.min(99,parseInt(v,10)||0))};emp.coberturaMinima=m;set('empregador',emp);log('Cobertura mínima: '+setor+' '+turno+' = '+m[setor][turno]);subEscala();}
+function heatmapCobertura(fs,dias){
+ const linhas=MATRIZ_ESCALA.cobertura(fs,dias);if(!linhas.length)return '';
+ const nome={M:'Manhã',T:'Tarde',N:'Noite'},faltas=linhas.reduce((n,l)=>n+l.dias.filter(c=>c.status==='falta').length,0);
+ return `<section class="heat-card" aria-label="Mapa de cobertura"><div class="row"><h4 style="margin:0">Mapa de cobertura por setor</h4><span class="heat-resumo ${faltas?'falta':'ok'}">${faltas?faltas+' turno(s) abaixo do mínimo':'Cobertura mínima atendida'}</span></div>
+ <p class="muted" style="margin:4px 0 8px">Defina o mínimo de pessoas por turno em cada setor. Verde = atende; vermelho = abaixo do mínimo; cinza = sem mínimo.</p>
+ <div class="tbl-wrap matrix-wrap" tabindex="0"><table class="matrix-table heat-table"><thead><tr><th class="matrix-name">Setor · turno</th><th>Mín.</th>${dias.map(d=>`<th>${DIAS[dow(d)].slice(0,3)}<br>${brOf(d).slice(0,5)}</th>`).join('')}</tr></thead><tbody>${linhas.map(l=>`<tr><td class="matrix-name"><strong>${esc(l.setor)}</strong><small>${l.turno} ${nome[l.turno]}</small></td><td><input class="heat-min" type="number" min="0" max="99" value="${l.min}" aria-label="Mínimo ${esc(l.setor)} ${nome[l.turno]}" data-setor="${esc(l.setor)}" data-turno="${l.turno}" onchange="setMinimoCobertura(this.dataset.setor,this.dataset.turno,this.value)"/></td>${l.dias.map(c=>`<td class="heat-cel heat-${c.status}" title="${brOf(c.dia)} · ${c.qtd} de ${l.min||'—'}">${c.qtd}${c.status==='falta'?`<small>/${l.min}</small>`:''}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+}
 async function pdfEscalaEquipe(){try{await MATRIZ_ESCALA.pdf(window.__escIni,window.__escFim);}catch(e){toast('Não foi possível gerar o PDF. Tente novamente.',3000);}}
 function mesEscala(v){if(!/^\d{4}-\d{2}$/.test(v))return;window.__escDias='mes';window.__escIni=v+'-01';window.__escFim=addDias(v+'-01',new Date(Number(v.slice(0,4)),Number(v.slice(5,7)),0).getDate()-1);subEscala();}
 /* Escala — período flexível (7, 15 ou 30 dias) */
@@ -2223,6 +2232,7 @@ function subEscala(){
   <div class="muted">A escala prevalece sobre a jornada do cadastro. Edição por 30 dias após criação; depois, bloqueada. Máx. 3 folgas por semana.</div>
   <div class="esc-legenda">${MATRIZ_ESCALA.TURNOS.map(t=>`<span class="shift-${t.codigo}"><b>${t.codigo}</b> ${t.nome}</span>`).join('')}</div>
   <div class="tbl-wrap matrix-wrap" role="region" aria-label="Escala da equipe" tabindex="0"><table class="matrix-table"><thead><tr><th class="matrix-name">Colaborador</th>${dias.map(d=>`<th>${DIAS[dow(d)].slice(0,3)}<br>${brOf(d).slice(0,5)}</th>`).join('')}${semanas.map(g=>`<th>Carga semanal<br>${brOf(g.dias[0]).slice(0,5)}–${brOf(g.dias.at(-1)).slice(0,5)}</th>`).join('')}</tr></thead><tbody>${matriz||`<tr><td colspan="${dias.length+semanas.length+1}">Nenhum colaborador cadastrado.</td></tr>`}</tbody></table></div>
+  ${heatmapCobertura(fs,dias)}
   <details class="matrix-details"><summary>Horários e edição detalhada</summary><div class="tbl-wrap"><table class="escala-table"><tr><th>Funcionário</th>${dias.map(d=>`<th>${DIAS[dow(d)].slice(0,3)}<br>${brOf(d).slice(0,5)}</th>`).join('')}</tr>${rows}</table></div></details>
   <div class="hr"></div><h4>Histórico de alterações da escala</h4>
   <div class="tbl-wrap"><table><tr><th>Registro</th></tr>${hist.map(h=>`<tr><td>${esc(h.texto)}</td></tr>`).join('')||'<tr><td class="muted">Sem alterações.</td></tr>'}</table></div></section>`;
