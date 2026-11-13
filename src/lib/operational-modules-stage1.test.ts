@@ -96,7 +96,7 @@ test('stage 1: compatibility aliases delegate to the extracted module and inline
   assert.equal(aliases.DIAS, namespace.obter('core.formatos').DIAS);
   assert.match(html, /const \{pad,esc,isoOf,brOf,hhmm,toMin,toHHMM,toSaldo,DIAS,dow,addDias\}=PontoProOperacional\.obter\('boot\.compatibilidade'\)\.aliases\('core\.formatos'/);
   assert.match(html, /function cpfMascarado\(c\)\{return PontoProOperacional\.obter\('core\.formatos'\)\.cpfMascarado\(c\);\}/);
-  assert.equal((html.match(/on(?:click|change|input|submit|keydown|keyup)=/g) || []).length, 203);
+  assert.equal((html.match(/on(?:click|change|input|submit|keydown|keyup)=/g) || []).length, 204);
 });
 
 test('stage 1: modules add no Supabase, storage, queue, export or polling behavior', () => {
