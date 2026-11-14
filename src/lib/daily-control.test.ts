@@ -36,8 +36,8 @@ test('painel identifica intervalo atual e informa tempo realizado versus previst
 
 test('jornada acima de seis horas gera alerta crítico após seis horas contínuas', () => {
   const bs = [punch('1', '08:00', 'Entrada', 1)];
-  assert.equal(panel([employee()], bs, '14:00').linhas[0].status, 'trabalhando');
-  const p = panel([employee()], bs, '14:01');
+  assert.equal(panel([employee()], bs, '14:00', { hSaiInt: '', hEntInt: '' }).linhas[0].status, 'trabalhando');
+  const p = panel([employee()], bs, '14:01', { hSaiInt: '', hEntInt: '' });
   assert.equal(p.linhas[0].status, 'alerta');
   assert.match(p.linhas[0].motivoAlerta, /6h/);
   assert.equal(p.contadores.alerta, 1);
