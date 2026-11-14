@@ -96,7 +96,7 @@ test('stage 1: compatibility aliases delegate to the extracted module and inline
   assert.equal(aliases.DIAS, namespace.obter('core.formatos').DIAS);
   assert.match(html, /const \{pad,esc,isoOf,brOf,hhmm,toMin,toHHMM,toSaldo,DIAS,dow,addDias\}=PontoProOperacional\.obter\('boot\.compatibilidade'\)\.aliases\('core\.formatos'/);
   assert.match(html, /function cpfMascarado\(c\)\{return PontoProOperacional\.obter\('core\.formatos'\)\.cpfMascarado\(c\);\}/);
-  assert.equal((html.match(/on(?:click|change|input|submit|keydown|keyup)=/g) || []).length, 208);
+  assert.equal((html.match(/on(?:click|change|input|submit|keydown|keyup)=/g) || []).length, 212);
 });
 
 test('stage 1: modules add no Supabase, storage, queue, export or polling behavior', () => {
@@ -110,7 +110,7 @@ test('stage 1: modules add no Supabase, storage, queue, export or polling behavi
 
 test('stage 1: service worker caches all new shell modules atomically and still excludes account data', () => {
   const sw = readFileSync('public/ponto-offline-sw.js', 'utf8');
-  assert.match(sw, /ponto-static-20261113-triagem-matriz-v1/);
+  assert.match(sw, /ponto-static-20261114-painel-dia-v1/);
   for (const path of modulePaths) assert.ok(sw.includes(`'/${path}'`), path);
   const assets = sw.slice(sw.indexOf('const ASSETS'), sw.indexOf('self.addEventListener'));
   assert.doesNotMatch(assets, /\/api\/|\/rest\/|\/auth\/|pontos_pendentes/);
