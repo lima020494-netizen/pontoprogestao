@@ -16,7 +16,7 @@ const moduleFiles = [
   'boot/contexto-v20261110-etapa1.js', 'boot/compatibilidade-v20261110-etapa1.js',
   'domain/escala-v20261110-etapa2.js', 'domain/ocorrencias-v20261110-etapa2.js',
   'domain/jornada-v20261110-etapa2.js', 'domain/banco-v20261110-etapa2.js',
-  'domain/nucleo-v20261110-etapa2.js',
+  'domain/painel-dia-v20261114.js', 'domain/nucleo-v20261110-etapa2.js',
   'data/armazenamento-v20261110-etapa3.js', 'data/indexeddb-v20261110-etapa3.js',
   'data/fila-offline-v20261110-etapa3.js', 'data/supabase-v20261110-etapa3.js',
   'data/nucleo-v20261110-etapa3.js',

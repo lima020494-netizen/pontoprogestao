@@ -1,5 +1,5 @@
 /* Only the kiosk shell and public static files. Never cache API/auth/company responses. */
-const CACHE = 'ponto-static-20261113-triagem-matriz-v1';
+const CACHE = 'ponto-static-20261114-painel-dia-v1';
 const SHELL = '/vip-ponto.html';
 const ASSETS = [SHELL, '/jspdf-2.5.1.umd.min.js', '/jspdf.plugin.autotable.min.js',
   '/jszip-3.10.1.min.js', '/xlsx-0.18.5.full.min.js', '/supabase-2.117.3.min.js',
@@ -7,7 +7,7 @@ const ASSETS = [SHELL, '/jspdf-2.5.1.umd.min.js', '/jspdf.plugin.autotable.min.j
   '/operacional/boot/contexto-v20261110-etapa1.js', '/operacional/boot/compatibilidade-v20261110-etapa1.js',
   '/operacional/domain/escala-v20261110-etapa2.js', '/operacional/domain/ocorrencias-v20261110-etapa2.js',
   '/operacional/domain/jornada-v20261110-etapa2.js', '/operacional/domain/banco-v20261110-etapa2.js',
-  '/operacional/domain/nucleo-v20261110-etapa2.js',
+  '/operacional/domain/painel-dia-v20261114.js', '/operacional/domain/nucleo-v20261110-etapa2.js',
   '/operacional/data/armazenamento-v20261110-etapa3.js', '/operacional/data/indexeddb-v20261110-etapa3.js',
   '/operacional/data/fila-offline-v20261110-etapa3.js', '/operacional/data/supabase-v20261110-etapa3.js',
   '/operacional/data/nucleo-v20261110-etapa3.js',
