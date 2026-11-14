@@ -12,8 +12,9 @@ const punch = (pin: string, hora: string, tipo: string, nsr: number, data = day)
   pin, data, hora, tipo, nsr: String(nsr), fonte: 'PIN',
 });
 
-function panel(employees: any[], batidas: any[] = [], hora = '10:00', empregador: any = {}, ocorrencias: any[] = [], escalas: any = {}) {
+function panel(employees: any[], batidas: any[] = [], hora = '10:00', empregador: any = {}, ocorrencias: any[] = [], escalas: any = {}, carga = 0) {
   const context: any = createDomainContext({
+    ...(carga ? { cargaEscala: () => carga } : {}),
     get: (key: string, fallback: unknown) => ({ funcionarios: employees, batidas, empregador: { hEntrada: '08:00', hSaiInt: '12:00', hEntInt: '13:00', hSaida: '17:00', ...empregador }, ocorrencias, escalas, feriados: [] } as any)[key] ?? fallback,
   });
   return context.calcularPainelDia(at(hora));
@@ -47,7 +48,7 @@ test('jornada de quatro a seis horas gera alerta somente após quatro horas cont
   const f = employee('1', { escala: '6x1' });
   const bs = [punch('1', '08:00', 'Entrada', 1)];
   const emp = { hSaiInt: '', hEntInt: '', hSaida: '13:00' };
-  const p = panel([f], bs, '12:01', emp);
+  const p = panel([f], bs, '12:01', emp, [], {}, 300);
   assert.equal(p.linhas[0].status, 'alerta');
   assert.match(p.linhas[0].motivoAlerta, /4h/);
 });
