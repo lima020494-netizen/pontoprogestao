@@ -2194,7 +2194,7 @@ function registrarItemEscala(pin,dia,item,de,para){
  const f=funcPorPin(pin);if(!f)return 'Colaborador não encontrado.';
  const ini=window.__escIni,origem=escalaDaSemana(dia,pin),destino=get('escalas',{})[ini];
  if([origem,destino].some(e=>e?.criacaoData&&(Date.now()-new Date(e.criacaoData).getTime())/864e5>ESC_TRAVA_DIAS)){const erro='Escala bloqueada após 30 dias.';toast(erro,2000);return erro;}
- const all=get('escalas',{})||{},chave=origem?.semanaInicio||ini,e=all[chave]||escalaObj(ini).e;all[chave]=e;
+ const all=get('escalas',{})||{},chave=Object.keys(all).find(k=>all[k]===origem)||origem?.semanaInicio||ini,e=origem||all[chave]||escalaObj(ini).e;all[chave]=e;
  if(item.tipo!=='Trabalhado'){
   const qtd=Object.values(all).flatMap(x=>x.folgas||[]).filter(x=>x.pin===pin&&x.tipo!=='Trabalhado'&&x.dia!==dia&&inicioSemana(x.dia)===inicioSemana(dia));
   if(new Set(qtd.map(x=>x.dia)).size>=3){const erro='Máximo de 3 folgas por colaborador na semana.';toast(erro,2500);return erro;}
