@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createDomainContext } from './operational-domain-harness.ts';
 
-const day = '2026-11-14';
+const day = '2026-11-13';
 const at = (hora: string) => new Date(`${day}T${hora}:00`);
 const employee = (pin = '1', extra: Record<string, unknown> = {}) => ({
   pin, nome: `Colaborador ${pin}`, cargo: 'Atendente', escala: '5x2', status: 'Ativo', admissao: '2026-01-01', ...extra,
