@@ -1682,7 +1682,7 @@ function pararRelogioGestor(){if(relogioGestor)clearInterval(relogioGestor);relo
 function mostrarCentralGestor(){
   pararRelogioGestor();fecharMenuGestor(false);ABA='dash';atualizarMenuGestor('dash');
   $('gestor-body').classList.remove('hidden');$('gestor-hub').classList.remove('hidden');
-  $('gestor-hub').innerHTML=painelExecutivoHTML()+terminalQuiosqueHTML();
+  $('gestor-hub').innerHTML=painelExecutivoHTML()+painelDiaHTML()+terminalQuiosqueHTML();
   carregarTelaGestor('gestor-body','Dashboard de Frequência',()=>abaDash());
   atualizarPainelExecutivo();relogioGestor=setInterval(atualizarPainelExecutivo,30000);$('tela-gestor').scrollTop=0;
 }
