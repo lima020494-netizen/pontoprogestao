@@ -85,7 +85,7 @@ test('ocorrência aprovada não é contada como não comparecimento', () => {
 });
 
 test('saída conclui a jornada e trabalho após a saída prevista fica no grupo de concluídos e extras', () => {
-  const concluido = panel([employee()], ['08:00', '12:00', '13:00', '17:00'].map((h, i) => punch('1', h, ['Entrada', 'Saída Intervalo', 'Entrada Intervalo', 'Saída'][i], i + 1)), '18:00');
+  const concluido = panel([employee()], ['08:00', '12:00', '13:00', '17:00'].map((h, i) => punch('1', h, ['Entrada', 'Saída Intervalo', 'Entrada Intervalo', 'Saída'][i]!, i + 1)), '18:00');
   assert.equal(concluido.linhas[0].status, 'concluido');
   const extra = panel([employee()], [punch('1', '08:00', 'Entrada', 1), punch('1', '12:00', 'Saída Intervalo', 2), punch('1', '13:00', 'Entrada Intervalo', 3)], '17:01');
   assert.equal(extra.linhas[0].status, 'extra');
