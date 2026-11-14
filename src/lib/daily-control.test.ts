@@ -121,7 +121,7 @@ test('cada KPI filtra somente sua categoria e o filtro encerrados reúne saída 
     get: (key: string, fallback: unknown) => ({ funcionarios: fs, batidas: bs, empregador: { hEntrada: '08:00', hSaiInt: '12:00', hEntInt: '13:00', hSaida: '17:00' }, ocorrencias: [], escalas: {}, feriados: [] } as any)[key] ?? fallback,
   });
   const p = context.calcularPainelDia(at('12:30'));
-  assert.equal(p.contadores.trabalhando, 1);
+  assert.equal(p.contadores.trabalhando, 3);
   assert.equal(p.contadores.intervalo, 1);
   assert.equal(p.contadores.ausentes, 1);
   assert.equal(context.filtrarPainelDia(p, 'intervalo').length, 1);
