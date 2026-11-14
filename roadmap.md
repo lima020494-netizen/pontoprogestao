@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Evolução Etapa 2: Painel do Dia integrado ao Início, com KPIs-filtro, situação da equipe, alertas de intervalo e atalho ao Tratamento; usar dados já carregados, sem polling ao Supabase, preservando cálculos, auditoria e offline.
-- [x] Evolução Etapa 1: triagem leve do Tratamento de Ponto, KPIs-filtro, paginação e edição unificada da Matriz Visual de escalas, preservando auditoria e cálculos; 47 testes focados e suíte completa executados, preview com dados fictícios, sem publicar.
+- [x] Evolução Etapa 2: Painel do Dia integrado ao Início com cinco KPIs-filtro, situação da equipe, timeline, tempos de jornada/intervalo, alertas de 4h/6h, tolerância configurada, virada noturna e atalho ao Tratamento. Atualização local a cada 30s, sem polling ao Supabase; véspera carregada sob demanda somente antes das 6h. Preview fictício conferiu 8 colaboradores, filtros, atalho com data/PIN, desktop/390px sem overflow/erros e zero consultas à nuvem em 31s; 246 testes/build OK, sem dados reais ou publicação. Sessão externa autenticada não verificada.
+- [x] Evolução Etapa 1: triagem leve sem folha mensal, quatro KPIs-filtro, lotes de 20 e Matriz Visual unificada com ciclo M/T/N/F/D e horários rápidos. Preview fictício confirmou falta filtrada, 20→31 registros, M→T, horário 18:30–03:00 e nenhuma tabela detalhada duplicada; corrigida reutilização de escala sobreposta com chave antiga, sem registro-sombra. Suíte final 246 testes/build OK, sem publicar.
 
 - [x] Fase 1 da matriz de escalas: chips M/T/N/F/D, semana/mês, carga semanal pela apuração e PDF da equipe com logo; clique e persistência conferidos com dados fictícios no desktop/celular. Horários cadastrados e bloqueio preservados, sem publicar.
 
