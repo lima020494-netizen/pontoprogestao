@@ -49,7 +49,7 @@
           const ultima = bs[bs.length - 1];
           if (ultima && (ultima.tipo === 'Entrada' || ultima.tipo === 'Entrada Intervalo')) decorrido += desde(ultima.hora);
         }
-        const intervaloPrevisto = preAssinalado
+        const intervaloPrevisto = previsto <= 0 ? 0 : preAssinalado
           ? S.difMin(f.intervalo?.inicio || '12:00', f.intervalo?.fim || '13:00')
           : empregador.hSaiInt && empregador.hEntInt
             ? S.difMin(empregador.hSaiInt, empregador.hEntInt)
