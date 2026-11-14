@@ -13,6 +13,7 @@
     Object.assign(S, namespace.obter('domain.ocorrencias').criar(S));
     Object.assign(S, namespace.obter('domain.jornada').criar(S));
     Object.assign(S, namespace.obter('domain.banco').criar(S));
+    Object.assign(S, namespace.obter('domain.painelDia').criar(S));
     Object.assign(S, dependencias?.aliases || {});
     return S;
   }

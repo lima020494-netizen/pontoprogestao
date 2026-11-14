@@ -41,4 +41,4 @@
 - Accountant closing excludes open/future absences without altering PDF calculations.
 - Capacitor hosts HTTPS /quiosque; no native printer bridge.
 - Text over dark navy surfaces must be declared with ID-scoped specificity (e.g. `#gestor-body td.dept-head`) so the shared `#gestor-body td/label` color defaults cannot darken it; contrast.test.ts locks every dark surface to AA.
-- Stable cloud reads use account-scoped expiring IndexedDB cache; auth/punches never use it and audit paginates on demand. Versioned data modules compose via data.nucleo; the shell owns Supabase auth/client and global aliases, preserving legacy storage, immediate sync and offline behavior.
+- Stable reads use account-scoped expiring IndexedDB; auth/punches never use it and audit paginates. data.nucleo composes versioned modules; the shell owns auth/client and aliases, preserving offline sync. Daily control uses loaded data and shared calculations; only pre-06:00 overnight review backfills yesterday, never recurring cloud polling.

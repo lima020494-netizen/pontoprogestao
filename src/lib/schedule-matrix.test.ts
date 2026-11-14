@@ -46,6 +46,16 @@ test('quick click persists one canonical cell and recalculates once',()=>{
   vm.runInContext("alternarTurnoEscala('1','2026-11-09')",ctx);
   assert.equal(data.escalas['2026-11-09'].folgas[0].turno,'T');assert.equal(writes,1);assert.equal(renders,0);
 });
+test('quick click reuses an overlapping legacy week instead of creating a shadow schedule',()=>{
+  const {ctx,api,data,inicioSemana}=fixture();const anterior=api.item('M','1','2026-11-09',{horarioEntrada:'08:00',horarioSaida:'17:00'});
+  data.escalas={legado:{semanaInicio:'2026-11-09',semanaFim:'2026-11-15',folgas:[anterior]}};
+  Object.assign(ctx,{MATRIZ_ESCALA:api,inicioSemana,ESC_TRAVA_DIAS:30,set:(k:string,v:any)=>{data[k]=v;},histEscala:()=>{},subEscala:()=>{},toast:()=>{}});
+  ctx.window.__escIni='2026-11-09';ctx.window.__escFim='2026-11-15';
+  vm.runInContext(html.slice(html.indexOf('function escalaObj('),html.indexOf('function setCelula(')),ctx);
+  vm.runInContext(html.slice(html.indexOf('function registrarItemEscala('),html.indexOf('async function pdfEscalaEquipe(')),ctx);
+  vm.runInContext("alternarTurnoEscala('1','2026-11-09')",ctx);
+  assert.deepEqual(Object.keys(data.escalas),['legado']);assert.equal(data.escalas.legado.folgas[0].turno,'T');assert.equal(data.escalas['2026-11-09'],undefined);
+});
 test('quick time editor saves entry and exit once without rebuilding the whole screen',()=>{
   const {ctx,api,data,inicioSemana}=fixture();let writes=0,renders=0,closed=0;
   Object.assign(ctx,{MATRIZ_ESCALA:api,inicioSemana,ESC_TRAVA_DIAS:30,set:(k:string,v:any)=>{data[k]=v;writes++;},histEscala:()=>{},subEscala:()=>{renders++;},toast:()=>{},fecharModal:()=>{closed++;}});
