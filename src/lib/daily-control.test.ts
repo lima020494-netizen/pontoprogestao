@@ -108,12 +108,13 @@ test('jornada noturna aberta ontem permanece visível após meia-noite sem mudar
 });
 
 test('cada KPI filtra somente sua categoria e o filtro encerrados reúne saída e extras', () => {
-  const fs = [employee('1'), employee('2'), employee('3'), employee('4'), employee('5')];
+  const fs = [employee('1'), employee('2'), employee('3'), employee('4'), employee('5'), employee('6')];
   const bs = [
     punch('1', '08:00', 'Entrada', 1),
     punch('2', '08:00', 'Entrada', 2), punch('2', '12:00', 'Saída Intervalo', 3),
     punch('3', '08:00', 'Entrada', 4),
     punch('5', '08:00', 'Entrada', 5), punch('5', '12:00', 'Saída Intervalo', 6), punch('5', '13:00', 'Entrada Intervalo', 7),
+    punch('6', '08:00', 'Entrada', 8), punch('6', '12:00', 'Saída Intervalo', 9), punch('6', '13:00', 'Entrada Intervalo', 10), punch('6', '17:00', 'Saída', 11),
   ];
   const context: any = createDomainContext({
     get: (key: string, fallback: unknown) => ({ funcionarios: fs, batidas: bs, empregador: { hEntrada: '08:00', hSaiInt: '12:00', hEntInt: '13:00', hSaida: '17:00' }, ocorrencias: [], escalas: {}, feriados: [] } as any)[key] ?? fallback,
