@@ -139,7 +139,7 @@
       return [...grupos].map(([nome, linhas]) => ({ nome, ...resumir(linhas) }));
     }
 
-    function acompanhar(painel, { busca = '', status = 'todos', pagina = 1 } = {}) {
+    function acompanhar(painel, { busca = '', status = 'todos', pagina = 1, limite = 20 } = {}) {
       const normalizar = v => String(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
       const termo = normalizar(busca);
       const filtradas = painel.linhas.filter(l => {
@@ -149,14 +149,16 @@
           : status === 'ausentes' ? l.status === 'ausente' : status === 'encerrados' ? l.finalizadoOuExtra : l.status === status);
         return categoria && normalizar(l.f.nome + ' ' + l.f.pin).includes(termo);
       });
-      const paginas = Math.max(1, Math.ceil(filtradas.length / 20));
+      const tamanho = Number(limite) === 15 ? 15 : 20;
+      const paginas = Math.max(1, Math.ceil(filtradas.length / tamanho));
       const atual = Math.min(paginas, Math.max(1, Number(pagina) || 1));
-      return { linhas: filtradas.slice((atual - 1) * 20, atual * 20), total: filtradas.length, paginas, pagina: atual };
+      return { linhas: filtradas.slice((atual - 1) * tamanho, atual * tamanho), total: filtradas.length, paginas, pagina: atual, limite: tamanho };
     }
 
     function tendencia(agora, modo = 'mes') {
       const hoje = S.isoOf(agora), emp = S.get('empregador', {}) || {}, fs = S.get('funcionarios', []) || [];
       const pontos = [];
+      const ranking = new Map();
       const primeiro = modo === 'hoje' ? hoje : hoje.slice(0, 8) + '01';
       for (let data = primeiro; data <= hoje; data = S.addDias(data, 1)) {
         const linhas = [];
@@ -167,6 +169,9 @@
           const bs = S.batidasDia(f.pin, data), item = S.buscaNaEscala(f.pin, data);
           const inicio = item?.horarioEntrada || (S.dow(data) === 6 ? emp.hSabEntrada : '') || emp.hEntrada || '08:00';
           const entrada = bs.find(b => b.tipo === 'Entrada');
+          const r = ranking.get(f.pin) || { f, previstos: 0, presentes: 0 };
+          r.previstos++; if (entrada) r.presentes++;
+          ranking.set(f.pin, r);
           const tolerancia = Number.isFinite(Number(emp.toleranciaAtraso)) ? Number(emp.toleranciaAtraso) : 10;
           let atraso = entrada ? S.toMin(entrada.hora) - S.toMin(inicio) : 0;
           if (atraso < -720) atraso += 1440;
@@ -181,6 +186,8 @@
           }
         } else pontos.push({ data, rotulo: data.slice(8), ...resumir(linhas) });
       }
+      pontos.ranking = [...ranking.values()].map(r => ({ ...r, presenca: Math.round(r.presentes / r.previstos * 100) }))
+        .sort((a, b) => b.presenca - a.presenca || String(a.f.nome).localeCompare(String(b.f.nome)));
       return pontos;
     }
 
