@@ -129,3 +129,47 @@ test('cada KPI filtra somente sua categoria e o filtro encerrados reúne saída 
   const later = context.calcularPainelDia(at('17:01'));
   assert.equal(context.filtrarPainelDia(later, 'encerrados').length, 2);
 });
+
+test('presença e conclusão usam somente previstos na escala: dois presentes de três, um concluído', () => {
+  const context: any = createDomainContext();
+  const s = context.resumirPainelDia([
+    { previsto: 480, bs: [{ tipo: 'Entrada' }], atrasoMin: 0, status: 'concluido' },
+    { previsto: 480, bs: [{ tipo: 'Entrada' }], atrasoMin: 5, status: 'trabalhando' },
+    { previsto: 480, bs: [], atrasoMin: 0, status: 'ausente' },
+    { previsto: 0, bs: [{ tipo: 'Entrada' }], atrasoMin: 0, status: 'descanso' },
+  ]);
+  assert.equal(s.presenca, 67); assert.equal(s.conclusao, 33); assert.equal(s.pontualidade, 50);
+  assert.equal(s.previstos, 3);
+});
+
+test('setores mantêm denominadores próprios sem misturar unidades', () => {
+  const c: any = createDomainContext();
+  const p = { linhas: [
+    { f: { departamento: 'Bar', unidade: 'A' }, previsto: 480, bs: [{ tipo: 'Entrada' }], atrasoMin: 0 },
+    { f: { departamento: 'Bar', unidade: 'A' }, previsto: 480, bs: [], atrasoMin: 0 },
+    { f: { departamento: 'Bar', unidade: 'B' }, previsto: 480, bs: [{ tipo: 'Entrada' }], atrasoMin: 0 },
+  ] };
+  const setores = c.setoresPainelDia(p);
+  assert.equal(setores[0].presenca, 50); assert.equal(setores[1].presenca, 100);
+});
+
+test('tabela pagina 53 pessoas em lotes de 15 ou 20 e busca por nome sem acentos/PIN', () => {
+  const c: any = createDomainContext();
+  const p = { linhas: Array.from({ length: 53 }, (_, i) => ({ f: { nome: 'João ' + i, pin: String(1000 + i) }, status: 'trabalhando', bs: [{ tipo: 'Entrada' }] })) };
+  assert.equal(c.acompanharPainelDia(p, { limite: 15 }).linhas.length, 15);
+  assert.equal(c.acompanharPainelDia(p, { limite: 20, pagina: 3 }).linhas.length, 13);
+  assert.equal(c.acompanharPainelDia(p, { busca: '1052', pagina: 4 }).pagina, 1);
+  assert.equal(c.acompanharPainelDia(p, { busca: 'joao 52' }).linhas[0].f.pin, '1052');
+});
+
+test('tendência Hoje/Mês respeita tolerância e retorna presença e pontualidade sem gravações', () => {
+  const data: any = { funcionarios: [employee()], batidas: [punch('1', '08:15', 'Entrada', 1)], empregador: { hEntrada: '08:00', toleranciaAtraso: 15 }, feriados: [], ocorrencias: [], escalas: {} };
+  const c: any = createDomainContext({ get: (k: string, d: any) => data[k] ?? d });
+  const antes = JSON.stringify(data);
+  const hoje = c.tendenciaPainelDia(at('10:00'), 'hoje');
+  assert.equal(hoje.length, 11); assert.equal(hoje[7].presenca, 0);
+  assert.equal(hoje[10].presenca, 100); assert.equal(hoje[10].pontualidade, 100);
+  const mes = c.tendenciaPainelDia(at('10:00'), 'mes');
+  assert.equal(mes.length, 13); assert.equal(mes[12].presenca, 100);
+  assert.equal(JSON.stringify(data), antes);
+});
