@@ -117,7 +117,75 @@
       return painel.linhas.filter(l => l.status === status);
     }
 
-    return { CATEGORIAS, calcularPainelDia: calcular, filtrarPainelDia: filtrar };
+    function resumir(linhas) {
+      const previstas = linhas.filter(l => l.previsto > 0);
+      const presentes = previstas.filter(l => l.bs.some(b => b.tipo === 'Entrada'));
+      const concluidas = presentes.filter(l => l.status === 'concluido');
+      const pontuais = presentes.filter(l => l.atrasoMin === 0);
+      return { previstos: previstas.length, presentes: presentes.length, concluidos: concluidas.length,
+        presenca: previstas.length ? Math.round(presentes.length / previstas.length * 100) : 0,
+        conclusao: previstas.length ? Math.round(concluidas.length / previstas.length * 100) : 0,
+        pontualidade: presentes.length ? Math.round(pontuais.length / presentes.length * 100) : 0 };
+    }
+
+    function setores(painel) {
+      const grupos = new Map();
+      for (const l of painel.linhas) {
+        const nome = l.f.departamento || 'Sem setor', unidade = l.f.unidade || '';
+        const chave = unidade ? unidade + ' · ' + nome : nome;
+        if (!grupos.has(chave)) grupos.set(chave, []);
+        grupos.get(chave).push(l);
+      }
+      return [...grupos].map(([nome, linhas]) => ({ nome, ...resumir(linhas) }));
+    }
+
+    function acompanhar(painel, { busca = '', status = 'todos', pagina = 1 } = {}) {
+      const normalizar = v => String(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const termo = normalizar(busca);
+      const filtradas = painel.linhas.filter(l => {
+        const categoria = status === 'todos' || (status === 'trabalhando' ? ['trabalhando', 'alerta', 'extra'].includes(l.status) && l.bs[l.bs.length - 1]?.tipo !== 'Saída Intervalo'
+          : status === 'extra' ? l.extraMin > 0 || l.status === 'extra'
+          : status === 'intervalo' ? l.bs.some(b => b.tipo === 'Saída Intervalo') && !l.bs.some(b => b.tipo === 'Entrada Intervalo') && l.status !== 'concluido'
+          : status === 'ausentes' ? l.status === 'ausente' : status === 'encerrados' ? l.finalizadoOuExtra : l.status === status);
+        return categoria && normalizar(l.f.nome + ' ' + l.f.pin).includes(termo);
+      });
+      const paginas = Math.max(1, Math.ceil(filtradas.length / 20));
+      const atual = Math.min(paginas, Math.max(1, Number(pagina) || 1));
+      return { linhas: filtradas.slice((atual - 1) * 20, atual * 20), total: filtradas.length, paginas, pagina: atual };
+    }
+
+    function tendencia(agora, modo = 'mes') {
+      const hoje = S.isoOf(agora), emp = S.get('empregador', {}) || {}, fs = S.get('funcionarios', []) || [];
+      const pontos = [];
+      const primeiro = modo === 'hoje' ? hoje : hoje.slice(0, 8) + '01';
+      for (let data = primeiro; data <= hoje; data = S.addDias(data, 1)) {
+        const linhas = [];
+        for (const f of fs) {
+          if ((f.admissao && f.admissao > data) || (f.dataDesligamento && f.dataDesligamento < data)) continue;
+          const previsto = S.previstoDia(f, data);
+          if (!previsto) continue;
+          const bs = S.batidasDia(f.pin, data), item = S.buscaNaEscala(f.pin, data);
+          const inicio = item?.horarioEntrada || (S.dow(data) === 6 ? emp.hSabEntrada : '') || emp.hEntrada || '08:00';
+          const entrada = bs.find(b => b.tipo === 'Entrada');
+          const tolerancia = Number.isFinite(Number(emp.toleranciaAtraso)) ? Number(emp.toleranciaAtraso) : 10;
+          let atraso = entrada ? S.toMin(entrada.hora) - S.toMin(inicio) : 0;
+          if (atraso < -720) atraso += 1440;
+          else if (atraso > 720) atraso -= 1440;
+          linhas.push({ previsto, bs, atrasoMin: Math.max(0, atraso - tolerancia), status: bs.some(b => b.tipo === 'Saída') ? 'concluido' : '' });
+        }
+        if (modo === 'hoje') {
+          const horaAtual = Math.floor(S.toMin(S.hhmm(agora)) / 60);
+          for (let hora = 0; hora <= horaAtual; hora++) {
+            const parciais = linhas.map(l => ({ ...l, bs: l.bs.filter(b => S.toMin(b.hora) <= hora * 60 + 59) }));
+            pontos.push({ data, rotulo: String(hora).padStart(2, '0') + 'h', ...resumir(parciais) });
+          }
+        } else pontos.push({ data, rotulo: data.slice(8), ...resumir(linhas) });
+      }
+      return pontos;
+    }
+
+    return { CATEGORIAS, calcularPainelDia: calcular, filtrarPainelDia: filtrar,
+      resumirPainelDia: resumir, setoresPainelDia: setores, acompanharPainelDia: acompanhar, tendenciaPainelDia: tendencia };
   }
 
   namespace.definir('domain.painelDia', Object.freeze({ criar }));
