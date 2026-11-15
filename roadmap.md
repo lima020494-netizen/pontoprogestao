@@ -127,3 +127,4 @@
 - [x] Falta injustificada sem débito no banco (só desconto salarial); banco debita apenas Folga Compensatória e carga incompleta.
 - [x] Atrasos removidos da folha e do banco; permanecem só no Dashboard gerencial.
 - [x] Lançamento unificado das 4 batidas (Entrada, Saída/Retorno Intervalo, Saída) no Tratamento e na batida manual
+- [x] Painel do Gestor — Etapa 1: rotina de 3 atalhos e bloco Terminal de Ponto removidos do início; menu renomeado para "📊 Painel do Gestor"; Terminal Quiosque logo abaixo no grupo Rotina & Operação. 246 testes OK; regras, cálculos e dados intactos; nada publicado.
