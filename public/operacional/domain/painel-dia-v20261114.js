@@ -146,7 +146,7 @@
         const categoria = status === 'todos' || (status === 'trabalhando' ? ['trabalhando', 'alerta', 'extra'].includes(l.status) && l.bs[l.bs.length - 1]?.tipo !== 'Saída Intervalo'
           : status === 'extra' ? l.extraMin > 0 || l.status === 'extra'
           : status === 'intervalo' ? l.bs.some(b => b.tipo === 'Saída Intervalo') && !l.bs.some(b => b.tipo === 'Entrada Intervalo') && l.status !== 'concluido'
-          : status === 'ausentes' ? l.status === 'ausente' : status === 'encerrados' ? l.finalizadoOuExtra : l.status === status);
+          : status === 'ausentes' ? l.status === 'ausente' : status === 'encerrados' ? l.status === 'concluido' : l.status === status);
         return categoria && normalizar(l.f.nome + ' ' + l.f.pin).includes(termo);
       });
       const tamanho = Number(limite) === 15 ? 15 : 20;
