@@ -36,6 +36,28 @@
     }
     const buscaNaEscala = (pin, data) => { const e = S.escalaDaSemana(data, pin); return e ? ((e.folgas || []).find(x => x.pin === pin && x.dia === data) || null) : null; };
 
+    // Only explicit, authorized compensation creates debt; legacy rest remains neutral.
+    function compensacaoEscalaValida(it) {
+      return it?.tipo === 'Folga Compensada' && it.compensacaoBanco === true &&
+        String(it.motivo || '').trim().length >= 5 && String(it.autorizadoPor || '').trim() &&
+        Number.isFinite(it.cargaNominal) && it.cargaNominal >= 0;
+    }
+    function compensacaoEscala(pin, data) {
+      const it = S.buscaNaEscala(pin, data);
+      return compensacaoEscalaValida(it) ? it : null;
+    }
+    function prepararCompensacaoEscala(f, data, motivo, gestor, anterior = {}) {
+      motivo = String(motivo || '').trim();
+      const autorizadoPor = String(gestor?.nome || '').trim();
+      if (motivo.length < 5) return { erro: 'Justificativa obrigatória (mín. 5 caracteres).' };
+      if (!autorizadoPor) return { erro: 'É necessário um gestor identificado para autorizar.' };
+      const cargaNominal = anterior.compensacaoBanco === true && Number.isFinite(anterior.cargaNominal)
+        ? anterior.cargaNominal : S.cargaEscala(f.escala);
+      return { item: { pin: f.pin, dia: data, tipo: 'Folga Compensada', turno: 'F', horarioEntrada: '', horarioSaida: '',
+        compensacaoBanco: true, cargaNominal, motivo, autorizadoPor, funcaoAutorizador: gestor.funcao || '',
+        registradoEm: new Date().toISOString() } };
+    }
+
     const TIPOS_ESC = ['Trabalhado', 'DSR', 'Folga Compensada']; // 'Folga Domingo' legado é exibido como Folga Compensada
     function lerCelulaEscala(v) {
       v = String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toUpperCase();
@@ -46,7 +68,7 @@
       return t ? { tipo: t, horarioEntrada: '' } : null;
     }
 
-    return { feriadoDe, escalaDaSemana, folgaEscala, horarioEscala, previstoDia, buscaNaEscala, TIPOS_ESC, lerCelulaEscala };
+    return { feriadoDe, escalaDaSemana, folgaEscala, horarioEscala, previstoDia, buscaNaEscala, compensacaoEscalaValida, compensacaoEscala, prepararCompensacaoEscala, TIPOS_ESC, lerCelulaEscala };
   }
 
   namespace.definir('domain.escala', Object.freeze({ criar }));

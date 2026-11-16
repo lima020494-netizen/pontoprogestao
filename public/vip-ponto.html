@@ -2037,9 +2037,9 @@ function desenharTratamento(){
  out.innerHTML=`<div class="treatment-kpis" role="group" aria-label="Filtrar pendências">${kpis.map(([f,c,t,n])=>`<button type="button" class="treatment-kpi tone-${c}" aria-pressed="${TRAT_FILTRO===f}" onclick="filtrarKpiTratamento('${f}')" title="Filtrar por ${t}"><span>${t}</span><strong>${n}</strong></button>`).join('')}</div><div class="treatment-view">${visao}${todas.length?'<label class="treatment-check"><input type="checkbox" aria-label="Selecionar todos os registros visíveis" onchange="selecionarTratamentos(this.checked)" '+(todas.every(x=>TRAT_SELECAO.has(x.key))?'checked':'')+'/> Selecionar todos</label>':''}</div><div class="treatment-list">${lista.map(x=>cardTratamento(x)).join('')||`<div class="treatment-empty"><span aria-hidden="true">${termo?'🔍':'✓'}</span><h4>${vazio}</h4></div>`}</div>${todas.length>lista.length?`<div class="treatment-more"><span>Exibindo ${lista.length} de ${todas.length}</span><button class="btn ghost" onclick="carregarMaisTratamento()">Ver mais ${Math.min(TRAT_LOTE,todas.length-lista.length)}</button></div>`:todas.length?`<div class="treatment-more"><span>${todas.length} registro(s) neste filtro</span></div>`:''}<div id="trat-bulk"></div>`;
  barraTratamento();
 }
-function cardTratamento({f,l,bs,oc,st,key}){
+function cardTratamento({f,l,bs,oc,compensada,st,key}){
  const fator=Number(get('empregador',{}).fatorBancoDomFeriado)===1?1:2,multiplica=!!feriadoDe(l.data)||dow(l.data)===0;
- return `<article class="treatment-card tone-${st.cor}"><header><label class="treatment-check"><input type="checkbox" aria-label="Selecionar ${esc(f.nome)} em ${brOf(l.data)}" ${TRAT_SELECAO.has(key)?'checked':''} onchange="alternarSelecaoTratamento('${esc(key)}',this.checked)"/><strong>${esc(f.nome)}</strong></label><time datetime="${l.data}">${brOf(l.data)} · ${esc(l.dia)}</time><span class="treatment-status">${esc(st.titulo)}</span></header><ol class="treatment-timeline" aria-label="Marcações da jornada">${(bs.length?bs:[null,null,null,null]).map((b,i)=>`<li><span class="timeline-dot" aria-hidden="true"></span><small>${esc(b?.tipo||TIPOS[i]||'Marcação')}</small><strong>${b?esc(b.hora):'—'}${b&&instanteBatida(b).civil!==l.data?' <span title="Data civil: '+esc(instanteBatida(b).civil)+'">🌙</span>':''}${b?.fonte==='MANUAL'?' *':''}</strong></li>`).join('')}</ol><footer><div class="treatment-values"><span>Previsto <b>${toHHMM(l.previsto)}</b></span><span>Trabalhado <b>${toHHMM(l.trabalhado)}</b></span><span>Banco <b>${toSaldo(l.saldo)}</b></span>${st.cor==='purple'?`<small class="treatment-factor">${multiplica?'Fator multiplicador '+fator.toFixed(1)+'x aplicado automaticamente ao Banco de Horas':'Descanso da escala trabalhado — crédito simples 1.0x no Banco de Horas'}</small>`:''}${oc?.anexo?`<button class="btn ghost sm" onclick="baixarAnexoTratamento('${esc(key)}')">↓ Anexo</button>`:''}</div><div class="row"><button class="btn ghost" onclick="verDetalhesBatidas('${esc(f.pin)}','${l.data}')" title="Histórico e ajustes das marcações">Detalhes</button><button class="btn" onclick="abrirTratamento('${esc(f.pin)}','${l.data}')">${oc?'Revisar':'Tratar'}</button></div></footer></article>`;
+ return `<article class="treatment-card tone-${st.cor}"><header><label class="treatment-check"><input type="checkbox" aria-label="Selecionar ${esc(f.nome)} em ${brOf(l.data)}" ${TRAT_SELECAO.has(key)?'checked':''} onchange="alternarSelecaoTratamento('${esc(key)}',this.checked)"/><strong>${esc(f.nome)}</strong></label><time datetime="${l.data}">${brOf(l.data)} · ${esc(l.dia)}</time><span class="treatment-status">${esc(st.titulo)}</span></header><ol class="treatment-timeline" aria-label="Marcações da jornada">${(bs.length?bs:[null,null,null,null]).map((b,i)=>`<li><span class="timeline-dot" aria-hidden="true"></span><small>${esc(b?.tipo||TIPOS[i]||'Marcação')}</small><strong>${b?esc(b.hora):'—'}${b&&instanteBatida(b).civil!==l.data?' <span title="Data civil: '+esc(instanteBatida(b).civil)+'">🌙</span>':''}${b?.fonte==='MANUAL'?' *':''}</strong></li>`).join('')}</ol><footer><div class="treatment-values"><span>Previsto <b>${toHHMM(l.previsto)}</b></span><span>Trabalhado <b>${toHHMM(l.trabalhado)}</b></span><span>Banco <b>${toSaldo(l.saldo)}</b></span>${st.cor==='purple'?`<small class="treatment-factor">${multiplica?'Fator multiplicador '+fator.toFixed(1)+'x aplicado automaticamente ao Banco de Horas':'Descanso da escala trabalhado — crédito simples 1.0x no Banco de Horas'}</small>`:''}${compensada?`<small>Folga Compensatória (Escala) · Abatimento ${toHHMM(Math.max(0,-l.saldo))} · Motivo: ${esc(compensada.motivo)} · Autorizado por: ${esc(compensada.autorizadoPor)}</small>`:''}${oc?.anexo?`<button class="btn ghost sm" onclick="baixarAnexoTratamento('${esc(key)}')">↓ Anexo</button>`:''}</div><div class="row"><button class="btn ghost" onclick="verDetalhesBatidas('${esc(f.pin)}','${l.data}')" title="Histórico e ajustes das marcações">Detalhes</button><button class="btn" onclick="abrirTratamento('${esc(f.pin)}','${l.data}')">${oc?'Revisar':'Tratar'}</button></div></footer></article>`;
 }
 function alternarSelecaoTratamento(key,checked){if(checked)TRAT_SELECAO.add(key);else TRAT_SELECAO.delete(key);barraTratamento();}
 function selecionarTratamentos(checked){TRAT_SELECAO.clear();if(checked)listaTratamento().forEach(x=>TRAT_SELECAO.add(x.key));desenharTratamento();}
@@ -2217,6 +2217,7 @@ document.addEventListener('keydown',e=>{const modal=$('modal-generico');if(!moda
 const MATRIZ_ESCALA=PontoProOperacional.obter('gestor.matrizEscala').criar({get,buscaNaEscala,previstoDia,inicioSemana,garantirLib,diasPeriodo,brOf,toHHMM,toast,pdfCabecalhoPadrao,pdfTabelaPadrao,pdfRodapesPadrao});
 function registrarItemEscala(pin,dia,item,de,para){
  const f=funcPorPin(pin);if(!f)return 'Colaborador não encontrado.';
+ if(item.tipo==='Folga Compensada'&&!NUCLEO_OPERACIONAL.compensacaoEscalaValida(item))return 'Informe motivo e gestor para a Folga Compensada.';
  const ini=window.__escIni,origem=escalaDaSemana(dia,pin),destino=get('escalas',{})[ini];
  if([origem,destino].some(e=>e?.criacaoData&&(Date.now()-new Date(e.criacaoData).getTime())/864e5>ESC_TRAVA_DIAS)){const erro='Escala bloqueada após 30 dias.';toast(erro,2000);return erro;}
  const all=get('escalas',{})||{},chave=Object.keys(all).find(k=>all[k]===origem)||origem?.semanaInicio||ini,e=origem||all[chave]||escalaObj(ini).e;all[chave]=e;
@@ -2225,15 +2226,30 @@ function registrarItemEscala(pin,dia,item,de,para){
   if(new Set(qtd.map(x=>x.dia)).size>=3){const erro='Máximo de 3 folgas por colaborador na semana.';toast(erro,2500);return erro;}
  }
  const i=e.folgas.findIndex(x=>x.pin===pin&&x.dia===dia);if(i>=0)e.folgas[i]=item;else e.folgas.push(item);
- set('escalas',all);histEscala(chave,pin,dia,de,para);atualizarMatrizTurno(pin,dia);return '';
+ set('escalas',all);histEscala(chave,pin,dia,de,para,item);atualizarMatrizTurno(pin,dia);return '';
 }
 function alternarTurnoEscala(pin,dia){
  const f=funcPorPin(pin);if(!f)return;
  const antigo=buscaNaEscala(pin,dia),c=MATRIZ_ESCALA.proximo(MATRIZ_ESCALA.codigo(f,dia));
+ if(c==='F'){abrirFolgaCompensada(pin,dia);return;}
  registrarItemEscala(pin,dia,MATRIZ_ESCALA.item(c,pin,dia,antigo||{}),antigo?.turno||antigo?.tipo||'Padrão',c);
+}
+function abrirFolgaCompensada(pin,dia){
+ const f=funcPorPin(pin);if(!f)return;const it=buscaNaEscala(pin,dia)||{};
+ const minutos=it.compensacaoBanco===true?it.cargaNominal:cargaEscala(f.escala);
+ abrirModal(`<div class="matrix-editor"><div class="row"><h3>Folga Compensada</h3><button class="btn ghost right" onclick="fecharModal()" aria-label="Fechar">✕</button></div><p>${esc(f.nome)} · ${brOf(dia)}</p><p>Débito nominal no Banco de Horas: <strong>${toHHMM(minutos)}</strong></p><label for="fc-motivo">Justificativa / motivo (mín. 5 caracteres)</label><textarea id="fc-motivo" rows="3">${esc(it.motivo||'')}</textarea><label for="fc-autorizador">Autorizado por</label><input id="fc-autorizador" value="${esc(GERENCIADOR?.nome||'')}" readonly/><p id="fc-erro" class="alert err" role="alert" hidden></p><div class="row"><button class="btn ghost" onclick="fecharModal()">Cancelar</button><button class="btn" onclick="salvarFolgaCompensada('${esc(pin)}','${dia}')">Salvar folga</button></div></div>`);
+}
+function salvarFolgaCompensada(pin,dia){
+ const f=funcPorPin(pin);if(!f)return;
+ const plano=NUCLEO_OPERACIONAL.prepararCompensacaoEscala(f,dia,$('fc-motivo').value,GERENCIADOR,buscaNaEscala(pin,dia)||{});
+ const anterior=buscaNaEscala(pin,dia);
+ const erro=plano.erro||registrarItemEscala(pin,dia,plano.item,anterior?.tipo||'Padrão','Folga Compensada');
+ if(erro){$('fc-erro').textContent=erro;$('fc-erro').hidden=false;return erro;}
+ fecharModal();toast('Folga salva com débito nominal no banco.',2500);return '';
 }
 function editarHorarioMatriz(pin,dia){
  const f=funcPorPin(pin);if(!f)return;const it=buscaNaEscala(pin,dia)||{};
+ if(it.tipo==='Folga Compensada'){abrirFolgaCompensada(pin,dia);return;}
  abrirModal(`<div class="matrix-editor"><div class="row"><div><h3>Horário da jornada</h3><p class="muted">${esc(f.nome)} · ${brOf(dia)}</p></div><button class="btn sm ghost right" onclick="fecharModal()" aria-label="Fechar">✕</button></div><p class="muted">Para jornadas atípicas, informe os horários sem alterar os demais dias.</p><div class="grid g2"><div><label for="mh-entrada">Entrada</label><input id="mh-entrada" type="time" value="${esc(it.horarioEntrada||'')}"/></div><div><label for="mh-saida">Saída</label><input id="mh-saida" type="time" value="${esc(it.horarioSaida||'')}"/></div></div><p id="mh-erro" class="alert err" role="alert" hidden></p><div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn ghost" onclick="fecharModal()">Cancelar</button><button class="btn" onclick="const erro=salvarHorarioMatriz('${esc(pin)}','${dia}',$('mh-entrada').value,$('mh-saida').value);if(erro){$('mh-erro').textContent=erro;$('mh-erro').hidden=false;}">Salvar horário</button></div></div>`);
 }
 function salvarHorarioMatriz(pin,dia,entrada,saida){
@@ -2322,28 +2338,23 @@ function escalaObj(ini,fim){
   return {all,e:all[ini]};
 }
 function setCelula(ini,pin,dia,tipo){
-  const {all,e}=escalaObj(ini);
-  const i=e.folgas.findIndex(x=>x.pin===pin&&x.dia===dia);
-  const antigo=(buscaNaEscala(pin,dia)||{tipo:'Trabalhado'}).tipo;
-  if(tipo!=='Trabalhado'){
-    const sem=inicioSemana(dia);
-    const qtd=Object.values(all).flatMap(x=>x.folgas||[]).filter(x=>x.pin===pin&&x.tipo!=='Trabalhado'&&x.dia!==dia&&inicioSemana(x.dia)===sem);
-    if(new Set(qtd.map(x=>x.dia)).size>=3){alert('Máximo de 3 folgas por funcionário na mesma semana.');subEscala();return;}
-  }
-  const item={pin,dia,tipo,horarioEntrada:tipo==='Trabalhado'?(i>=0?e.folgas[i].horarioEntrada:''):''};
-  if(i>=0) e.folgas[i]=item; else e.folgas.push(item);
-  set('escalas',all); histEscala(ini,pin,dia,antigo,tipo); subEscala();
+ window.__escIni=ini;
+ if(tipo==='Folga Compensada'){abrirFolgaCompensada(pin,dia);return;}
+ const antigo=buscaNaEscala(pin,dia)||{};
+ const item=MATRIZ_ESCALA.item(tipo==='DSR'?'D':'M',pin,dia,antigo);
+ registrarItemEscala(pin,dia,item,antigo.tipo||'Padrão',tipo);
 }
 function setHora(ini,pin,dia,h){
   const {all,e}=escalaObj(ini); const i=e.folgas.findIndex(x=>x.pin===pin&&x.dia===dia);
   if(i>=0) e.folgas[i].horarioEntrada=h; else e.folgas.push({pin,dia,tipo:'Trabalhado',horarioEntrada:h});
   set('escalas',all); histEscala(ini,pin,dia,'horário',h);
 }
-function histEscala(semana,pin,dia,de,para){
+function histEscala(semana,pin,dia,de,para,item){
   const f=funcPorPin(pin)||{nome:pin}, l=get('logsEscala',[]);
   const d=getHoraOficial();
-  l.unshift({semana,texto:`Escala alterada em ${brOf(isoOf(d))} ${hhmm(d)} por ${assinaGerenciador()} - De: ${de} para: ${para} no dia ${brOf(dia).slice(0,5)} funcionário ${f.nome}`});
-  set('logsEscala',l); log(`Escala ${brOf(dia)} ${f.nome}: ${de} → ${para}`);
+  const motivo=item?.motivo||'',autorizadoPor=GERENCIADOR?.nome||'',debito=item?.compensacaoBanco===true?item.cargaNominal:0;
+  l.unshift({semana,pin,dia,de,para,motivo,autorizadoPor,debito,registradoEm:d.toISOString(),texto:`Escala alterada em ${brOf(isoOf(d))} ${hhmm(d)} por ${assinaGerenciador()} - De: ${de} para: ${para} no dia ${brOf(dia).slice(0,5)} funcionário ${f.nome}${motivo?` - Motivo: ${motivo} - Autorizado por: ${autorizadoPor} - Débito nominal: ${toHHMM(debito)}`:''}`});
+  set('logsEscala',l); log(`Escala ${brOf(dia)} ${f.nome}: ${de} → ${para}${motivo?` - Motivo: ${motivo} - Autorizado por: ${autorizadoPor} - Débito nominal: ${toHHMM(debito)}`:''}`);
 }
 function salvarEscala(ini,fim){const {all}=escalaObj(ini,fim);set('escalas',all);histEscala(ini,'—',ini,'salvamento','escala salva');toast('Escala salva. Alterações livres por 30 dias.',4000);subEscala();}
 function diasPeriodo(ini,fim){const d=[];for(let x=ini;x<=fim&&d.length<31;x=addDias(x,1))d.push(x);return d;}
@@ -2396,6 +2407,7 @@ function mostrarImport(itens,erros){
   window.__import=itens;
   abrirModal(`<div class="row"><h3>Pré-visualização da importação</h3><button class="btn sm ghost right" onclick="fecharModal()">✕</button></div>
   <div class="card"><div><b>${itens.length}</b> registro(s) válidos • <b>${erros.length}</b> com erro</div>
+  ${itens.some(x=>x.tipo==='Folga Compensada')?`<label for="imp-fc-motivo">Motivo das folgas compensadas (mín. 5 caracteres)</label><textarea id="imp-fc-motivo"></textarea><p>Autorizado por: ${esc(GERENCIADOR?.nome||'')}</p><p id="imp-fc-erro" class="alert err" hidden></p>`:''}
   ${erros.length?`<div class="alert err">${erros.slice(0,20).map(esc).join('<br>')}</div>`:''}
   <div class="tbl-wrap" style="max-height:50vh"><table><tr><th>Funcionário</th><th>Data</th><th>Tipo</th><th>Horário</th></tr>
   ${itens.slice(0,300).map(x=>`<tr><td>${esc(x.nome)}</td><td>${brOf(x.dia)}</td><td>${esc(x.tipo)}</td><td>${x.horarioEntrada||''}${x.horarioSaida?'-'+x.horarioSaida:''}</td></tr>`).join('')}</table></div>
@@ -2403,10 +2415,18 @@ function mostrarImport(itens,erros){
 }
 function confirmarImport(){
   const it=window.__import||[]; if(!it.length) return;
+  const planos=new Map();
+  for(const x of it.filter(x=>x.tipo==='Folga Compensada')){
+    const f=funcPorPin(x.pin);if(!f)return;
+    const plano=NUCLEO_OPERACIONAL.prepararCompensacaoEscala(f,x.dia,$('imp-fc-motivo')?.value,GERENCIADOR,buscaNaEscala(x.pin,x.dia)||{});
+    if(plano.erro){$('imp-fc-erro').textContent=plano.erro;$('imp-fc-erro').hidden=false;return;}
+    planos.set(x.pin+'|'+x.dia,plano.item);
+  }
   const ds=it.map(x=>x.dia).sort(), ini=ds[0], fim=ds[ds.length-1];
   const {all,e}=escalaObj(ini,fim);
-  it.forEach(x=>{const i=e.folgas.findIndex(y=>y.pin===x.pin&&y.dia===x.dia);const o={pin:x.pin,dia:x.dia,tipo:x.tipo,horarioEntrada:x.horarioEntrada,...(x.horarioSaida?{horarioSaida:x.horarioSaida}:{})};if(i>=0)e.folgas[i]=o;else e.folgas.push(o);});
+  it.forEach(x=>{const i=e.folgas.findIndex(y=>y.pin===x.pin&&y.dia===x.dia);const o=planos.get(x.pin+'|'+x.dia)||{pin:x.pin,dia:x.dia,tipo:x.tipo,horarioEntrada:x.horarioEntrada,...(x.horarioSaida?{horarioSaida:x.horarioSaida}:{})};if(i>=0)e.folgas[i]=o;else e.folgas.push(o);});
   set('escalas',all);
+  planos.forEach(item=>histEscala(ini,item.pin,item.dia,'Importação','Folga Compensada',item));
   log(`Escala importada via planilha: ${it.length} registro(s) de ${brOf(ini)} a ${brOf(fim)}`);
   fecharModal(); window.__escIni=ini; window.__escFim=fim; subEscala(); toast('Escala importada e salva na nuvem.',4000);
 }

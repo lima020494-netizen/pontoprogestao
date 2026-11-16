@@ -35,6 +35,7 @@
     S.setCarregando(true);
     const conta=S.getConta();
     try{
+      if(!await sincronizarEscalaPendente())throw new Error('Escala offline pendente; preservando edição local.');
       S.setNuvemDesde(S.janelaNuvemDesde());
       await S.sincronizarPendentes();
       const rs=await Promise.all([
@@ -67,6 +68,12 @@
     S.atualizaStatus();
   }
   function nuvemPush(k,v){
+    if(['escalas','logsEscala'].includes(k)){
+      guardarEscalaPendente(k,v);
+      if(!S.sb||!S.getConta())return;
+      clearTimeout(NUVEM_TIMERS[k]);
+      NUVEM_TIMERS[k]=setTimeout(()=>sincronizarEscalaPendente(),400);return;
+    }
     if(!S.sb||!S.getConta())return;
     clearTimeout(NUVEM_TIMERS[k]);
     NUVEM_TIMERS[k]=setTimeout(()=>S.nuvemPushAgora(k,v),400);
@@ -88,7 +95,41 @@
       else S.chk(await S.sb.from('dados').upsert({conta:S.getConta(),chave:k,valor:v,atualizado_em:new Date().toISOString()},{onConflict:'conta,chave'}));
       if(['empregador','feriados'].includes(k))await S.cacheEstavelInvalidar(S.getConta(),k);
       S.setNuvemOk(true);
-    }catch(e){S.setNuvemOk(false);console.warn('Falha ao sincronizar com a nuvem:',k,e);}
+      return true;
+    }catch(e){S.setNuvemOk(false);console.warn('Falha ao sincronizar com a nuvem:',k,e);return false;}
+  }
+  const ESCALA_GRAVACOES=new Map();let ESCALA_SYNC=null;
+  function guardarEscalaPendente(k,v){
+    const conta=S.getConta();if(!conta)return;
+    const id='escala-outbox|'+conta+'|'+k,raw=JSON.stringify(v);
+    S.localStorage.setItem('vip:'+conta+':outbox:'+k,raw);
+    const anterior=ESCALA_GRAVACOES.get(id)||Promise.resolve();
+    const escrita=anterior.then(()=>S.cacheEstavelTx('readwrite',s=>s.put({id,raw}))).catch(()=>{});
+    ESCALA_GRAVACOES.set(id,escrita);
+  }
+  async function sincronizarEscalaPendente(){
+    if(ESCALA_SYNC)return ESCALA_SYNC;
+    const conta=S.getConta();if(!conta)return true;
+    const tarefa=(async()=>{
+      for(const k of ['escalas','logsEscala']){
+        const id='escala-outbox|'+conta+'|'+k,chave='vip:'+conta+':outbox:'+k;
+        await ESCALA_GRAVACOES.get(id);
+        let raw=S.localStorage.getItem(chave);
+        if(!raw)try{raw=(await S.cacheEstavelTx('readonly',s=>s.get(id)))?.raw;}catch(e){}
+        if(!raw)continue;
+        if(!S.sb||S.getConta()!==conta)return false;
+        if(!await S.nuvemPushAgora(k,JSON.parse(raw)))return false;
+        if(S.getConta()!==conta)return false;
+        if(S.localStorage.getItem(chave)&&S.localStorage.getItem(chave)!==raw)return false;
+        S.localStorage.removeItem(chave);
+        // Serialize deletion before subsequent edits, so a newer snapshot is never erased.
+        const limpeza=(ESCALA_GRAVACOES.get(id)||Promise.resolve())
+          .then(()=>S.cacheEstavelTx('readwrite',s=>s.delete(id))).catch(()=>{});
+        ESCALA_GRAVACOES.set(id,limpeza);await limpeza;
+      }
+      return true;
+    })();ESCALA_SYNC=tarefa;
+    try{return await tarefa;}finally{ESCALA_SYNC=null;}
   }
   async function migrarTudoSunmiParaSupabase(forcar){
     if(!S.sb||!S.getConta())return null;
@@ -123,7 +164,7 @@
       return msg;
     }catch(e){console.warn('Migração falhou',e);return 'Migração falhou: '+(e.message||e);}
   }
-  return {linhaFunc,linhaPonto,janelaNuvemDesde,lerPontosNuvem,garantirHistorico,carregarNuvem,nuvemPush,nuvemPushAgora,migrarTudoSunmiParaSupabase};
+  return {linhaFunc,linhaPonto,janelaNuvemDesde,lerPontosNuvem,garantirHistorico,carregarNuvem,nuvemPush,nuvemPushAgora,guardarEscalaPendente,sincronizarEscalaPendente,migrarTudoSunmiParaSupabase};
 
   }
 

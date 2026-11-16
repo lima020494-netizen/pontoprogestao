@@ -2,3 +2,5 @@
 - Matrix chips map to canonical schedule types and retain configured hours; this avoids inventing shift durations or changing payroll calculations.
 - Reuse the existing schedule record when a period overlaps; this prevents duplicate per-day entries from shadowing edits.
 - Derive executive presence, sector rates and trends from loaded daily schedules/punches, paginate the team at 15/20 rows and open monthly fiscal reports only on demand; this avoids duplicate monthly work and new polling.
+- Authorized compensation is derived once from schedule JSON with captured nominal minutes, never a second occurrence/punch; legacy rest stays neutral.
+- Pending schedule/audit snapshots use an account-scoped IndexedDB outbox with local fallback, flushed before reads to preserve offline edits on failure.
