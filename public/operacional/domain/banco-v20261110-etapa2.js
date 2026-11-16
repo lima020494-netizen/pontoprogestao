@@ -45,6 +45,11 @@
     }
     function movimentoBancoDia(pin, data, prev, trab, atraso = 0) {
       const oc = S.ocorrenciaDia(pin, data), regra = S.regraOcorrencia(oc?.tipo), e = S.get('empregador', {}) || {};
+      const compensada = S.compensacaoEscala(pin, data);
+      if (compensada && !regra.abonado && !regra.externo && !regra.falta && !regra.suspensao) {
+        return { ...regra, compensacao: true, etiqueta: 'FOLGA COMPENSATÓRIA (ESCALA)',
+          saldo: -compensada.cargaNominal, faltantes: 0, origem: 'escala' };
+      }
       const fator = Number(e.fatorBancoDomFeriado) === 1 ? 1 : 2, multiplica = trab > 0 && (!!S.feriadoDe(data) || S.dow(data) === 0);
       // Falta injustificada: desconto salarial na folha/holerite, saldo neutro no banco.
       const falta = regra.falta || (trab === 0 && prev > 0 && !oc?.tipo);
@@ -71,7 +76,10 @@
         if (f.status === 'Desligado' && d > f.dataDesligamento) { oc = 'DESLIGADO'; cls = 't-deslig'; }
         else if (f.status === 'Férias' && d >= f.feriasIni && d <= f.feriasFim) { oc = 'FÉRIAS'; cls = 't-ferias'; }
         else if (f.status === 'Afastamento' && d >= f.afastDe && d <= f.afastAte) { oc = 'AFASTAMENTO'; cls = 't-afast'; just.push(`${S.brOf(d)} - AFASTAMENTO - ${(f.motivoAfast || '').toUpperCase()}`); }
-        else if (folga) { oc = folga.tipo.toUpperCase(); cls = 't-folga'; tot.folgas++; }
+        else if (folga) { oc = movimento.origem === 'escala' ? movimento.etiqueta : folga.tipo.toUpperCase(); cls = 't-folga'; tot.folgas++;
+          const comp = S.compensacaoEscala(pin, d);
+          if (comp) just.push(`${S.brOf(d)} - FOLGA COMPENSATÓRIA (ESCALA) - ${comp.motivo} - Autorizado por: ${comp.autorizadoPor} - Carga nominal: ${S.toHHMM(comp.cargaNominal)}`);
+        }
         else if (fer) { oc = 'FERIADO'; cls = 't-feriado'; tot.feriados++; just.push(`${S.brOf(d)} - FERIADO - ${fer.nome}`); }
         const ocorr = S.ocorrenciaDia(pin, d);
         if (ocorr) {
@@ -118,7 +126,7 @@
         for (let d = de; d <= ate; d = S.addDias(d, 1)) {
           const bs = S.batidasDia(pin, d), prev = S.previstoDia(f, d), trab = S.trabalhoApuradoDia(f, d, bs);
           const movimento = S.movimentoBancoDia(pin, d, prev, trab, S.atrasoDia(pin, d, bs, prev));
-          dias.push({ data: d, previsto: prev, trabalhado: trab, saldo: movimento.saldo, ocorrencia: typeof S.ocorrenciaDia === 'function' ? S.ocorrenciaDia(pin, d)?.tipo || '' : '', vigente: true });
+          dias.push({ data: d, previsto: prev, trabalhado: trab, saldo: movimento.saldo, ocorrencia: movimento.origem === 'escala' ? 'Folga Compensatória (Escala)' : S.ocorrenciaDia(pin, d)?.tipo || '', vigente: true });
           if (movimento.saldo > 0) { cred += movimento.saldo; det.push(`Crédito - Hora Extra dia ${S.brOf(d)} - Previsto ${S.toHHMM(prev)} / Realizado ${S.toHHMM(trab)} / Banco ${S.toHHMM(movimento.saldo)}`); }
           else if (movimento.saldo < 0) { deb -= movimento.saldo; det.push(`${movimento.compensacao ? 'Débito - Folga Compensatória' : 'Débito - Carga incompleta'} dia ${S.brOf(d)} - ${S.toHHMM(-movimento.saldo)}`); }
         }
@@ -156,13 +164,16 @@
     /* Triagem do Inbox: um dia por vez, sem montar folha, totais, justificativas ou saldo histórico do mês. */
     function triagemTratamentoDia(f, data, hoje) {
       const bs = S.batidasDia(f.pin, data), oc = S.ocorrenciaDia(f.pin, data);
-      if (data > hoje && !bs.length && !oc) return null;
+      const compensada = S.compensacaoEscala(f.pin, data);
+      if (data > hoje && !bs.length && !oc && !compensada) return null;
       const previsto = S.previstoDia(f, data), trabalhado = S.trabalhoApuradoDia(f, data, bs);
       const atraso = bs.length ? S.atrasoDia(f.pin, data, bs, previsto) : 0;
       const movimento = S.movimentoBancoDia(f.pin, data, previsto, trabalhado, atraso);
       const vigencia = f.inicioVigenciaBancoHoras || f.bancoInicio || f.admissao || data;
       const l = { data, dia: S.DIAS[S.dow(data)], previsto, trabalhado, saldo: data < vigencia ? 0 : movimento.saldo };
-      return { l, bs, oc, st: S.classificacaoTratamento(l, oc, bs, hoje) };
+      const st = S.classificacaoTratamento(l, oc, bs, hoje);
+      if (compensada && !bs.length && !st.solicitacao) Object.assign(st, { pendente: false, falta: false, parcial: false, intervalo: false, cor: 'green', titulo: 'Folga Compensatória (Escala)' });
+      return { l, bs, oc, compensada, st };
     }
 
     return { batidasDia, paresBatidas, difMin, minutosTrabalhados, calculaNoturna, trabalhadoDia, trabalhoApuradoDia, descontoDsrDia, atrasoDia, movimentoBancoDia, dadosFolha, resumoMensalFolha, calcBanco, classificacaoTratamento, triagemTratamentoDia };

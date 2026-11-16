@@ -1,7 +1,7 @@
 /* Matriz visual: códigos de apresentação, sem novos cálculos ou horários presumidos. */
 (function(namespace){
   'use strict';
-  const TURNOS=Object.freeze([{codigo:'M',nome:'Manhã'},{codigo:'T',nome:'Tarde'},{codigo:'N',nome:'Noite'},{codigo:'F',nome:'Folga'},{codigo:'D',nome:'DSR'}]);
+  const TURNOS=Object.freeze([{codigo:'M',nome:'Manhã'},{codigo:'T',nome:'Tarde'},{codigo:'N',nome:'Noite'},{codigo:'F',nome:'Folga Compensada'},{codigo:'D',nome:'DSR'}]);
   function criar(S){
     function turnoPorHorario(horario){const hora=Number(String(horario||'08:00').slice(0,2));return hora>=18||hora<6?'N':hora>=12?'T':'M';}
     function codigo(f,d){
@@ -14,7 +14,10 @@
     function proximo(atual){return TURNOS[(TURNOS.findIndex(t=>t.codigo===atual)+1)%TURNOS.length].codigo;}
     function item(c,pin,dia,anterior={}){
       if(!TURNOS.some(t=>t.codigo===c))throw new Error('Turno inválido');
-      return {...anterior,pin,dia,tipo:c==='D'?'DSR':c==='F'?'Folga Compensada':'Trabalhado',turno:c,horarioEntrada:c==='F'||c==='D'?'':anterior.horarioEntrada||'',horarioSaida:c==='F'||c==='D'?'':anterior.horarioSaida||''};
+      const copia={...anterior};
+      // Metadata must not reactivate when cycling back to F on another edit.
+      for(const k of ['compensacaoBanco','cargaNominal','motivo','autorizadoPor','funcaoAutorizador','registradoEm'])delete copia[k];
+      return {...copia,pin,dia,tipo:c==='D'?'DSR':c==='F'?'Folga Compensada':'Trabalhado',turno:c,horarioEntrada:c==='F'||c==='D'?'':anterior.horarioEntrada||'',horarioSaida:c==='F'||c==='D'?'':anterior.horarioSaida||''};
     }
     function semanas(dias){const grupos=[];for(const d of dias){const ini=S.inicioSemana(d);let g=grupos.find(x=>x.ini===ini);if(!g){g={ini,dias:[]};grupos.push(g);}g.dias.push(d);}return grupos;}
     function carga(f,dias){return dias.reduce((n,d)=>n+S.previstoDia(f,d),0);}

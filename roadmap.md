@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Evolução — Etapa 3: Folga Compensada na escala com motivo de ao menos 5 caracteres, gestor identificado, débito nominal derivado no banco, histórico informativo sem pendência artificial e persistência offline; validar suíte e prévia sem dados reais ou publicação.
+- [ ] Evolução — Etapa 4: Acesso direto de gestor sem PIN — próxima etapa, aguardando autorização; não implementar nesta entrega.
+
 - [x] Painel do Gestor — Etapa 2: Torre de Controle unificada seguindo os anexos, anel de presença/conclusão, setores/unidades e ranking, tendência Hoje/Mês e tabela com busca, filtros e seletor de 15/20 linhas. Relatório de Frequência/PDF preservado sob demanda. 250 testes aprovados, build OK; preview com 53 colaboradores fictícios confirmou paginação, busca/PIN, filtro, período, atalho e desktop/390px sem overflow/erros. Dados reais, regras, NSR, auditoria e fila preservados; sem publicação. Sincronização externa autenticada não verificada.
 
 - [x] Evolução Etapa 2: Painel do Dia integrado ao Início com cinco KPIs-filtro, situação da equipe, timeline, tempos de jornada/intervalo, alertas de 4h/6h, tolerância configurada, virada noturna e atalho ao Tratamento. Atualização local a cada 30s, sem polling ao Supabase; véspera carregada sob demanda somente antes das 6h. Preview fictício conferiu 8 colaboradores, filtros, atalho com data/PIN, desktop/390px sem overflow/erros e zero consultas à nuvem em 31s; 246 testes/build OK, sem dados reais ou publicação. Sessão externa autenticada não verificada.
