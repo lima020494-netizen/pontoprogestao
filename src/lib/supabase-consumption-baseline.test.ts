@@ -31,7 +31,7 @@ test('baseline egress: first cloud load reads seven resources, cached reload fiv
     get: (k: string, fallback: unknown) => localData[k] ?? fallback,
     set: (k: string, value: unknown) => { localData[k] = value; },
     K: (k: string) => `vip:${context['CONTA']}:${k}`,
-    localStorage: { setItem: () => {} }, LOGS_SESSAO: new Set(), atualizaStatus: () => {},
+    localStorage: { setItem: () => {}, getItem: () => null, removeItem: () => {} }, LOGS_SESSAO: new Set(), atualizaStatus: () => {},
     chk: (r: any) => { if (r?.error) throw r.error; return r; },
     cacheEstavelTx: async (_modo: string, fn: (store: any) => any) => fn({
       get: (id: string) => ({ result: stored.get(id) }),
