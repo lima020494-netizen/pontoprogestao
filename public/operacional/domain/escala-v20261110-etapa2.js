@@ -37,11 +37,14 @@
     const buscaNaEscala = (pin, data) => { const e = S.escalaDaSemana(data, pin); return e ? ((e.folgas || []).find(x => x.pin === pin && x.dia === data) || null) : null; };
 
     // Only explicit, authorized compensation creates debt; legacy rest remains neutral.
-    function compensacaoEscala(pin, data) {
-      const it = S.buscaNaEscala(pin, data);
+    function compensacaoEscalaValida(it) {
       return it?.tipo === 'Folga Compensada' && it.compensacaoBanco === true &&
         String(it.motivo || '').trim().length >= 5 && String(it.autorizadoPor || '').trim() &&
-        Number.isFinite(it.cargaNominal) && it.cargaNominal >= 0 ? it : null;
+        Number.isFinite(it.cargaNominal) && it.cargaNominal >= 0;
+    }
+    function compensacaoEscala(pin, data) {
+      const it = S.buscaNaEscala(pin, data);
+      return compensacaoEscalaValida(it) ? it : null;
     }
     function prepararCompensacaoEscala(f, data, motivo, gestor, anterior = {}) {
       motivo = String(motivo || '').trim();
@@ -65,7 +68,7 @@
       return t ? { tipo: t, horarioEntrada: '' } : null;
     }
 
-    return { feriadoDe, escalaDaSemana, folgaEscala, horarioEscala, previstoDia, buscaNaEscala, compensacaoEscala, prepararCompensacaoEscala, TIPOS_ESC, lerCelulaEscala };
+    return { feriadoDe, escalaDaSemana, folgaEscala, horarioEscala, previstoDia, buscaNaEscala, compensacaoEscalaValida, compensacaoEscala, prepararCompensacaoEscala, TIPOS_ESC, lerCelulaEscala };
   }
 
   namespace.definir('domain.escala', Object.freeze({ criar }));
