@@ -162,7 +162,7 @@
       return msg;
     }catch(e){console.warn('Migração falhou',e);return 'Migração falhou: '+(e.message||e);}
   }
-  return {linhaFunc,linhaPonto,janelaNuvemDesde,lerPontosNuvem,garantirHistorico,carregarNuvem,nuvemPush,nuvemPushAgora,migrarTudoSunmiParaSupabase};
+  return {linhaFunc,linhaPonto,janelaNuvemDesde,lerPontosNuvem,garantirHistorico,carregarNuvem,nuvemPush,nuvemPushAgora,guardarEscalaPendente,sincronizarEscalaPendente,migrarTudoSunmiParaSupabase};
 
   }
 
