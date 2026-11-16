@@ -122,8 +122,10 @@
         if(S.getConta()!==conta)return false;
         if(S.localStorage.getItem(chave)&&S.localStorage.getItem(chave)!==raw)return false;
         S.localStorage.removeItem(chave);
-        await ESCALA_GRAVACOES.get(id);
-        try{await S.cacheEstavelTx('readwrite',s=>s.delete(id));}catch(e){}
+        // Serialize deletion before subsequent edits, so a newer snapshot is never erased.
+        const limpeza=(ESCALA_GRAVACOES.get(id)||Promise.resolve())
+          .then(()=>S.cacheEstavelTx('readwrite',s=>s.delete(id))).catch(()=>{});
+        ESCALA_GRAVACOES.set(id,limpeza);await limpeza;
       }
       return true;
     })();ESCALA_SYNC=tarefa;
