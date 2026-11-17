@@ -1,7 +1,7 @@
 # Roadmap
 
 - [x] Evolução — Etapa 3: Folga Compensada na matriz/semana e importação com motivo mínimo de 5 caracteres e gestor identificado; débito nominal derivado uma vez, auditoria e histórico informativo sem pendência artificial. Descansos legados continuam neutros; vigência, marcações originais e ocorrências existentes preservadas. Outbox de escala/auditoria em IndexedDB por conta com fallback local e envio antes da leitura na reconexão. 260 testes passaram; prévia com dados fictícios confirmou 08:00 de débito (5x2), validação, autoria, Inbox Zero, histórico e IndexedDB; sem dados reais ou publicação. Sincronização autenticada externa não verificada.
-- [ ] Evolução — Etapa 4: Acesso direto de gestor sem PIN — próxima etapa, aguardando autorização; não implementar nesta entrega.
+- [x] Evolução — Etapa 4: gestor autenticado entra direto no Painel (PIN só no Quiosque/portal; autor = conta logada), ciclo M→T→N→D→F com motivo/autor em F, matriz/PDF agrupados por setor e planilha ordenada por setor; 263 testes OK; prévia, sem publicar.
 
 - [x] Painel do Gestor — Etapa 2: Torre de Controle unificada seguindo os anexos, anel de presença/conclusão, setores/unidades e ranking, tendência Hoje/Mês e tabela com busca, filtros e seletor de 15/20 linhas. Relatório de Frequência/PDF preservado sob demanda. 250 testes aprovados, build OK; preview com 53 colaboradores fictícios confirmou paginação, busca/PIN, filtro, período, atalho e desktop/390px sem overflow/erros. Dados reais, regras, NSR, auditoria e fila preservados; sem publicação. Sincronização externa autenticada não verificada.
 

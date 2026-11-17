@@ -16,7 +16,8 @@ async function comprovantePDF(b){
 
 function gradeEscala(ini,fim){
   const dias=S.diasPeriodo(ini,fim||S.addDias(ini,6)), fs=S.get('funcionarios',[]).filter(f=>f.status!=='Desligado');
-  return [['ID (PIN)','Nome',...dias.map(d=>S.brOf(d))],...fs.map(f=>[f.pin,f.nome,...dias.map(d=>S.celulaEscala(S.buscaNaEscala(f.pin,d)))])];
+  const st=f=>String(f.departamento||'').trim()||'Sem setor',ordem=[...fs].sort((a,b)=>st(a).localeCompare(st(b),'pt-BR')||String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'));
+  return [['ID (PIN)','Nome',...dias.map(d=>S.brOf(d))],...ordem.map(f=>[f.pin,f.nome,...dias.map(d=>S.celulaEscala(S.buscaNaEscala(f.pin,d)))])];
 }
 async function planilhaEscala(ini,fim,fmt){
   if(fmt==='xlsx') await S.garantirLib('xlsx');

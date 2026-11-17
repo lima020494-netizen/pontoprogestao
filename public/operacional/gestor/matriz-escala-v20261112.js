@@ -1,7 +1,7 @@
 /* Matriz visual: códigos de apresentação, sem novos cálculos ou horários presumidos. */
 (function(namespace){
   'use strict';
-  const TURNOS=Object.freeze([{codigo:'M',nome:'Manhã'},{codigo:'T',nome:'Tarde'},{codigo:'N',nome:'Noite'},{codigo:'F',nome:'Folga Compensada'},{codigo:'D',nome:'DSR'}]);
+  const TURNOS=Object.freeze([{codigo:'M',nome:'Manhã'},{codigo:'T',nome:'Tarde'},{codigo:'N',nome:'Noite'},{codigo:'D',nome:'DSR'},{codigo:'F',nome:'Folga Compensada'}]);
   function criar(S){
     function turnoPorHorario(horario){const hora=Number(String(horario||'08:00').slice(0,2));return hora>=18||hora<6?'N':hora>=12?'T':'M';}
     function codigo(f,d){
@@ -11,6 +11,9 @@
       if(!it&&S.previstoDia(f,d)===0)return new Date(d+'T12:00:00Z').getUTCDay()===0?'D':'F';
       return turnoPorHorario(it?.horarioEntrada||S.get('empregador',{}).hEntrada||'08:00');
     }
+    const setorDe=f=>String(f.departamento||'').trim()||'Sem setor';
+    function porSetor(fs){return [...fs].sort((a,b)=>setorDe(a).localeCompare(setorDe(b),'pt-BR')||String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'));}
+    function gruposSetor(fs){const m=new Map();porSetor(fs).forEach(f=>{const k=setorDe(f);if(!m.has(k))m.set(k,[]);m.get(k).push(f);});return [...m].map(([setor,lista])=>({setor,lista}));}
     function proximo(atual){return TURNOS[(TURNOS.findIndex(t=>t.codigo===atual)+1)%TURNOS.length].codigo;}
     function item(c,pin,dia,anterior={}){
       if(!TURNOS.some(t=>t.codigo===c))throw new Error('Turno inválido');
@@ -23,7 +26,7 @@
     function carga(f,dias){return dias.reduce((n,d)=>n+S.previstoDia(f,d),0);}
     async function pdf(ini,fim){
       await S.garantirLib('pdf');
-      const fs=S.get('funcionarios',[]).filter(f=>f.status!=='Desligado');
+      const fs=porSetor(S.get('funcionarios',[]).filter(f=>f.status!=='Desligado'));
       if(!fs.length){S.toast('Nenhum colaborador cadastrado.',2000);return;}
       const doc=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'}),grupos=semanas(S.diasPeriodo(ini,fim));
       grupos.forEach((g,i)=>{
@@ -31,7 +34,7 @@
         const sub=S.brOf(g.dias[0])+' a '+S.brOf(g.dias.at(-1));
         let y=S.pdfCabecalhoPadrao(doc,'Escala da equipe',sub);
         doc.setFontSize(8);doc.text('M Manhã · T Tarde · N Noite · F Folga · D DSR',10,y);y+=6;
-        const body=fs.map(f=>[f.nome,f.departamento||'—',...g.dias.map(d=>codigo(f,d)),S.toHHMM(carga(f,g.dias))]);
+        const body=gruposSetor(fs).flatMap(gr=>[[{content:gr.setor+' · '+gr.lista.length+' colaborador(es)',colSpan:g.dias.length+3,styles:{fontStyle:'bold',fillColor:[30,58,138],textColor:[255,255,255]}}],...gr.lista.map(f=>[f.nome,f.departamento||'—',...g.dias.map(d=>codigo(f,d)),S.toHHMM(carga(f,g.dias))])]);
         S.pdfTabelaPadrao(doc,{y,titulo:'Escala da equipe',sub,head:['Colaborador','Setor',...g.dias.map(d=>S.brOf(d).slice(0,5)),'Carga'],body,widths:[46,26,...g.dias.map(()=>((190-46-26-20)/g.dias.length)),20],fontSize:8,cellPadding:2});
       });
       S.pdfRodapesPadrao(doc);doc.save('Escala_Equipe_'+ini+'_'+fim+'.pdf');
@@ -45,7 +48,7 @@
         return {setor,turno,min,dias:dias.map(d=>{const qtd=lista.filter(f=>codigo(f,d)===turno).length;return {dia:d,qtd,status:!min?'neutro':qtd>=min?'ok':'falta'};})};
       }));
     }
-    return {TURNOS,turnoPorHorario,codigo,proximo,item,semanas,carga,pdf,minimos,cobertura};
+    return {porSetor,gruposSetor,TURNOS,turnoPorHorario,codigo,proximo,item,semanas,carga,pdf,minimos,cobertura};
   }
   namespace.definir('gestor.matrizEscala',Object.freeze({criar}));
 })(window.PontoProOperacional);
