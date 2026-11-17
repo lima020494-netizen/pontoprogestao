@@ -23,7 +23,7 @@ test('reaching F in the rotation still opens the reason/author modal',()=>{
 });
 test('employees are grouped and ordered by sector',()=>{
   const {api}=fixture();const g=api.gruposSetor([{nome:'Zé',departamento:'Salão'},{nome:'Bia',departamento:'Bar'},{nome:'Ana',departamento:'Bar'},{nome:'Caio'}]);
-  assert.deepEqual(g.map((x:any)=>[x.setor,x.lista.map((f:any)=>f.nome).join(',')]),[['Bar','Ana,Bia'],['Salão','Zé'],['Sem setor','Caio']]);
+  assert.deepEqual(JSON.parse(JSON.stringify(g.map((x:any)=>[x.setor,x.lista.map((f:any)=>f.nome).join(',')]))),[['Bar','Ana,Bia'],['Salão','Zé'],['Sem setor','Caio']]);
   assert.match(html,/colaborador\(es\)<\/th><\/tr>/);
 });
 test('authenticated manager enters the panel directly without the PIN lock',()=>{
@@ -84,5 +84,6 @@ test('PDF builds all monthly dates and team rows after loading the PDF library',
   const {ctx,api,data,inicioSemana}=fixture();let loaded=false,rows=0;const dates:string[]=[];
   ctx.window.jspdf={jsPDF:class{addPage(){}setFontSize(){}text(){}save(){assert.equal(dates.length,31);}}};
   const pdf=ctx.PontoProOperacional.obter('gestor.matrizEscala').criar({...ctx.NUCLEO_OPERACIONAL,inicioSemana,garantirLib:async()=>{loaded=true;},diasPeriodo:()=>Array.from({length:31},(_,i)=>'2026-10-'+String(i+1).padStart(2,'0')),pdfCabecalhoPadrao:()=>47,pdfTabelaPadrao:(_doc:any,o:any)=>{assert.equal(loaded,true);rows+=o.body.length;dates.push(...o.head.slice(2,-1));},pdfRodapesPadrao:()=>{},toast:()=>{}});
-  await pdf.pdf('2026-10-01','2026-10-31');assert.equal(rows,5);assert.equal(data.funcionarios.length,1);assert.equal(api.codigo(f,'2026-11-09'),'M');
+  await pdf.pdf('2026-10-01','2026-10-31');assert.equal(rows,10); // 5 semanas × (cabeçalho do setor + 1 colaborador)
+  assert.equal(data.funcionarios.length,1);assert.equal(api.codigo(f,'2026-11-09'),'M');
 });
