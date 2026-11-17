@@ -16,7 +16,8 @@ async function comprovantePDF(b){
 
 function gradeEscala(ini,fim){
   const dias=S.diasPeriodo(ini,fim||S.addDias(ini,6)), fs=S.get('funcionarios',[]).filter(f=>f.status!=='Desligado');
-  return [['ID (PIN)','Nome',...dias.map(d=>S.brOf(d))],...fs.map(f=>[f.pin,f.nome,...dias.map(d=>S.celulaEscala(S.buscaNaEscala(f.pin,d)))])];
+  const ordem=window.MATRIZ_ESCALA?.porSetor?window.MATRIZ_ESCALA.porSetor(fs):fs;
+  return [['ID (PIN)','Nome',...dias.map(d=>S.brOf(d))],...ordem.map(f=>[f.pin,f.nome,...dias.map(d=>S.celulaEscala(S.buscaNaEscala(f.pin,d)))])];
 }
 async function planilhaEscala(ini,fim,fmt){
   if(fmt==='xlsx') await S.garantirLib('xlsx');
