@@ -34,7 +34,7 @@
 - Support uses a bottom pill, never a top banner.
 - APK aliases share one redirect URL; terminal links to /download.
 - Manual overnight type/jornada persist in punch JSON; civil timestamps stay unchanged.
-- /gestor and /quiosque reuse the HTML engine via mode-aware iframe and scoped semantic treatment styles; Supabase session and manager PIN guard access, avoiding duplicated fiscal/auth engines.
+- /gestor and /quiosque reuse the HTML engine via mode-aware iframe and scoped semantic treatment styles; the Supabase session alone grants manager access (the employee PIN stays kiosk/portal-only, and the session account is the audit author), avoiding duplicated fiscal/auth engines.
 - Identity schemas normalize legacy color fields to the fixed institutional palette; surface tokens govern light admin/manager and dark kiosk without recoloring official sheets. Known legacy platform logos resolve to the current CDN asset; custom company logos remain untouched.
 - Manager kiosk links and QR contain only the same-origin /quiosque URL, never account identifiers or credentials; opening another device still requires the existing company sign-in.
 - Manager limits follow plans; hidden reserves never count.
