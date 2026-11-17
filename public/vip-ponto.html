@@ -893,7 +893,7 @@ label:has(input[type=checkbox]){min-height:44px;cursor:pointer}
 </div>
 
 <div id="gestor-bloqueio" class="hidden manager-lock">
-  <section aria-labelledby="gestor-lock-title"><div class="manager-lock-logo"><img id="gestor-lock-logo" src="/vip-logo.png?v=20261028" alt="Logo da empresa"/></div><h1 id="gestor-lock-title">Painel do Gestor</h1><p id="gestor-lock-empresa"></p><button class="btn manager-lock-primary" onclick="pedirPinGestor()">🔒 Acessar com PIN</button><div class="manager-lock-secondary"><a class="btn ghost" href="/quiosque" target="_top">Quiosque ↗</a></div><button class="btn manager-lock-logout" onclick="logoff()">⏻ Sair da conta</button></section>
+  <section aria-labelledby="gestor-lock-title"><div class="manager-lock-logo"><img id="gestor-lock-logo" src="/vip-logo.png?v=20261028" alt="Logo da empresa"/></div><h1 id="gestor-lock-title">Painel do Gestor</h1><p id="gestor-lock-empresa"></p><button class="btn manager-lock-primary" onclick="entrarGestorDireto()">📊 Entrar no Painel</button><div class="manager-lock-secondary"><a class="btn ghost" href="/quiosque" target="_top">Quiosque ↗</a></div><button class="btn manager-lock-logout" onclick="logoff()">⏻ Sair da conta</button></section>
   <button class="btn manager-support-fab" onclick="abrirSuporteGestor()" aria-label="Suporte ao Gestor" title="Suporte ao Gestor"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 13v-1a8 8 0 0 1 16 0v1M4 12H2v7h4v-7zM20 12h2v7h-4v-7zM20 19c0 3-4 3-8 3"/></svg></button>
 </div>
 <!-- ======================= GESTOR ======================= -->
@@ -1594,8 +1594,12 @@ function abrirGestor(){
   atualizarAvisoSuporte();
   mostrarCentralGestor();
 }
-function fecharGestor(){trocaGestor++;fecharMenuGestor(false);$('tela-gestor').classList.add('hidden');pararRelogioGestor();GERENCIADOR=null;fecharModal();fecharPinModal();if(MODO_GESTOR)bloquearGestor();}
-function bloquearGestor(){
+function fecharGestor(){trocaGestor++;fecharMenuGestor(false);$('tela-gestor').classList.add('hidden');pararRelogioGestor();GERENCIADOR=null;fecharModal();fecharPinModal();if(MODO_GESTOR)mostrarTelaGestor();}
+/* Etapa 4: gestor autenticado por e-mail/senha entra direto; PIN fica restrito ao Quiosque/portal. */
+function gestorDaSessao(){const e=get('empregador',{})||{},gs=get('gerenciadores',[]).filter(g=>!g.is_hidden),c=String(CONTA||'').toLowerCase(),g=gs.find(g=>String(g.email||'').toLowerCase()===c);return g?{...g,email:c,via:'sessao'}:{nome:e.responsavel||c||'Gestor',funcao:'Gestor (conta autenticada)',email:c,via:'sessao'};}
+function entrarGestorDireto(){if(!MODO_GESTOR||!CONTA||!get('empregador',null))return mostrarTelaGestor();GERENCIADOR=gestorDaSessao();$('gestor-bloqueio').classList.add('hidden');abrirGestor();}
+function bloquearGestor(){if(MODO_GESTOR&&CONTA&&get('empregador',null))return entrarGestorDireto();mostrarTelaGestor();}
+function mostrarTelaGestor(){
   GERENCIADOR=null;['tela-home','tela-login','tela-empregador','tela-gestor'].forEach(id=>$(id).classList.add('hidden'));
   $('gestor-bloqueio').classList.remove('hidden');$('gestor-lock-logo').src=logoEmpresa();const e=get('empregador',{})||{};$('gestor-lock-empresa').textContent=e.fantasia||e.razao||'Ponto Pro Gestão';
 }
