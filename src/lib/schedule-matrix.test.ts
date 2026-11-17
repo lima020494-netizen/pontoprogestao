@@ -15,8 +15,21 @@ function fixture(){
   const api=ctx.PontoProOperacional.obter('gestor.matrizEscala').criar({...ctx.NUCLEO_OPERACIONAL,inicioSemana});
   return {ctx,api,data,inicioSemana};
 }
-test('one-click cycle is M → T → N → F → D → M',()=>{
-  const {api}=fixture();assert.deepEqual(['M','T','N','F','D'].map(c=>api.proximo(c)),['T','N','F','D','M']);
+test('one-click cycle is M → T → N → D → F → M',()=>{
+  const {api}=fixture();assert.deepEqual(['M','T','N','D','F'].map(c=>api.proximo(c)),['T','N','D','F','M']);
+});
+test('reaching F in the rotation still opens the reason/author modal',()=>{
+  assert.match(html,/if\(c==='F'\)\{abrirFolgaCompensada\(pin,dia\);return;\}/);
+});
+test('employees are grouped and ordered by sector',()=>{
+  const {api}=fixture();const g=api.gruposSetor([{nome:'Zé',departamento:'Salão'},{nome:'Bia',departamento:'Bar'},{nome:'Ana',departamento:'Bar'},{nome:'Caio'}]);
+  assert.deepEqual(g.map((x:any)=>[x.setor,x.lista.map((f:any)=>f.nome).join(',')]),[['Bar','Ana,Bia'],['Salão','Zé'],['Sem setor','Caio']]);
+  assert.match(html,/colaborador\(es\)<\/th><\/tr>/);
+});
+test('authenticated manager enters the panel directly without the PIN lock',()=>{
+  assert.match(html,/function bloquearGestor\(\)\{if\(MODO_GESTOR&&CONTA&&get\('empregador',null\)\)return entrarGestorDireto\(\);/);
+  assert.doesNotMatch(html,/Acessar com PIN/);
+  assert.match(html,/GERENCIADOR=gestorDaSessao\(\)/);
 });
 test('M/T/N preserve canonical worked-day duration and existing hours',()=>{
   const {api}=fixture();for(const c of ['M','T','N']){const it=api.item(c,'1','2026-11-09',{horarioEntrada:'09:15',horarioSaida:'17:15'});assert.equal(it.tipo,'Trabalhado');assert.equal(it.horarioEntrada,'09:15');assert.equal(it.horarioSaida,'17:15');}
