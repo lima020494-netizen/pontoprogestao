@@ -4,13 +4,13 @@ import { resolvePlatformLogo } from "./platform-identity";
 
 const publicLogo = z.string().max(1400000).refine(v => v === "" || /^https:\/\//.test(v) || /^\/__l5e\/assets-v1\/[A-Za-z0-9/_ .-]+$/.test(v) || /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(v), "Use uma imagem HTTPS ou PNG/JPG/WebP.");
 // Retain legacy field names for stored settings, but never apply legacy palettes.
-export const OFFICIAL_IDENTITY = { primary_color: "#1E3A8A", accent_color: "#0EA5E9", text_color: "#12203a" } as const;
+export const OFFICIAL_IDENTITY = { primary_color: "#03446C", accent_color: "#FEBE45", text_color: "#0B2130" } as const;
 export const appSettingsSchema = z.object({
   app_name: z.string().trim().min(1).max(80),
   logo_url: publicLogo,
   primary_color: z.string().regex(/^#[0-9a-f]{6}$/i).transform(() => OFFICIAL_IDENTITY.primary_color),
   accent_color: z.string().regex(/^#[0-9a-f]{6}$/i).transform(() => OFFICIAL_IDENTITY.accent_color),
-  text_color: z.string().regex(/^#[0-9a-f]{6}$/i).default("#12203a").transform(() => OFFICIAL_IDENTITY.text_color),
+  text_color: z.string().regex(/^#[0-9a-f]{6}$/i).default("#0B2130").transform(() => OFFICIAL_IDENTITY.text_color),
   version: z.string().trim().min(1).max(30),
   maintenance: z.boolean(),
   developer: developerInfoSchema,

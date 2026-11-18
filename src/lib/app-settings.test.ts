@@ -8,14 +8,14 @@ test("global identity preserves configured logo, version and maintenance", () =>
   const s = resolveAppSettings({logo_url:"https://example.com/logo.png",version:"4.0",maintenance:true});
   assert.equal(s.logo_url,"https://example.com/logo.png"); assert.equal(s.version,"4.0"); assert.equal(s.maintenance,true);
 });
-test("official navy replaces a legacy custom primary color", () => {
-  assert.equal(resolveAppSettings({primary_color:"#c9992b"}).primary_color,"#1E3A8A");
+test("official deep blue replaces a legacy custom primary color", () => {
+  assert.equal(resolveAppSettings({primary_color:"#c9992b"}).primary_color,"#03446C");
 });
-test("official cyan replaces a legacy custom accent color", () => {
-  assert.equal(resolveAppSettings({accent_color:"#c9992b"}).accent_color,"#0EA5E9");
+test("official gold replaces a legacy custom accent color", () => {
+  assert.equal(resolveAppSettings({accent_color:"#c9992b"}).accent_color,"#FEBE45");
 });
 test("global font no longer applies custom colors", () => {
-  assert.equal(resolveAppSettings({text_color:"#ffffff"}).text_color,"#12203a");
+  assert.equal(resolveAppSettings({text_color:"#ffffff"}).text_color,"#0B2130");
 });
 test("unreadable global text is adjusted to at least 4.5 contrast", () => {
   assert.ok(contrastRatio(readableTextColor("#ffffff","#ffffff"),"#ffffff")>=4.5);

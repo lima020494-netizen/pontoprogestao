@@ -41,7 +41,8 @@
     function jornadaDe(b) { const m = S.indiceJornadas(); return m.get(b) || m.get(b.pin + '#' + b.nsr) || b.jornada || b.data; }
     const ordemJornada = (a, b) => S.instanteBatida(a).key.localeCompare(S.instanteBatida(b).key);
     function batidasJornada(pin, iso) {
-      const bs = S.get('batidas', []).filter(b => !b.excluida && b.pin === pin && S.jornadaDe(b) === iso).sort(S.ordemJornada);
+      const indice = S.indiceJornadas();
+      const bs = S.get('batidas', []).filter(b => !b.excluida && b.pin === pin && (indice.get(b) || indice.get(b.pin + '#' + b.nsr) || b.jornada || b.data) === iso).sort(S.ordemJornada);
       if (new Set(bs.map(b => b.tipo)).size === bs.length) return bs;
       const tipos = ['Entrada', 'Saída Intervalo', 'Entrada Intervalo', 'Saída'];
       return bs.map((b, i) => ({ ...b, tipo: tipos[i] || b.tipo }));

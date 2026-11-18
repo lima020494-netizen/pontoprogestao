@@ -155,14 +155,23 @@
       return { linhas: filtradas.slice((atual - 1) * tamanho, atual * tamanho), total: filtradas.length, paginas, pagina: atual, limite: tamanho };
     }
 
-    function tendencia(agora, modo = 'mes') {
+    function tendencia(agora, modo = 'mes', diarios = null) {
+      const personalizado = !!modo && typeof modo === 'object';
       const hoje = S.isoOf(agora), emp = S.get('empregador', {}) || {}, fs = S.get('funcionarios', []) || [];
       const pontos = [];
       const ranking = new Map();
-      const primeiro = modo === 'hoje' ? hoje : hoje.slice(0, 8) + '01';
-      for (let data = primeiro; data <= hoje; data = S.addDias(data, 1)) {
-        const linhas = [];
-        for (const f of fs) {
+      const primeiro = personalizado ? modo.inicio : modo === 'hoje' ? hoje : hoje.slice(0, 8) + '01';
+      const ultimo = personalizado && modo.fim < hoje ? modo.fim : hoje;
+      for (let data = primeiro; data <= ultimo; data = S.addDias(data, 1)) {
+        const linhas = [], existente = personalizado && diarios?.find(d => d.data === data);
+        if (existente) {
+          for (const l of existente.linhas) {
+            if (!l.previsto) continue;
+            const r = ranking.get(l.f.pin) || { f: l.f, previstos: 0, presentes: 0 };
+            r.previstos++; if (l.bs.some(b => b.tipo === 'Entrada')) r.presentes++;
+            ranking.set(l.f.pin, r); linhas.push(l);
+          }
+        } else for (const f of fs) {
           if ((f.admissao && f.admissao > data) || (f.dataDesligamento && f.dataDesligamento < data)) continue;
           const previsto = S.previstoDia(f, data);
           if (!previsto) continue;

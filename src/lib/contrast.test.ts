@@ -6,7 +6,7 @@ import { contrastRatio } from './platform-identity';
 const html = readFileSync(new URL('../../public/vip-ponto.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 const page = readFileSync(new URL('../components/conheca-page.tsx', import.meta.url), 'utf8');
-const navy = '#1e3a8a'; // fundo institucional escuro usado em faixas, cabeçalhos e barras
+const navy = '#03446c'; // fundo institucional escuro usado em faixas, cabeçalhos e barras
 
 // Declaração de um seletor específico, mesmo quando ele faz parte de uma lista de seletores.
 function declaration(selector: string, file: string): string {

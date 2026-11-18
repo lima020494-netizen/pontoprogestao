@@ -145,11 +145,11 @@
 
 /* Scoped commercial palette: never changes the operational iframe. */
 .commercial {
-  --background: #1e3a8a;
+  --background: #03446C;
   --foreground: #ffffff;
   --card: #162338;
   --card-foreground: #ffffff;
-  --primary: #0ea5e9;
+  --primary: #FEBE45;
   --primary-foreground: #0f172a;
   --secondary: #1c3046;
   --secondary-foreground: #ffffff;
@@ -157,15 +157,15 @@
   --muted-foreground: #b7c8dc;
   --border: #304359;
   --input: #304359;
-  --ring: #38bdf8;
+  --ring: #1E86C0;
   --accent: #1c3046;
   --accent-foreground: #ffffff;
   --commercial-success: #7ee4b6;
   --commercial-eyebrow: #7dd3fc;
   --commercial-overlay: linear-gradient(90deg, #0f172af5 0%, #0f172ad9 42%, #0f172a30 100%);
-  font-family: "Manrope", sans-serif;
+  font-family: "Inter", sans-serif;
 }
-.commercial h1,.commercial h2,.commercial h3 { font-family: "Sora", sans-serif; }
+.commercial h1,.commercial h2,.commercial h3 { font-family: "Plus Jakarta Sans", sans-serif; }
 .commercial-hero::after { content:""; position:absolute; inset:0; background:var(--commercial-overlay); }
 .commercial-check { color:var(--commercial-success); }
 .commercial-eyebrow { color: var(--commercial-eyebrow); }
@@ -176,7 +176,7 @@
 @keyframes commercial-enter { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
 
 /* Super Admin — fixed institutional light palette. */
-.admin-shell { --adm-bg:oklch(.984 .003 247.858); --adm-card:oklch(1 0 0); --adm-brand:oklch(.379 .146 265.522); --adm-cyan:oklch(.685 .169 237.323); --adm-text:oklch(.235 .049 260); --adm-border:oklch(.929 .013 255.508); --adm-muted:oklch(.554 .046 257.417); --adm-shadow:0 4px 20px color-mix(in oklab,var(--adm-brand) 8%,transparent); background:var(--adm-bg);color:var(--adm-text);font-family:Manrope,system-ui,sans-serif; }
+.admin-shell { --adm-bg:oklch(.984 .003 247.858); --adm-card:oklch(1 0 0); --adm-brand:oklch(.379 .146 265.522); --adm-cyan:oklch(.685 .169 237.323); --adm-text:oklch(.235 .049 260); --adm-border:oklch(.929 .013 255.508); --adm-muted:oklch(.554 .046 257.417); --adm-shadow:0 4px 20px color-mix(in oklab,var(--adm-brand) 8%,transparent); background:var(--adm-bg);color:var(--adm-text);font-family:Inter,system-ui,sans-serif; }
 .admin-card { background:var(--adm-card);border:1px solid var(--adm-border);border-radius:8px;padding:24px;box-shadow:var(--adm-shadow); }
 .admin-input { display:block;width:100%;margin-top:8px;min-height:44px;border-radius:8px;padding:10px 12px;background:var(--adm-card);color:var(--adm-text);border:1px solid var(--adm-border); }
 .admin-input:focus-visible { outline:2px solid var(--adm-cyan);outline-offset:2px; }
@@ -198,7 +198,7 @@
 @media(max-width:640px) { .admin-tabs { display:grid;grid-template-columns:repeat(2,minmax(0,1fr)); } .admin-tabs button { font-size:12px;padding:8px; } .admin-shell header { gap:8px; } }
 .operational-frame { position:fixed;inset:0;width:100%;height:100%;border:0; }
 .commercial-hero { color:var(--hero-foreground); }
-.commercial { --hero-foreground:#ffffff;--hero-accent:#38bdf8; }
+.commercial { --hero-foreground:#ffffff;--hero-accent:#FEBE45; }
 .commercial article { color:var(--card-foreground); }
 .commercial-hero .text-primary { color:var(--hero-accent); }
 .admin-card { color:var(--adm-card-text,var(--adm-text)); }

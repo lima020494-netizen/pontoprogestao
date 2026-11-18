@@ -1,7 +1,7 @@
-import officialLogo from "@/assets/ponto-pro-gestao-logo-v20261028.png.asset.json";
+import officialLogo from "@/assets/ponto-pro-gestao-logo-v20261118.png.asset.json";
 
 export const PLATFORM_LOGO = officialLogo.url;
-const legacyLogo = /(?:798df0df-fee7-4f44-b98f-df1e096c0ace|\/vip-logo\.png(?:\?|$)|ponto-pro-gestao-logo\.jpg)/;
+const legacyLogo = /(?:798df0df-fee7-4f44-b98f-df1e096c0ace|1fd9a036-8b2e-4139-ad92-09df31f88a47|\/vip-logo\.png(?:\?|$)|ponto-pro-gestao-logo\.jpg)/;
 export function resolvePlatformLogo(value: string) {
   return !value || legacyLogo.test(value) ? PLATFORM_LOGO : value;
 }
@@ -21,5 +21,5 @@ export function contrastRatio(a: string, b: string) {
 }
 export function readableTextColor(requested: string, background: string) {
   if (contrastRatio(requested, background) >= 4.5) return requested;
-  return contrastRatio("#ffffff", background) > contrastRatio("#12203a", background) ? "#ffffff" : "#12203a";
+  return contrastRatio("#ffffff", background) > contrastRatio("#0B2130", background) ? "#ffffff" : "#0B2130";
 }
