@@ -135,3 +135,9 @@
 - [x] Atrasos removidos da folha e do banco; permanecem só no Dashboard gerencial.
 - [x] Lançamento unificado das 4 batidas (Entrada, Saída/Retorno Intervalo, Saída) no Tratamento e na batida manual
 - [x] Painel do Gestor — Etapa 1: rotina de 3 atalhos e bloco Terminal de Ponto removidos do início; menu renomeado para "📊 Painel do Gestor"; Terminal Quiosque logo abaixo no grupo Rotina & Operação. 246 testes OK; regras, cálculos e dados intactos; nada publicado.
+
+## Etapa 6 — Painel do Gestor unificado ✅ (prévia, não publicado)
+- [x] Tela inicial única "Painel do Gestor": saudação, empresa, seletor de período, 4 KPIs (Presença, Em Atividade, Alertas de Intervalo, Pendências → Tratamento), "Precisa de Decisão", presença por setor e equipe paginada 15/20 com busca e avatares.
+- [x] Gerenciadores Autorizados por e-mail (até 4, sem PIN); PIN restrito ao Quiosque/portal.
+- [x] Perfil na gaveta com nome, iniciais, cargo e e-mail (fallback no responsável da empresa).
+- [x] Gaveta em 4 blocos; "Terminal Quiosque" → "Aplicativos & Acessos"; novo atalho Relatórios.
