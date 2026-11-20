@@ -7,6 +7,7 @@
     Object.assign(S,namespace.obter('reports.folha').criar(S));
     Object.assign(S,namespace.obter('reports.fiscal').criar(S));
     Object.assign(S,namespace.obter('reports.exportacoes').criar(S));
+    Object.assign(S,namespace.obter('reports.analiticos').criar(S));
     Object.assign(S,dependencias.aliases||{});
     return S;
   }

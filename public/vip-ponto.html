@@ -51,6 +51,7 @@ function garantirLib(grupo){
 <script src="/operacional/reports/folha-v20261110-etapa4.js"></script>
 <script src="/operacional/reports/fiscal-v20261110-etapa4.js"></script>
 <script src="/operacional/reports/exportacoes-v20261110-etapa4.js"></script>
+<script src="/operacional/reports/relatorios-analiticos-v20261120.js"></script>
 <script src="/operacional/reports/nucleo-v20261110-etapa4.js"></script>
 <script src="/operacional/gestor/matriz-escala-v20261112.js"></script>
 <script src="/operacional/gestor/seletor-periodo-v20261118.js"></script>
@@ -878,6 +879,23 @@ h1,h2,h3,h4,.gestor-company,.manager-welcome h2,.daily-head h3,.control-card h4,
 .drawer-email{opacity:.75;font-size:11px!important;overflow-wrap:anywhere}
 @media(max-width:900px){.exec-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.exec-grid{grid-template-columns:1fr!important}}
 @media(max-width:480px){.exec-kpis{grid-template-columns:1fr}}
+
+/* Etapa 7 — hub de Relatórios Analíticos, somente leitura sobre a apuração compartilhada. */
+.rel-head{margin-bottom:16px}.rel-head h3{font:800 26px "Plus Jakarta Sans",Inter,sans-serif}.rel-head p{margin-bottom:0}
+.rel-tabs{display:flex;gap:6px;overflow-x:auto;padding:6px;margin-bottom:16px;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:var(--manager-soft-shadow);scrollbar-width:thin}
+.rel-tabs button{flex:1 0 auto;min-height:46px;padding:10px 14px;border:0;border-radius:11px;background:transparent;color:var(--soft);font:700 12px Inter,sans-serif;cursor:pointer;white-space:nowrap}
+.rel-tabs button[aria-selected=true]{background:var(--navy);color:#fff;box-shadow:0 4px 12px rgba(3,68,108,.18)}.rel-tabs button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.rel-filters{display:grid;grid-template-columns:minmax(300px,1.6fr) minmax(160px,.75fr) minmax(190px,1fr) auto;align-items:end;gap:12px;padding:20px;margin-bottom:20px;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:var(--manager-soft-shadow)}
+.rel-filters[hidden]{display:none}.rel-filters label{margin-top:0}.rel-filters .period-picker{min-width:0}.rel-filters>.btn{min-height:50px;white-space:nowrap}
+.rel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}.rel-card{min-width:0;padding:20px 22px;margin-bottom:16px;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:var(--manager-soft-shadow)}
+.rel-grid .rel-card{margin-bottom:0}.rel-card h4{margin:0 0 6px;color:var(--navy);font:700 16px "Plus Jakarta Sans",Inter,sans-serif}.rel-card>p{margin-top:0}.rel-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}
+.rel-kpis .exec-kpi{min-height:126px;background:var(--treat-bg,var(--card));box-shadow:var(--manager-soft-shadow)}.rel-kpis .exec-kpi strong{font-size:26px;font-variant-numeric:tabular-nums}.rel-kpis .exec-kpi small{opacity:1;color:var(--treat-fg,var(--soft))}
+.rel-patterns{display:grid;gap:8px;margin-top:14px}.rel-patterns>div:not(.rel-empty){display:grid;grid-template-columns:minmax(110px,1fr) auto;align-items:center;gap:5px 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}.rel-patterns small{grid-column:1/-1;color:var(--soft)}
+.rel-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:4px 9px;border:1px solid var(--treat-line,var(--line));border-radius:999px;background:var(--treat-bg,var(--bg));color:var(--treat-fg,var(--soft));font-size:11px;font-weight:800;white-space:normal}
+.rel-empty{padding:20px;text-align:center;color:var(--soft);font-size:13px}.rel-scroll{max-height:560px;overflow:auto}.rel-note{margin-bottom:16px;background:var(--treat-blue-bg);color:var(--treat-blue-fg);border-color:var(--treat-blue-line)}
+.rel-consolidated{min-width:1120px}.rel-one .doc-header{margin-top:12px}.rel-one .doc-title{display:none}.rel-one .rel-kpis{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:16px}.rel-ident{display:flex;flex-direction:column;gap:4px;padding:14px 0;color:var(--soft)}.rel-ident strong{color:var(--navy);font-size:18px}.rel-one textarea{margin-top:4px}.rel-signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin:34px 0 20px;text-align:center;color:var(--soft);font-size:12px}.rel-signatures span{padding-top:8px;border-top:1px solid var(--soft)}.rel-ficha-actions{justify-content:flex-end}
+@media(max-width:1080px){.rel-filters{grid-template-columns:1fr 1fr}.rel-filters .period-picker{grid-column:1/-1}.rel-filters>.btn{width:100%}}
+@media(max-width:700px){.rel-grid{grid-template-columns:1fr}.rel-filters{grid-template-columns:1fr;padding:16px}.rel-filters .period-picker{grid-column:auto}.rel-card{padding:16px}.rel-kpis{grid-template-columns:1fr}.rel-one .rel-kpis{grid-template-columns:1fr}.rel-signatures{gap:20px}.rel-tabs{margin-inline:-4px}.rel-head h3{font-size:22px}.rel-ficha-actions{flex-direction:column}.rel-ficha-actions .btn{width:100%}}
 </style>
 </head>
 <body>
@@ -1653,6 +1671,7 @@ const MODULOS_GESTOR={
   folha:{ico:'📄',nome:'Folha MTE',desc:'Folhas, PDF, XML e AFD',cls:'mod-folha'},
   emp:{ico:'🏢',nome:'Empresa',desc:'Empresa e gerenciadores autorizados',cls:'mod-emp'},
   logs:{ico:'📜',nome:'Histórico',desc:'Auditoria das operações',cls:'mod-logs'},
+  rel:{ico:'📈',nome:'Relatórios Analíticos',desc:'Gestão, escalas e frequência',cls:'mod-rel'},
 
 };
 function abrirGestor(){
@@ -1670,7 +1689,7 @@ function abrirGestor(){
   atualizarAvisoSuporte();
   mostrarCentralGestor();
 }
-function fecharGestor(){trocaGestor++;fecharMenuGestor(false);destruirSeletorPeriodoPainel();$('tela-gestor').classList.add('hidden');pararRelogioGestor();GERENCIADOR=null;fecharModal();fecharPinModal();if(MODO_GESTOR)mostrarTelaGestor();}
+function fecharGestor(){trocaGestor++;fecharMenuGestor(false);destruirSeletorPeriodoPainel();destruirSeletorPeriodoRelatorios();$('tela-gestor').classList.add('hidden');pararRelogioGestor();GERENCIADOR=null;fecharModal();fecharPinModal();if(MODO_GESTOR)mostrarTelaGestor();}
 /* Etapa 4: gestor autenticado por e-mail/senha entra direto; PIN fica restrito ao Quiosque/portal. */
 function gestorDaSessao(){const e=get('empregador',{})||{},gs=get('gerenciadores',[]).filter(g=>!g.is_hidden),c=String(CONTA||'').toLowerCase(),g=gs.find(g=>String(g.email||'').toLowerCase()===c);return g?{...g,email:c,via:'sessao'}:{nome:e.responsavel||c||'Gestor',funcao:'Gestor (conta autenticada)',email:c,via:'sessao'};}
 function entrarGestorDireto(){if(!MODO_GESTOR||!CONTA||!get('empregador',null))return mostrarTelaGestor();GERENCIADOR=gestorDaSessao();$('gestor-bloqueio').classList.add('hidden');abrirGestor();}
@@ -1731,7 +1750,6 @@ document.addEventListener('keydown',e=>{if(!$('tela-gestor').classList.contains(
 function navegarGestor(k){
   fecharMenuGestor();
   if(k==='dev'&&!podeEditarDev())return;
-  if(k==='rel'){irAba('dash');atualizarMenuGestor('rel');const d=$('gestor-body')?.querySelector('.control-report');if(d){d.open=true;setTimeout(()=>d.scrollIntoView({behavior:'smooth'}),60);}return;}
   if(['bat','esc','ban'].includes(k)){SUB=k;irAba('ponto');}
   else irAba(k);
   atualizarMenuGestor(k);
@@ -1757,7 +1775,81 @@ function buscarPainelDia(valor){PAINEL_BUSCA=valor;PAINEL_PAGINA=1;renderPainelD
 function paginarPainelDia(valor){PAINEL_PAGINA=valor;renderPainelDia();}
 function tamanhoPainelDia(valor){PAINEL_LIMITE=Number(valor);PAINEL_PAGINA=1;renderPainelDia();}
 function abrirPainelTratamento(pin,data,fim=data){const f=funcPorPin(pin);window.__tratBusca=(f?.nome||'Colaborador')+' — PIN '+pin;window.__batFilt={pin,ini:data,fim};navegarGestor('bat');}
-function abrirRelatorioFrequencia(){const out=$('frequencia-detalhada');if(out&&!out.innerHTML)abaDash('frequencia-detalhada');}
+function abrirRelatorioFrequencia(){REL_TAB='frequencia';navegarGestor('rel');}
+const REL_ABAS=[['pontualidade','Pontualidade & Atrasos'],['intervalos','Intervalos Não Usufruídos'],['extras','Horas Extras, DSR & Feriados'],['consolidado','Consolidado Pré-Folha'],['escalas','Matriz de Escalas'],['frequencia','Frequência Detalhada']];
+let REL_TAB='pontualidade',REL_INTERVALO=null,REL_SELETOR=null,REL_SETOR='',REL_PIN='',REL_DADOS=null,REL_CARGA=0;
+const relAnalitica=()=>['pontualidade','intervalos','extras','consolidado'].includes(REL_TAB);
+function destruirSeletorPeriodoRelatorios(){REL_SELETOR?.destruir();REL_SELETOR=null;}
+function abaRelatorios(){
+  REL_INTERVALO=REL_INTERVALO||PontoProOperacional.obter('gestor.seletorPeriodo').atalho('mes',getHoraOficial());REL_DADOS=null;
+  const setores=[...new Set(get('funcionarios',[]).map(f=>String(f.departamento||'').trim()||'Sem setor'))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  $('gestor-body').innerHTML=`<div class="mod-head rel-head"><div><h3>Relatórios Analíticos</h3><p class="muted">Leitura gerencial e pré-fechamento com a mesma apuração da Folha e do Banco de Horas.</p></div></div>
+  <div class="rel-tabs" role="tablist" aria-label="Relatórios disponíveis">${REL_ABAS.map(([k,t])=>`<button type="button" role="tab" id="rel-tab-${k}" aria-controls="rel-content" aria-selected="${REL_TAB===k}" onclick="selecionarRelatorio('${k}')">${t}</button>`).join('')}</div>
+  <section id="rel-filtros" class="rel-filters" aria-label="Filtros dos relatórios"><div id="rel-periodo-seletor"></div><div><label for="rel-setor">Setor</label><select id="rel-setor"><option value="">Todos os setores</option>${setores.map(s=>`<option value="${esc(s)}" ${REL_SETOR===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div><div><label for="rel-pin">Colaborador</label><select id="rel-pin"><option value="">Todos os colaboradores</option>${get('funcionarios',[]).map(f=>`<option value="${esc(f.pin)}" ${REL_PIN===String(f.pin)?'selected':''}>${esc(f.nome)}</option>`).join('')}</select></div><button type="button" class="btn" onclick="aplicarFiltrosRelatorios()">Aplicar filtros</button></section>
+  <div id="rel-content" role="tabpanel" aria-live="polite"></div>`;
+  REL_SELETOR=PontoProOperacional.obter('gestor.seletorPeriodo').criar({alvo:$('rel-periodo-seletor'),periodo:REL_INTERVALO,aoAplicar:aplicarPeriodoRelatorios});renderRelatorioAtual();
+}
+async function aplicarPeriodoRelatorios(periodo){
+  if((Date.parse(periodo.fim)-Date.parse(periodo.inicio))/86400000>=366)throw new Error('Selecione um período de até 366 dias.');
+  if(CONTA){try{await garantirHistorico(periodo.inicio);}catch(e){toast('Sem conexão: exibindo o histórico disponível no aparelho.',2500);}}
+  REL_INTERVALO={...periodo};REL_DADOS=null;renderRelatorioAtual();
+}
+function aplicarFiltrosRelatorios(){REL_SETOR=$('rel-setor')?.value||'';REL_PIN=$('rel-pin')?.value||'';REL_DADOS=null;carregarRelatoriosAnaliticos();}
+function selecionarRelatorio(k){if(!REL_ABAS.some(([id])=>id===k))return;REL_TAB=k;renderRelatorioAtual();}
+async function carregarRelatoriosAnaliticos(){
+  if(!relAnalitica())return renderRelatorioAtual();const carga=++REL_CARGA,out=$('rel-content');if(!out)return;
+  out.innerHTML='<section class="module-loading" role="status"><h3>Preparando relatório</h3><span>Consolidando o período com a apuração compartilhada…</span><div class="module-loading-bar"></div></section>';
+  if(CONTA){try{await garantirHistorico(REL_INTERVALO.inicio);}catch(e){toast('Sem conexão: usando os registros disponíveis neste aparelho.',2500);}}
+  if(carga!==REL_CARGA||!$('rel-content'))return;
+  try{REL_DADOS=RELATORIOS_NUCLEO.calcularRelatoriosAnaliticos({inicio:REL_INTERVALO.inicio,fim:REL_INTERVALO.fim,setor:REL_SETOR,pin:REL_PIN,hoje:hojeISO()});renderRelatorioAtual();}
+  catch(e){out.innerHTML=`<div class="alert err">${esc(e.message||'Não foi possível calcular o relatório.')}</div>`;}
+}
+function renderRelatorioAtual(){
+  const out=$('rel-content');if(!out)return;document.querySelectorAll('.rel-tabs [role=tab]').forEach(b=>b.setAttribute('aria-selected',String(b.id==='rel-tab-'+REL_TAB)));$('rel-filtros').hidden=!relAnalitica();
+  if(REL_TAB==='escalas'){
+    out.innerHTML='<div id="rel-escala-body"></div>';window.__escIni=REL_INTERVALO.inicio;window.__escFim=addDias(REL_INTERVALO.inicio,Math.min(30,Math.max(0,Math.round((Date.parse(REL_INTERVALO.fim)-Date.parse(REL_INTERVALO.inicio))/86400000))));window.__escDias=Math.round((Date.parse(window.__escFim)-Date.parse(window.__escIni))/86400000)+1;subEscala();return;
+  }
+  if(REL_TAB==='frequencia'){
+    out.innerHTML='<div id="rel-frequencia-body"></div>';abaDash('rel-frequencia-body');if($('d-per')){$('d-per').value='pers';$('d-ini').value=REL_INTERVALO.inicio;$('d-fim').value=REL_INTERVALO.fim;$('d-func').value=REL_PIN;calcDash();}return;
+  }
+  if(!REL_DADOS)return carregarRelatoriosAnaliticos();
+  out.innerHTML=REL_TAB==='pontualidade'?relPontualidadeHTML(REL_DADOS):REL_TAB==='intervalos'?relIntervalosHTML(REL_DADOS):REL_TAB==='extras'?relExtrasHTML(REL_DADOS):relConsolidadoHTML(REL_DADOS);
+}
+function relKpis(itens){return `<div class="exec-kpis rel-kpis">${itens.map(([tom,rotulo,valor,detalhe])=>`<article class="exec-kpi ${tom}"><span>${rotulo}</span><strong>${valor}</strong><small>${detalhe}</small></article>`).join('')}</div>`;}
+function relVazio(texto='Nenhum registro para os filtros selecionados.'){return `<div class="rel-empty">${esc(texto)}</div>`;}
+function relPontualidadeHTML(r){
+  const p=r.pontualidade,setores=[...r.setores].sort((a,b)=>b.atrasoMin-a.atrasoMin||a.taxa-b.taxa);
+  return `${relKpis([['tone-green','Taxa de pontualidade',p.taxa+'%',`${p.pontuais} de ${p.entradas} entradas previstas`],['tone-red','Atraso acumulado',toHHMM(p.minutos),`${p.atrasos} dia(s) após a tolerância`],['tone-net','Tolerância aplicada','10 min','Atraso não debita Banco de Horas'],['tone-blue','Colaboradores',r.colaboradores.length,'Ficha individual para alinhamento']])}
+  <div class="rel-grid"><section class="rel-card"><h4>Padrões de recorrência</h4><p class="muted">Dias da semana com maior concentração de atrasos.</p><div class="rel-patterns">${p.recorrencia.map(x=>`<div><strong>${esc(x.dia)}</strong><span class="rel-badge tone-red">${x.quantidade} ocorrência(s)</span><small>${toHHMM(x.minutos)} acumulados</small></div>`).join('')||relVazio('Nenhum atraso no período.')}</div></section>
+  <section class="rel-card"><h4>Ranking por setor</h4><p class="muted">Pontualidade e minutos de atraso por equipe.</p><div class="sector-list">${setores.map(s=>`<div><header><strong>${esc(s.setor)}</strong><b>${s.taxa}% pontual</b></header><progress max="100" value="${s.taxa}" aria-label="Pontualidade em ${esc(s.setor)}"></progress><small>${s.atrasos} atraso(s) · ${toHHMM(s.atrasoMin)} acumulados</small></div>`).join('')||relVazio()}</div></section></div>
+  <section class="rel-card"><div class="rel-card-head"><div><h4>Ranking por colaborador</h4><p class="muted">Abra a ficha 1-on-1 para detalhar cada dia e registrar o alinhamento.</p></div></div><div class="control-table-wrap"><table class="control-table"><thead><tr><th>Colaborador</th><th>Setor</th><th>Pontualidade</th><th>Dias com atraso</th><th>Minutos</th><th>Principal recorrência</th><th>Ação</th></tr></thead><tbody>${p.ranking.map(c=>{const x=c.pontualidade;return `<tr><td><strong>${esc(c.f.nome)}</strong><small>${esc(c.f.cargo||c.f.funcao||'Colaborador')}</small></td><td>${esc(c.consolidado.setor)}</td><td><span class="rel-badge ${x.taxa>=90?'tone-green':'tone-red'}">${x.taxa}%</span><small>${x.pontuais} de ${x.entradas} entradas</small></td><td>${x.atrasos.length}</td><td>${toHHMM(x.minutos)}</td><td>${x.recorrencia[0]?esc(x.recorrencia[0].dia)+' · '+x.recorrencia[0].quantidade+'x':'—'}</td><td><button type="button" class="btn ghost sm" onclick="abrirFichaPontualidade('${esc(c.f.pin)}')">Ficha 1-on-1</button></td></tr>`;}).join('')||`<tr><td colspan="7">${relVazio()}</td></tr>`}</tbody></table></div></section>`;
+}
+function relIntervalosHTML(r){
+  const i=r.intervalos;
+  return `${relKpis([['tone-red','Ocorrências',i.total,'Jornada acima de 6h'],['tone-net','Colaboradores',i.colaboradores,'Com ao menos uma ocorrência'],['tone-orange','Reincidência',i.reincidentes,'Colaboradores com 2 ou mais'],['tone-blue','Setores',r.setores.filter(s=>s.intervalos).length,'Com risco de hora extra intervalar']])}
+  <section class="rel-card"><h4>Reincidência por setor</h4><div class="control-table-wrap"><table class="control-table"><thead><tr><th>Setor</th><th>Ocorrências</th><th>Colaboradores reincidentes</th></tr></thead><tbody>${r.setores.filter(s=>s.intervalos).sort((a,b)=>b.intervalos-a.intervalos).map(s=>`<tr><td><strong>${esc(s.setor)}</strong></td><td>${s.intervalos}</td><td>${s.reincidentes}</td></tr>`).join('')||`<tr><td colspan="3">${relVazio('Nenhuma ocorrência de intervalo no período.')}</td></tr>`}</tbody></table></div></section>
+  <section class="rel-card"><h4>Ocorrências por colaborador</h4><p class="muted">Jornadas acima de 6h sem intervalo registrado ou com pausa comprovadamente inferior a 1h. Intervalo pré-assinalado não é tratado como ausência.</p><div class="control-table-wrap rel-scroll"><table class="control-table"><thead><tr><th>Data</th><th>Colaborador</th><th>Setor</th><th>Jornada</th><th>Pausa</th><th>Detecção</th></tr></thead><tbody>${i.ocorrencias.map(o=>`<tr><td>${brOf(o.data)}</td><td><strong>${esc(o.nome)}</strong></td><td>${esc(o.setor)}</td><td>${toHHMM(o.trabalhado)}</td><td>${o.pausa?toHHMM(o.pausa):'—'}</td><td><span class="rel-badge tone-red">${esc(o.tipo)}</span><small>Risco gerencial — Art. 71 CLT</small></td></tr>`).join('')||`<tr><td colspan="6">${relVazio('Nenhuma jornada acima de 6h com intervalo ausente ou inferior a 1h.')}</td></tr>`}</tbody></table></div></section>`;
+}
+function relExtrasHTML(r){
+  const e=r.extras,fator=Number((get('empregador',{})||{}).fatorBancoDomFeriado)===1?1:2;
+  return `${relKpis([['tone-blue','Horas extras 50%',toHHMM(e.extras50),'Dias com jornada prevista'],['tone-net','DSR, folgas e feriados 100%',toHHMM(e.extras100),'Classificação gerencial da Folha'],['tone-green','Total de horas extras',toHHMM(e.total),'Soma das duas classificações'],['tone-net','Movimento no Banco',toSaldo(e.movimentoBanco),`Créditos ${toHHMM(e.creditos)} · Débitos ${toHHMM(e.debitos)}`]])}
+  <div class="alert rel-note">As categorias 50% e 100% são analíticas e não calculam remuneração. O Banco de Horas em domingo/feriado usa o fator configurado pela empresa: <strong>${fator.toFixed(1)}x</strong>.</div>
+  <section class="rel-card"><h4>Distribuição e ranking por setor</h4><div class="control-table-wrap"><table class="control-table"><thead><tr><th>Setor</th><th>Extras 50%</th><th>DSR/Feriados 100%</th><th>Total</th><th>Movimento no Banco</th></tr></thead><tbody>${[...r.setores].sort((a,b)=>(b.extras50+b.extras100)-(a.extras50+a.extras100)).map(s=>`<tr><td><strong>${esc(s.setor)}</strong></td><td>${toHHMM(s.extras50)}</td><td>${toHHMM(s.extras100)}</td><td><strong>${toHHMM(s.extras50+s.extras100)}</strong></td><td>${toSaldo(s.movimentoBanco)}</td></tr>`).join('')||`<tr><td colspan="5">${relVazio()}</td></tr>`}</tbody></table></div></section>
+  <section class="rel-card"><h4>Detalhamento por colaborador</h4><div class="control-table-wrap"><table class="control-table"><thead><tr><th>Colaborador</th><th>Setor</th><th>Extras 50%</th><th>Extras 100%</th><th>Banco no período</th></tr></thead><tbody>${r.consolidado.map(x=>`<tr><td><strong>${esc(x.nome)}</strong></td><td>${esc(x.setor)}</td><td>${toHHMM(x.extras50)}</td><td>${toHHMM(x.extras100)}</td><td>${toSaldo(x.movimentoBanco)}</td></tr>`).join('')||`<tr><td colspan="5">${relVazio()}</td></tr>`}</tbody></table></div></section>`;
+}
+function relConsolidadoHTML(r){
+  const c=r.consolidado;
+  return `${relKpis([['tone-green','Dias trabalhados',c.reduce((n,x)=>n+x.diasTrabalhados,0),'Equipe filtrada'],['tone-red','Faltas concluídas',c.reduce((n,x)=>n+x.faltas,0),'Sem faltas em dias futuros/abertos'],['tone-blue','Horas extras',toHHMM(c.reduce((n,x)=>n+x.extras50+x.extras100,0)),`50% ${toHHMM(c.reduce((n,x)=>n+x.extras50,0))} · 100% ${toHHMM(c.reduce((n,x)=>n+x.extras100,0))}`],['tone-net','Saldo de Banco acumulado',toSaldo(c.reduce((n,x)=>n+x.saldoBanco,0)),'Saldos individuais acumulados']])}
+  <section class="rel-card"><div class="rel-card-head"><div><h4>Resumo executivo para a contabilidade</h4><p class="muted">Pré-fechamento de ${brOf(r.periodo.inicio)} a ${brOf(r.periodo.fim)}. Atrasos são informativos e não compõem débito de banco.</p></div></div><div class="control-table-wrap rel-scroll"><table class="control-table rel-consolidated"><thead><tr><th>Colaborador / Setor</th><th>Dias trabalhados</th><th>Faltas</th><th>DSRs</th><th>Horas normais</th><th>Extras 50%</th><th>Extras 100%</th><th>Atrasos</th><th>Abonos/Atestados</th><th>Movimento Banco</th><th>Saldo Banco</th></tr></thead><tbody>${c.map(x=>`<tr><td><strong>${esc(x.nome)}</strong><small>${esc(x.setor)} · ${esc(x.cargo)}</small></td><td>${x.diasTrabalhados}</td><td>${x.faltas}</td><td>${x.dsrs}</td><td>${toHHMM(x.normais)}</td><td>${toHHMM(x.extras50)}</td><td>${toHHMM(x.extras100)}</td><td>${x.atrasos}<small>${toHHMM(x.atrasoMin)}</small></td><td>${x.abonos}</td><td>${toSaldo(x.movimentoBanco)}</td><td><strong>${toSaldo(x.saldoBanco)}</strong></td></tr>`).join('')||`<tr><td colspan="11">${relVazio()}</td></tr>`}</tbody></table></div></section>`;
+}
+function abrirFichaPontualidade(pin){
+  const c=REL_DADOS?.colaboradores?.find(x=>x.f.pin===pin);if(!c)return;const m=RELATORIOS_NUCLEO.modeloFichaPontualidade(c,REL_DADOS.periodo);
+  abrirModal(`<div class="rel-one"><div class="row"><h3>Ficha de Alinhamento 1-on-1</h3><button type="button" class="btn ghost sm right" onclick="fecharModal()" aria-label="Fechar ficha">✕</button></div>${cabecalhoDocumentoHTML('Pontualidade & Atrasos',m.subtitulo)}<div class="rel-ident"><strong>${esc(c.f.nome)}</strong><span>${esc(c.consolidado.setor)} · ${esc(c.consolidado.cargo)}</span><span>Período: ${brOf(REL_DADOS.periodo.inicio)} a ${brOf(REL_DADOS.periodo.fim)}</span></div>${relKpis([['tone-green','Pontualidade',c.pontualidade.taxa+'%','Entradas dentro da tolerância'],['tone-red','Dias com atraso',c.pontualidade.atrasos.length,'No período selecionado'],['tone-net','Atraso acumulado',toHHMM(c.pontualidade.minutos),'Tolerância de 10 minutos']])}<div class="control-table-wrap"><table class="control-table"><thead><tr>${m.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${m.body.map(row=>`<tr>${row.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="6">${relVazio('Nenhum atraso no período.')}</td></tr>`}</tbody></table></div><label for="rel-ficha-notas">Anotações do alinhamento</label><textarea id="rel-ficha-notas" rows="5" placeholder="Combine ações, orientações e compromissos para o acompanhamento individual."></textarea><div class="rel-signatures"><span>Assinatura do colaborador</span><span>Assinatura do gestor</span></div><div class="row rel-ficha-actions"><button id="rel-ficha-pdf" type="button" class="btn" onclick="baixarFichaPontualidade('${esc(pin)}')">Baixar Ficha em PDF</button><button type="button" class="btn ghost" onclick="fecharModal()">Fechar</button></div></div>`);
+}
+async function baixarFichaPontualidade(pin){
+  const b=$('rel-ficha-pdf');if(b?.disabled)return;if(b){b.disabled=true;b.textContent='Gerando PDF…';}
+  try{await RELATORIOS_NUCLEO.pdfFichaPontualidade({dados:REL_DADOS,pin,anotacoes:$('rel-ficha-notas')?.value||''});toast('Ficha 1-on-1 gerada em PDF.',2500);}catch(e){toast(e.message||'Não foi possível gerar a ficha. Tente novamente.',4000);}finally{if(b){b.disabled=false;b.textContent='Baixar Ficha em PDF';}}
+}
 function desenharControle(canvas,percentual,pontos){
  const ctx=canvas?.getContext('2d');if(!ctx)return;const css=getComputedStyle(document.documentElement),cor=n=>css.getPropertyValue(n).trim();
  const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);
@@ -1801,16 +1893,16 @@ function pararRelogioGestor(){if(relogioGestor)clearInterval(relogioGestor);relo
 function mostrarCentralGestor(){
   pararRelogioGestor();fecharMenuGestor(false);ABA='dash';atualizarMenuGestor('dash');
   $('gestor-body').classList.remove('hidden');$('gestor-hub').classList.remove('hidden');
-  destruirSeletorPeriodoPainel();$('gestor-hub').innerHTML='<div class="exec-shell">'+painelExecutivoHTML()+painelDiaHTML()+'</div>';montarSeletorPeriodoPainel();
-  $('gestor-body').innerHTML='<details class="control-report" ontoggle="if(this.open)abrirRelatorioFrequencia()"><summary>Relatório de Frequência · filtros e PDF</summary><div id="frequencia-detalhada"></div></details>';
+  destruirSeletorPeriodoPainel();destruirSeletorPeriodoRelatorios();$('gestor-hub').innerHTML='<div class="exec-shell">'+painelExecutivoHTML()+painelDiaHTML()+'</div>';montarSeletorPeriodoPainel();
+  $('gestor-body').innerHTML='';
   atualizarPainelExecutivo();relogioGestor=setInterval(atualizarPainelExecutivo,30000);$('tela-gestor').scrollTop=0;
 }
 function irAba(k){
   if(k==='dash')return mostrarCentralGestor();
   if(k==='dev'&&!podeEditarDev())return;
   fecharMenuGestor(false);pararRelogioGestor();atualizarMenuGestor(k);
-  ABA=k;destruirSeletorPeriodoPainel();$('gestor-hub').classList.add('hidden');$('gestor-hub').innerHTML='';$('gestor-body').classList.remove('hidden');
-  carregarTelaGestor('gestor-body',k==='kiosk'?'Terminal de ponto':MODULOS_GESTOR[k]?.nome||'Carregando',()=>{({dash:abaDash,func:abaFunc,ponto:abaPonto,folha:abaFolha,emp:abaEmp,logs:abaLogs,assin:abaAssinatura,kiosk:abaTerminalQuiosque})[k]?.();});$('tela-gestor').scrollTop=0;
+  ABA=k;destruirSeletorPeriodoPainel();destruirSeletorPeriodoRelatorios();$('gestor-hub').classList.add('hidden');$('gestor-hub').innerHTML='';$('gestor-body').classList.remove('hidden');
+  carregarTelaGestor('gestor-body',k==='kiosk'?'Terminal de ponto':MODULOS_GESTOR[k]?.nome||'Carregando',()=>{({dash:abaDash,func:abaFunc,ponto:abaPonto,folha:abaFolha,emp:abaEmp,logs:abaLogs,assin:abaAssinatura,kiosk:abaTerminalQuiosque,rel:abaRelatorios})[k]?.();});$('tela-gestor').scrollTop=0;
 }
 /* Empregador/Gerenciadores dentro do gestor (reutiliza o mesmo formulário) */
 function abaEmp(){ $('empregador-form').innerHTML=''; telaEmpregador('gestor-body');
@@ -2030,6 +2122,7 @@ function reordenarJornada(pin,iso){const all=get('batidas',[]),bs=all.filter(b=>
 const RELATORIOS_NUCLEO=PontoProOperacional.obter('reports.nucleo').criar({
   get:(k,d)=>get(k,d),getConta:()=>CONTA,getGerenciador:()=>GERENCIADOR,getNtpOk:()=>NTP_OK,getSb:()=>sb,
   dadosFolha:(p,i,f)=>dadosFolha(p,i,f),resumoMensalFolha:d=>resumoMensalFolha(d),batidasDia:(p,d)=>batidasDia(p,d),funcPorPin:p=>funcPorPin(p),
+  minutosTrabalhados:(b,f)=>minutosTrabalhados(b,f),difMin:(a,b)=>difMin(a,b),horarioEscala:(p,d)=>horarioEscala(p,d),dow,
   toHHMM,toSaldo,brOf,esc,isoOf,hhmm,getHoraOficial:()=>getHoraOficial(),hojeISO:()=>hojeISO(),devCfg:()=>devCfg(),logoApp:()=>logoApp(),
   garantirLib:g=>garantirLib(g),garantirHistorico:d=>garantirHistorico(d),log:m=>log(m),toast:(m,t)=>toast(m,t),$:id=>$(id),
   periodoFolhaValido:()=>periodoFolhaValido(),dadosResumoBanco:()=>dadosResumoBanco(),periodoDash:()=>periodoDash(),loteValida:()=>loteValida(),
@@ -2370,7 +2463,8 @@ function heatmapCobertura(fs,dias){
 async function pdfEscalaEquipe(){try{await MATRIZ_ESCALA.pdf(window.__escIni,window.__escFim);}catch(e){toast('Não foi possível gerar o PDF. Tente novamente.',3000);}}
 function mesEscala(v){if(!/^\d{4}-\d{2}$/.test(v))return;window.__escDias='mes';window.__escIni=v+'-01';window.__escFim=addDias(v+'-01',new Date(Number(v.slice(0,4)),Number(v.slice(5,7)),0).getDate()-1);subEscala();}
 /* Escala — período flexível (7, 15 ou 30 dias) */
-function subEscala(){
+function subEscala(alvo){
+  const destino=alvo||($('rel-escala-body')?'rel-escala-body':'sub-body');
   const cfg=get('config',{inicioSemana:1});
   const nd=window.__escDias||7;
   const ini=window.__escIni||inicioSemana(hojeISO());
@@ -2387,7 +2481,7 @@ function subEscala(){
   const hist=get('logsEscala',[]).filter(h=>h.semana===ini);
   const PADRAO={'5x2':'TTTTTFD','6x1':'TTTTTTD','4x3':'TTTTFFD','12x36':'AAAAAAA','22x10':'AAAAAAA'},SEM=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const cards=ESCALAS.map(([c,n,m])=>{const q=fs.filter(f=>(f.escala||'5x2')===c).length;if(!q)return '';return `<article class="jornada-card"><header><span class="jornada-tipo">${esc(c)}</span><div><strong>${esc(n)}</strong><small>${toHHMM(m)} por dia · ${q} colaborador(es)</small></div></header><ol class="semana">${[...PADRAO[c]].map((t,i)=>`<li class="dia-${t}"><b>${SEM[i]}</b><span>${t==='T'?'Trab.':t==='D'?'DSR':t==='F'?'Folga':'Alt.'}</span></li>`).join('')}</ol></article>`;}).join('');
-  $('sub-body').innerHTML=`<div class="mod-head"><div><h3>Escalas &amp; Jornadas</h3><p class="muted">Padrão de referência por tipo de jornada. A escala do período abaixo prevalece no cálculo.</p></div></div>
+  $(destino).innerHTML=`<div class="mod-head"><div><h3>Escalas &amp; Jornadas</h3><p class="muted">Padrão de referência por tipo de jornada. A escala do período abaixo prevalece no cálculo.</p></div></div>
   ${cards?`<div class="jornada-grid">${cards}</div>`:''}
   <section class="mod-card"><div class="row"><h3>Escala ${brOf(ini)} a ${brOf(fim)} ${travada?'<span class="lock">🔒 bloqueada após 30 dias</span>':`<span class="muted" style="font-size:13px">🔓 editável por mais ${diasRest} dia(s)</span>`}</h3></div>
   <div class="grid g4">

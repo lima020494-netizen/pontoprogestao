@@ -142,7 +142,8 @@
 - [x] Perfil na gaveta com nome, iniciais, cargo e e-mail (fallback no responsável da empresa).
 - [x] Gaveta em 4 blocos; "Terminal Quiosque" → "Aplicativos & Acessos"; novo atalho Relatórios.
 
-## Etapa 7 — Relatórios Analíticos (prévia, não publicado)
-- [ ] Unificar Pontualidade & Atrasos, Intervalos Não Usufruídos, Horas Extras/DSR/Feriados e Consolidado Pré-Folha com período, setor e colaborador.
-- [ ] Disponibilizar ficha individual 1-on-1 em tela/PDF e centralizar Matriz de Escalas e Frequência Detalhada, sem mover Extrato do Banco nem Relatório de PINs.
-- [ ] Validar cálculos compartilhados, testes, build e navegação em preview sem publicar.
+## Etapa 7 — Relatórios Analíticos ✅ (prévia, não publicado)
+- [x] Unificar Pontualidade & Atrasos (taxa, minutos, recorrência e rankings), Intervalos Não Usufruídos (>6h sem pausa ou <1h), Horas Extras 50%/DSR/Feriados 100% e Consolidado Pré-Folha mensal com período, setor e colaborador.
+- [x] Disponibilizar ficha individual 1-on-1 em tela/PDF com previsto/realizado, tolerância, atrasos, anotações e assinaturas; centralizar Matriz de Escalas e Frequência Detalhada, sem mover Extrato do Banco nem Relatório de PINs.
+- [x] Apuração derivada da Folha e do fechamento contábil compartilhados; histórico sob demanda, sem polling, gravações ou alteração de batidas/NSR. Módulo incluído no cache offline versionado.
+- [x] 283 testes em 40 arquivos e build OK. Prévia com quatro colaboradores fictícios percorreu as seis abas, filtro por setor, ficha real em PDF e 390px sem erros ou transbordamento; PDF de uma página conferido por leitura. Sem autenticação externa, dados reais ou publicação.
