@@ -141,3 +141,8 @@
 - [x] Gerenciadores Autorizados por e-mail (até 4, sem PIN); PIN restrito ao Quiosque/portal.
 - [x] Perfil na gaveta com nome, iniciais, cargo e e-mail (fallback no responsável da empresa).
 - [x] Gaveta em 4 blocos; "Terminal Quiosque" → "Aplicativos & Acessos"; novo atalho Relatórios.
+
+## Etapa 7 — Relatórios Analíticos (prévia, não publicado)
+- [ ] Unificar Pontualidade & Atrasos, Intervalos Não Usufruídos, Horas Extras/DSR/Feriados e Consolidado Pré-Folha com período, setor e colaborador.
+- [ ] Disponibilizar ficha individual 1-on-1 em tela/PDF e centralizar Matriz de Escalas e Frequência Detalhada, sem mover Extrato do Banco nem Relatório de PINs.
+- [ ] Validar cálculos compartilhados, testes, build e navegação em preview sem publicar.
