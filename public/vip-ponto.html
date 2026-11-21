@@ -55,6 +55,7 @@ function garantirLib(grupo){
 <script src="/operacional/reports/nucleo-v20261110-etapa4.js"></script>
 <script src="/operacional/gestor/matriz-escala-v20261112.js"></script>
 <script src="/operacional/gestor/seletor-periodo-v20261118.js"></script>
+<script src="/operacional/gestor/colaboradores-v20261121.js"></script>
 <script src="/ponto-offline-register.js" defer></script>
 <style>
 /* ===================== DESIGN SYSTEM ===================== */
@@ -896,6 +897,8 @@ h1,h2,h3,h4,.gestor-company,.manager-welcome h2,.daily-head h3,.control-card h4,
 .rel-consolidated{min-width:1120px}.rel-one .doc-header{margin-top:12px}.rel-one .doc-title{display:none}.rel-one .rel-kpis{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:16px}.rel-ident{display:flex;flex-direction:column;gap:4px;padding:14px 0;color:var(--soft)}.rel-ident strong{color:var(--navy);font-size:18px}.rel-one textarea{margin-top:4px}.rel-signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin:34px 0 20px;text-align:center;color:var(--soft);font-size:12px}.rel-signatures span{padding-top:8px;border-top:1px solid var(--soft)}.rel-ficha-actions{justify-content:flex-end}
 @media(max-width:1080px){.rel-filters{grid-template-columns:1fr 1fr}.rel-filters .period-picker{grid-column:1/-1}.rel-filters>.btn{width:100%}}
 @media(max-width:700px){.rel-grid{grid-template-columns:1fr}.rel-filters{grid-template-columns:1fr;padding:16px}.rel-filters .period-picker{grid-column:auto}.rel-card{padding:16px}.rel-kpis{grid-template-columns:1fr}.rel-one .rel-kpis{grid-template-columns:1fr}.rel-signatures{gap:20px}.rel-tabs{margin-inline:-4px}.rel-head h3{font-size:22px}.rel-ficha-actions{flex-direction:column}.rel-ficha-actions .btn{width:100%}}
+.rel-head{align-items:center}.rel-head>div{order:0;flex:1;min-width:0}.rel-head>#rel-geral-pdf{order:1;flex:none;white-space:nowrap}@media(max-width:600px){.rel-head{flex-wrap:wrap}.rel-head>#rel-geral-pdf{width:100%;margin-left:0}}
+.employee-search{position:relative;min-width:0}.employee-suggestions{position:absolute;top:100%;left:0;right:0;z-index:31000;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:8px;max-height:300px;overflow:auto}.employee-option{display:block;width:100%;text-align:left;border-radius:0;white-space:normal}.employee-option[aria-selected=true]{background:var(--bg);outline:2px solid var(--beach)}.night-tag{color:var(--beach);font-size:11px;margin-left:8px}
 </style>
 </head>
 <body>
@@ -1671,7 +1674,7 @@ const MODULOS_GESTOR={
   folha:{ico:'📄',nome:'Folha MTE',desc:'Folhas, PDF, XML e AFD',cls:'mod-folha'},
   emp:{ico:'🏢',nome:'Empresa',desc:'Empresa e gerenciadores autorizados',cls:'mod-emp'},
   logs:{ico:'📜',nome:'Histórico',desc:'Auditoria das operações',cls:'mod-logs'},
-  rel:{ico:'📈',nome:'Relatórios Analíticos',desc:'Gestão, escalas e frequência',cls:'mod-rel'},
+  rel:{ico:'📈',nome:'Relatórios Analíticos',desc:'Quatro relatórios executivos de gestão',cls:'mod-rel'},
 
 };
 function abrirGestor(){
@@ -1775,15 +1778,15 @@ function buscarPainelDia(valor){PAINEL_BUSCA=valor;PAINEL_PAGINA=1;renderPainelD
 function paginarPainelDia(valor){PAINEL_PAGINA=valor;renderPainelDia();}
 function tamanhoPainelDia(valor){PAINEL_LIMITE=Number(valor);PAINEL_PAGINA=1;renderPainelDia();}
 function abrirPainelTratamento(pin,data,fim=data){const f=funcPorPin(pin);window.__tratBusca=(f?.nome||'Colaborador')+' — PIN '+pin;window.__batFilt={pin,ini:data,fim};navegarGestor('bat');}
-function abrirRelatorioFrequencia(){REL_TAB='frequencia';navegarGestor('rel');}
-const REL_ABAS=[['pontualidade','Pontualidade & Atrasos'],['intervalos','Intervalos Não Usufruídos'],['extras','Horas Extras, DSR & Feriados'],['consolidado','Consolidado Pré-Folha'],['escalas','Matriz de Escalas'],['frequencia','Frequência Detalhada']];
+function abrirRelatorioFrequencia(){REL_TAB='pontualidade';navegarGestor('rel');}
+const REL_ABAS=[['pontualidade','Pontualidade & Atrasos'],['intervalos','Intervalos Não Usufruídos'],['extras','Horas Extras, DSR & Feriados'],['consolidado','Consolidado Pré-Folha']];
 let REL_TAB='pontualidade',REL_INTERVALO=null,REL_SELETOR=null,REL_SETOR='',REL_PIN='',REL_DADOS=null,REL_CARGA=0;
 const relAnalitica=()=>['pontualidade','intervalos','extras','consolidado'].includes(REL_TAB);
 function destruirSeletorPeriodoRelatorios(){REL_SELETOR?.destruir();REL_SELETOR=null;}
 function abaRelatorios(){
   REL_INTERVALO=REL_INTERVALO||PontoProOperacional.obter('gestor.seletorPeriodo').atalho('mes',getHoraOficial());REL_DADOS=null;
   const setores=[...new Set(get('funcionarios',[]).map(f=>String(f.departamento||'').trim()||'Sem setor'))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  $('gestor-body').innerHTML=`<div class="mod-head rel-head"><div><h3>Relatórios Analíticos</h3><p class="muted">Leitura gerencial e pré-fechamento com a mesma apuração da Folha e do Banco de Horas.</p></div></div>
+  $('gestor-body').innerHTML=`<div class="mod-head rel-head"><button id="rel-geral-pdf" type="button" class="btn right" onclick="baixarRelatorioAnalitico()">↓ Baixar PDF</button><div><h3>Relatórios Analíticos</h3><p class="muted">Leitura gerencial e pré-fechamento com a mesma apuração da Folha e do Banco de Horas.</p></div></div>
   <div class="rel-tabs" role="tablist" aria-label="Relatórios disponíveis">${REL_ABAS.map(([k,t])=>`<button type="button" role="tab" id="rel-tab-${k}" aria-controls="rel-content" aria-selected="${REL_TAB===k}" onclick="selecionarRelatorio('${k}')">${t}</button>`).join('')}</div>
   <section id="rel-filtros" class="rel-filters" aria-label="Filtros dos relatórios"><div id="rel-periodo-seletor"></div><div><label for="rel-setor">Setor</label><select id="rel-setor"><option value="">Todos os setores</option>${setores.map(s=>`<option value="${esc(s)}" ${REL_SETOR===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div><div><label for="rel-pin">Colaborador</label><select id="rel-pin"><option value="">Todos os colaboradores</option>${get('funcionarios',[]).map(f=>`<option value="${esc(f.pin)}" ${REL_PIN===String(f.pin)?'selected':''}>${esc(f.nome)}</option>`).join('')}</select></div><button type="button" class="btn" onclick="aplicarFiltrosRelatorios()">Aplicar filtros</button></section>
   <div id="rel-content" role="tabpanel" aria-live="polite"></div>`;
@@ -1806,12 +1809,6 @@ async function carregarRelatoriosAnaliticos(){
 }
 function renderRelatorioAtual(){
   const out=$('rel-content');if(!out)return;document.querySelectorAll('.rel-tabs [role=tab]').forEach(b=>b.setAttribute('aria-selected',String(b.id==='rel-tab-'+REL_TAB)));$('rel-filtros').hidden=!relAnalitica();
-  if(REL_TAB==='escalas'){
-    out.innerHTML='<div id="rel-escala-body"></div>';window.__escIni=REL_INTERVALO.inicio;window.__escFim=addDias(REL_INTERVALO.inicio,Math.min(30,Math.max(0,Math.round((Date.parse(REL_INTERVALO.fim)-Date.parse(REL_INTERVALO.inicio))/86400000))));window.__escDias=Math.round((Date.parse(window.__escFim)-Date.parse(window.__escIni))/86400000)+1;subEscala();return;
-  }
-  if(REL_TAB==='frequencia'){
-    out.innerHTML='<div id="rel-frequencia-body"></div>';abaDash('rel-frequencia-body');if($('d-per')){$('d-per').value='pers';$('d-ini').value=REL_INTERVALO.inicio;$('d-fim').value=REL_INTERVALO.fim;$('d-func').value=REL_PIN;calcDash();}return;
-  }
   if(!REL_DADOS)return carregarRelatoriosAnaliticos();
   out.innerHTML=REL_TAB==='pontualidade'?relPontualidadeHTML(REL_DADOS):REL_TAB==='intervalos'?relIntervalosHTML(REL_DADOS):REL_TAB==='extras'?relExtrasHTML(REL_DADOS):relConsolidadoHTML(REL_DADOS);
 }
@@ -1828,7 +1825,7 @@ function relIntervalosHTML(r){
   const i=r.intervalos;
   return `${relKpis([['tone-red','Ocorrências',i.total,'Jornada acima de 6h'],['tone-net','Colaboradores',i.colaboradores,'Com ao menos uma ocorrência'],['tone-orange','Reincidência',i.reincidentes,'Colaboradores com 2 ou mais'],['tone-blue','Setores',r.setores.filter(s=>s.intervalos).length,'Com risco de hora extra intervalar']])}
   <section class="rel-card"><h4>Reincidência por setor</h4><div class="control-table-wrap"><table class="control-table"><thead><tr><th>Setor</th><th>Ocorrências</th><th>Colaboradores reincidentes</th></tr></thead><tbody>${r.setores.filter(s=>s.intervalos).sort((a,b)=>b.intervalos-a.intervalos).map(s=>`<tr><td><strong>${esc(s.setor)}</strong></td><td>${s.intervalos}</td><td>${s.reincidentes}</td></tr>`).join('')||`<tr><td colspan="3">${relVazio('Nenhuma ocorrência de intervalo no período.')}</td></tr>`}</tbody></table></div></section>
-  <section class="rel-card"><h4>Ocorrências por colaborador</h4><p class="muted">Jornadas acima de 6h sem intervalo registrado ou com pausa comprovadamente inferior a 1h. Intervalo pré-assinalado não é tratado como ausência.</p><div class="control-table-wrap rel-scroll"><table class="control-table"><thead><tr><th>Data</th><th>Colaborador</th><th>Setor</th><th>Jornada</th><th>Pausa</th><th>Detecção</th></tr></thead><tbody>${i.ocorrencias.map(o=>`<tr><td>${brOf(o.data)}</td><td><strong>${esc(o.nome)}</strong></td><td>${esc(o.setor)}</td><td>${toHHMM(o.trabalhado)}</td><td>${o.pausa?toHHMM(o.pausa):'—'}</td><td><span class="rel-badge tone-red">${esc(o.tipo)}</span><small>Risco gerencial — Art. 71 CLT</small></td></tr>`).join('')||`<tr><td colspan="6">${relVazio('Nenhuma jornada acima de 6h com intervalo ausente ou inferior a 1h.')}</td></tr>`}</tbody></table></div></section>`;
+  <section class="rel-card"><h4>Ocorrências por colaborador</h4><p class="muted">Jornadas acima de 6h sem intervalo registrado ou com pausa comprovadamente inferior a 1h. Intervalo pré-assinalado não é tratado como ausência.</p><div class="control-table-wrap rel-scroll"><table class="control-table"><thead><tr><th>Data</th><th>Colaborador</th><th>Setor</th><th>Jornada</th><th>Pausa</th><th>Suprimido / Alinhamento</th></tr></thead><tbody>${i.ocorrencias.map(o=>`<tr><td>${brOf(o.data)}</td><td><strong>${esc(o.nome)}</strong></td><td>${esc(o.setor)}</td><td>${toHHMM(o.trabalhado)}</td><td>${o.pausa?toHHMM(o.pausa):'—'}</td><td><span class="rel-badge tone-red">${esc(o.tipo)}</span><small>${toHHMM(o.suprimido)} · Art. 71 CLT</small><button type="button" class="btn ghost sm" onclick="abrirFichaIntervalos('${esc(o.pin)}')">Ficha 1-on-1</button></td></tr>`).join('')||`<tr><td colspan="6">${relVazio('Nenhuma jornada acima de 6h com intervalo ausente ou inferior a 1h.')}</td></tr>`}</tbody></table></div></section>`;
 }
 function relExtrasHTML(r){
   const e=r.extras,fator=Number((get('empregador',{})||{}).fatorBancoDomFeriado)===1?1:2;
@@ -1850,6 +1847,12 @@ async function baixarFichaPontualidade(pin){
   const b=$('rel-ficha-pdf');if(b?.disabled)return;if(b){b.disabled=true;b.textContent='Gerando PDF…';}
   try{await RELATORIOS_NUCLEO.pdfFichaPontualidade({dados:REL_DADOS,pin,anotacoes:$('rel-ficha-notas')?.value||''});toast('Ficha 1-on-1 gerada em PDF.',2500);}catch(e){toast(e.message||'Não foi possível gerar a ficha. Tente novamente.',4000);}finally{if(b){b.disabled=false;b.textContent='Baixar Ficha em PDF';}}
 }
+async function baixarRelatorioAnalitico(){const b=$('rel-geral-pdf');if(!REL_DADOS||b?.disabled)return;const dados=REL_DADOS,tipo=REL_TAB;b.disabled=true;try{await RELATORIOS_NUCLEO.pdfRelatorioAnalitico({dados,tipo});toast('Relatório gerado em PDF.',2500);}catch(e){toast(e.message||'Não foi possível gerar o PDF.',4000);}finally{b.disabled=false;}}
+function abrirFichaIntervalos(pin){
+ const c=REL_DADOS?.colaboradores.find(c=>c.f.pin===pin);if(!c)return;const m=RELATORIOS_NUCLEO.modeloFichaIntervalos(c,REL_DADOS.periodo);
+ abrirModal(`<div class="rel-one"><div class="row"><h3>Ficha 1-on-1 — Intervalos</h3><button class="btn ghost sm right" onclick="fecharModal()" aria-label="Fechar ficha">✕</button></div>${cabecalhoDocumentoHTML('Intervalos / Art. 71 CLT',m.subtitulo)}<div class="rel-ident"><strong>${esc(c.f.nome)}</strong><span>${esc(c.consolidado.setor)} · ${esc(c.consolidado.cargo)}</span></div>${relKpis([['tone-red','Ocorrências',c.intervalos.length,'No período'],['tone-orange','Tempo suprimido',toHHMM(c.intervalos.reduce((n,o)=>n+o.suprimido,0)),'Art. 71 CLT'],['tone-blue','Intervalo previsto','01:00','Jornadas acima de 6h']])}<div class="control-table-wrap"><table class="control-table"><thead><tr>${m.head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${m.body.map(row=>`<tr>${row.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><label for="rel-ficha-notas">Anotações do alinhamento</label><textarea id="rel-ficha-notas" rows="5"></textarea><div class="rel-signatures"><span>Assinatura do colaborador</span><span>Assinatura do gestor</span></div><button id="rel-ficha-pdf" class="btn" onclick="baixarFichaIntervalos('${esc(pin)}')">Baixar Ficha em PDF</button></div>`);
+}
+async function baixarFichaIntervalos(pin){const b=$('rel-ficha-pdf');if(b?.disabled)return;b.disabled=true;try{await RELATORIOS_NUCLEO.pdfFichaIntervalos({dados:REL_DADOS,pin,anotacoes:$('rel-ficha-notas')?.value||''});toast('Ficha gerada em PDF.',2500);}catch(e){toast(e.message||'Não foi possível gerar a ficha.',4000);}finally{b.disabled=false;}}
 function desenharControle(canvas,percentual,pontos){
  const ctx=canvas?.getContext('2d');if(!ctx)return;const css=getComputedStyle(document.documentElement),cor=n=>css.getPropertyValue(n).trim();
  const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);
@@ -2297,8 +2300,8 @@ function inserirBatidaManual(pinSelecionado='',dataSelecionada=''){
   abrirModal(`<div class="row"><h3>Inserir batida manual</h3><button class="btn sm ghost right" onclick="fecharModal()">✕</button></div>
   <div class="card grid g2">
     <div><label>Funcionário</label><select id="ib-pin" ${pinSelecionado?'disabled':''}>${fs.map(f=>`<option value="${f.pin}" ${f.pin===pinSelecionado?'selected':''}>${esc(f.nome)}</option>`).join('')}</select></div>
-    <div><label>Data</label><input type="date" id="ib-data" value="${dataSelecionada||hojeISO()}" ${dataSelecionada?'readonly':''}/></div>
-    <div style="grid-column:1/-1">${camposQuatroBatidas('ib',pinSelecionado&&dataSelecionada?batidasJornada(pinSelecionado,dataSelecionada):[])}<label style="display:flex;align-items:center;gap:8px;min-height:44px"><input type="checkbox" id="ib-anterior" style="width:20px;height:20px;flex:none"/> Saída da jornada da noite anterior (00:00–05:59)</label></div>
+    <div><label>Data de início da jornada</label><input type="date" id="ib-data" value="${dataSelecionada||hojeISO()}" ${dataSelecionada?'readonly':''}/></div>
+    <div style="grid-column:1/-1">${camposQuatroBatidas('ib',pinSelecionado&&dataSelecionada?batidasJornada(pinSelecionado,dataSelecionada):[])}</div>
     <div class="muted" style="align-self:end">As marcações do dia são ordenadas por horário automaticamente.</div>
     <div><label for="ib-autorizou">Quem autorizou *</label><input id="ib-autorizou" required/></div>
     <div style="grid-column:1/-1"><label>Motivo (obrigatório, mín. 5 caracteres)</label><textarea id="ib-motivo" rows="2"></textarea></div>
@@ -2306,59 +2309,60 @@ function inserirBatidaManual(pinSelecionado='',dataSelecionada=''){
 }
 function salvarBatidaManual(){
   const {itens}=horariosInformados('ib');
-  const erro=registrarVariasBatidas({pin:$('ib-pin').value,data:$('ib-data').value,itens,motivo:$('ib-motivo').value,autorizadoPor:$('ib-autorizou').value,anterior:$('ib-anterior')?.checked});
+  const erro=registrarVariasBatidas({pin:$('ib-pin').value,data:$('ib-data').value,itens,motivo:$('ib-motivo').value,autorizadoPor:$('ib-autorizou').value});
   if(erro)return alert(erro);
   fecharModal();subBatidas();if(typeof toast==='function')toast(itens.length+' batida(s) registrada(s).',2000);
 }
-function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,anterior=false,simular=false}){
+function registrarBatidaManual({pin,data,hora,tipo,motivo,autorizadoPor,simular=false,jornadaInicial=null}){
   if(!data||!hora)return 'Informe data e hora.';
   if(!TIPOS.includes(tipo))return 'Selecione um tipo de marcação válido.';
   if(String(motivo||'').trim().length<5)return 'Motivo obrigatório (mín. 5 caracteres).';
   if(!String(autorizadoPor||'').trim())return 'Informe quem autorizou a marcação.';
   motivo=motivo.trim();autorizadoPor=autorizadoPor.trim();
   const f=funcPorPin(pin), all=get('batidas',[]);if(!f)return 'Colaborador não encontrado.';
-  const madrugada=toMin(hora)<360;anterior=madrugada&&tipo==='Saída'&&anterior;const jornada=anterior?addDias(data,-1):data;
-  if(anterior&&!batidasJornada(pin,jornada).some(b=>b.tipo==='Entrada'))return 'Não há entrada na jornada da noite anterior. Confira a data da marcação.';
+  const madrugada=toMin(hora)<360,jornada=jornadaInicial||data;
   if(batidasJornada(pin,jornada).length>=4)return 'Limite de 4 marcações na jornada.';
   if(simular)return '';                                        // checagem sem gravar: usada quando vários dias são tratados juntos
   const nsrM=proximoNSR();
-  all.push({pin,nome:f.nome,cpf:f.cpf,data,hora,tipo,jornada:madrugada?jornada:undefined,jornadaManual:madrugada,tipoManual:madrugada?tipo:undefined,nsr:nsrM,fonte:'MANUAL',sync:false,offset:get('ntpOffset',0),
+  all.push({pin,nome:f.nome,cpf:f.cpf,data,hora,tipo,jornada:jornadaInicial|| (madrugada?jornada:undefined),jornadaManual:!!jornadaInicial||madrugada,tipoManual:jornadaInicial||madrugada?tipo:undefined,nsr:nsrM,fonte:'MANUAL',sync:false,offset:get('ntpOffset',0),
     autorizadoPor,gerenciador:GERENCIADOR.nome,movimento:`Inserida manualmente - Autorizado por: ${autorizadoPor} - Motivo: ${motivo} - Por: ${GERENCIADOR.nome}`,criadoEm:new Date().toISOString()});
   set('batidas',all); filaPonto(nsrM); reordenarJornada(pin,jornada); log(`${brOf(data)} ${hora} * Marcação Manual - Motivo: ${motivo} - Autorizado por: ${autorizadoPor}`);
   window.__batFilt={pin,data:jornada,ini:$('gb-ini')?.value||jornada,fim:$('gb-fim')?.value||data};return '';
 }
 function camposQuatroBatidas(px,existentes){
   const rot=['Entrada','Saída intervalo','Retorno intervalo','Saída'];
-  return `<p class="muted" style="margin:4px 0">Preencha só os horários que faltam — um, alguns ou os quatro.</p><div class="grid g2">${TIPOS.map((t,i)=>{const b=existentes.find(x=>x.tipo===t);return `<div><label for="${px}-h${i}">${rot[i]||esc(t)}</label><input type="time" id="${px}-h${i}" ${b?`value="${esc(b.hora)}" disabled title="Já registrada"`:''}/></div>`}).join('')}</div>`;
+  return `<p class="muted" style="margin:4px 0">Preencha só os horários que faltam — um, alguns ou os quatro.</p><div class="grid g2">${TIPOS.map((t,i)=>{const b=existentes.find(x=>x.tipo===t);return `<div><label for="${px}-h${i}">${rot[i]||esc(t)}<span class="night-tag" id="${px}-dia${i}"></span></label><input type="time" id="${px}-h${i}" oninput="atualizarViradaManual('${px}')" ${b?`value="${esc(b.hora)}" disabled title="Já registrada"`:''}/></div>`}).join('')}</div>`;
 }
+function atualizarViradaManual(px){let anterior=-1,dias=0;TIPOS.forEach((t,i)=>{const hora=$(px+'-h'+i)?.value,m=hora?toMin(hora):-1;if(m>=0){if(anterior>=0&&m<anterior)dias++;anterior=m;}const tag=$(px+'-dia'+i);if(tag)tag.textContent=hora&&dias?'(+'+dias+' dia)':'';});}
 function horariosInformados(px){
   const itens=TIPOS.map((tipo,i)=>{const el=$(px+'-h'+i);return {tipo,hora:el&&!el.disabled?el.value:''}}).filter(x=>x.hora);
   const h=$(px+'-hora')?.value;if(!itens.length&&h){const t=$(px+'-btipo')?.value||(toMin(h)<360?$(px+'-tipo')?.value:'')||TIPOS[0];return {itens:[{tipo:t,hora:h}],legado:true};}
   return {itens,legado:false};
 }
-function registrarVariasBatidas({pin,data,itens,motivo,autorizadoPor,anterior=false,soFaltantes=false,simular=false}){
+function registrarVariasBatidas({pin,data,itens,motivo,autorizadoPor,soFaltantes=false,simular=false}){
   if(!itens.length)return 'Informe ao menos um horário.';
   if(String(motivo||'').trim().length<5)return 'Motivo obrigatório (mín. 5 caracteres).';
   if(!String(autorizadoPor||'').trim())return 'Informe quem autorizou a marcação.';
   const exist=batidasJornada(pin,data);if(soFaltantes)itens=itens.filter(x=>!exist.some(b=>b.tipo===x.tipo));
   if(!itens.length)return '';
   if(exist.length+itens.length>4)return 'Limite de 4 marcações na jornada.';
-  for(const x of itens){const e=registrarBatidaManual({pin,data,hora:x.hora,tipo:x.tipo,motivo,autorizadoPor,anterior,simular:true});if(e)return e;}
+  const sequencia=PontoProOperacional.obter('gestor.colaboradores').sequencia(data,itens,exist);
+  for(const x of sequencia){const e=registrarBatidaManual({pin,data:x.data,hora:x.hora,tipo:x.tipo,motivo,autorizadoPor,jornadaInicial:data,simular:true});if(e)return e;}
   if(simular)return '';
-  for(const x of itens){const e=registrarBatidaManual({pin,data,hora:x.hora,tipo:x.tipo,motivo,autorizadoPor,anterior});if(e)return e;}
+  for(const x of sequencia){const e=registrarBatidaManual({pin,data:x.data,hora:x.hora,tipo:x.tipo,motivo,autorizadoPor,jornadaInicial:data});if(e)return e;}
   return '';
 }
 function lancarOcorrencia(pinSelecionado='',dataSelecionada=''){
  const fs=get('funcionarios',[]),lote=window.__tratLote,ex=lote?{}:ocorrenciaDia(pinSelecionado,dataSelecionada)||{};window.__ocEdit=ex;const impar=!lote&&!ex.tipo&&pinSelecionado&&dataSelecionada&&batidasJornada(pinSelecionado,dataSelecionada).length%2===1;const tipoSel=ex.tipo||(impar?'Esquecimento de Marcação':'');
  const liberados=tiposTratamentoLote(),grupos=GRUPOS_OCORRENCIAS.map(g=>({...g,itens:g.itens.filter(([v])=>v!=='Falta'&&(!lote||liberados.includes(v)))})).filter(g=>g.itens.length);
  window.__tratFoco=document.activeElement;
- abrirModal(`<div class="treatment-drawer-head"><div><small>TRATAMENTO DE PONTO</small><h3>${lote?'Abonar '+lote.length+' registros':'Tratar ocorrência'}</h3></div><button class="btn ghost" onclick="fecharModal();window.__tratLote=null" aria-label="Fechar ajustes">✕</button></div><div class="treatment-drawer-fields"><label for="oc-pin">Colaborador</label><select id="oc-pin" ${pinSelecionado?'disabled':''}>${fs.map(f=>`<option value="${esc(f.pin)}" ${f.pin===pinSelecionado?'selected':''}>${esc(f.nome)}</option>`).join('')}</select>${lote?'<div class="muted">'+lote.map(x=>esc(funcPorPin(x.pin)?.nome||'')+' · '+brOf(x.data)).join('<br>')+'</div>':''}<label for="oc-tipo">Tratamento</label><select id="oc-tipo" onchange="camposOcorrencia()">${grupos.map(g=>`<optgroup label="${esc(g.nome)}">${g.itens.map(([v,t])=>`<option value="${esc(v)}" ${v===tipoSel?'selected':''}>${esc(t)}</option>`).join('')}</optgroup>`).join('')}</select><div class="grid g2 ${lote?'hidden':''}"><div><label for="oc-data">Data início *</label><input type="date" id="oc-data" oninput="camposOcorrencia()" value="${ex.inicio||dataSelecionada||hojeISO()}"/></div><div id="oc-fim-campo"><label for="oc-fim">Data fim *</label><input type="date" id="oc-fim" value="${ex.fim||dataSelecionada||hojeISO()}"/></div></div><div id="oc-legal" class="hidden"><label for="oc-legal-motivo">Motivo legal / abono da empresa</label><select id="oc-legal-motivo"><option value="Empresa">Abono autorizado pela empresa</option><option value="Casamento">Casamento — art. 473, II</option><option value="Falecimento">Falecimento — art. 473, I</option><option value="Nascimento">Nascimento de filho — art. 473, III</option><option value="Sangue">Doação de sangue — art. 473, IV</option><option value="Eleitoral">Alistamento eleitoral — art. 473, V</option><option value="Comparecimento">Comparecimento legal documentado — art. 473</option></select></div><div id="oc-anexo-campo" class="hidden"><label for="oc-anexo">Anexo do atestado (PDF, JPG ou PNG, até 1 MB)</label><input id="oc-anexo" type="file" accept="application/pdf,image/jpeg,image/png"/>${ex.anexo?'<span class="muted">Anexo atual: '+esc(ex.anexo.nome)+'</span>':''}</div><div id="oc-vinculo-campo" class="hidden"><label for="oc-vinculo">DSR / feriado trabalhado (opcional)</label><input id="oc-vinculo" type="date" value="${ex.dataDsrTrabalhado||''}"/></div><div id="oc-batida-campo" class="hidden">${camposQuatroBatidas('oc',lote?[]:batidasJornada(pinSelecionado,dataSelecionada))}<label style="display:flex;align-items:center;gap:8px;min-height:44px"><input type="checkbox" id="oc-anterior" style="width:20px;height:20px;flex:none"/> Saída da jornada da noite anterior (00:00–05:59)</label></div><div id="oc-autorizacao"><label for="oc-autorizou">Quem autorizou *</label><input id="oc-autorizou" required value="${esc(ex.autorizadoPor||'')}"/></div><label for="oc-motivo">Motivo *</label><textarea id="oc-motivo" rows="3" required>${esc(ex.motivo||'')}</textarea><p id="oc-regra" class="muted"></p><div id="oc-erro" role="alert"></div></div><footer class="treatment-drawer-footer"><button class="btn ghost" onclick="fecharModal();window.__tratLote=null">Cancelar</button><button id="oc-salvar" class="btn" onclick="salvarOcorrencia()">Salvar tratamento</button></footer>`);
+ abrirModal(`<div class="treatment-drawer-head"><div><small>TRATAMENTO DE PONTO</small><h3>${lote?'Abonar '+lote.length+' registros':'Tratar ocorrência'}</h3></div><button class="btn ghost" onclick="fecharModal();window.__tratLote=null" aria-label="Fechar ajustes">✕</button></div><div class="treatment-drawer-fields"><label for="oc-pin">Colaborador</label><select id="oc-pin" ${pinSelecionado?'disabled':''}>${fs.map(f=>`<option value="${esc(f.pin)}" ${f.pin===pinSelecionado?'selected':''}>${esc(f.nome)}</option>`).join('')}</select>${lote?'<div class="muted">'+lote.map(x=>esc(funcPorPin(x.pin)?.nome||'')+' · '+brOf(x.data)).join('<br>')+'</div>':''}<label for="oc-tipo">Tratamento</label><select id="oc-tipo" onchange="camposOcorrencia()">${grupos.map(g=>`<optgroup label="${esc(g.nome)}">${g.itens.map(([v,t])=>`<option value="${esc(v)}" ${v===tipoSel?'selected':''}>${esc(t)}</option>`).join('')}</optgroup>`).join('')}</select><div class="grid g2 ${lote?'hidden':''}"><div><label for="oc-data">Data início *</label><input type="date" id="oc-data" oninput="camposOcorrencia()" value="${ex.inicio||dataSelecionada||hojeISO()}"/></div><div id="oc-fim-campo"><label for="oc-fim">Data fim *</label><input type="date" id="oc-fim" value="${ex.fim||dataSelecionada||hojeISO()}"/></div></div><div id="oc-legal" class="hidden"><label for="oc-legal-motivo">Motivo legal / abono da empresa</label><select id="oc-legal-motivo"><option value="Empresa">Abono autorizado pela empresa</option><option value="Casamento">Casamento — art. 473, II</option><option value="Falecimento">Falecimento — art. 473, I</option><option value="Nascimento">Nascimento de filho — art. 473, III</option><option value="Sangue">Doação de sangue — art. 473, IV</option><option value="Eleitoral">Alistamento eleitoral — art. 473, V</option><option value="Comparecimento">Comparecimento legal documentado — art. 473</option></select></div><div id="oc-anexo-campo" class="hidden"><label for="oc-anexo">Anexo do atestado (PDF, JPG ou PNG, até 1 MB)</label><input id="oc-anexo" type="file" accept="application/pdf,image/jpeg,image/png"/>${ex.anexo?'<span class="muted">Anexo atual: '+esc(ex.anexo.nome)+'</span>':''}</div><div id="oc-vinculo-campo" class="hidden"><label for="oc-vinculo">DSR / feriado trabalhado (opcional)</label><input id="oc-vinculo" type="date" value="${ex.dataDsrTrabalhado||''}"/></div><div id="oc-batida-campo" class="hidden">${camposQuatroBatidas('oc',lote?[]:batidasJornada(pinSelecionado,dataSelecionada))}</div><div id="oc-autorizacao"><label for="oc-autorizou">Quem autorizou *</label><input id="oc-autorizou" required value="${esc(ex.autorizadoPor||'')}"/></div><label for="oc-motivo">Motivo *</label><textarea id="oc-motivo" rows="3" required>${esc(ex.motivo||'')}</textarea><p id="oc-regra" class="muted"></p><div id="oc-erro" role="alert"></div></div><footer class="treatment-drawer-footer"><button class="btn ghost" onclick="fecharModal();window.__tratLote=null">Cancelar</button><button id="oc-salvar" class="btn" onclick="salvarOcorrencia()">Salvar tratamento</button></footer>`);
  const modal=$('modal-generico');modal.classList.add('treatment-drawer');modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Ajustes do Tratamento de Ponto');camposOcorrencia();modal.querySelector('button')?.focus();
 }
 function camposOcorrencia(){
  const tipo=$('oc-tipo').value,r=regraOcorrencia(tipo),lote=!!window.__tratLote;$('oc-autorizacao').classList.remove('hidden');
  $('oc-anexo-campo')?.classList.toggle('hidden',tipo!=='Atestado médico');$('oc-legal')?.classList.toggle('hidden',tipo!=='Falta Justificada');$('oc-vinculo-campo')?.classList.toggle('hidden',tipo!=='Folga compensatória');$('oc-batida-campo')?.classList.toggle('hidden',tipo!=='Esquecimento de Marcação');
- const periodo=!['Falta Justificada','Folga compensatória','Folga de Feriado/DSR Trabalhado','Trabalho Externo / Viagem','Suspensão Disciplinar','Doação de Sangue','Esquecimento de Marcação'].includes(tipo);$('oc-fim-campo')?.classList.toggle('hidden',!periodo);if(!periodo&&$('oc-fim')&&$('oc-data'))$('oc-fim').value=$('oc-data').value;const lbl=document.querySelector('label[for="oc-data"]');if(lbl)lbl.textContent=periodo?'Data início *':'Data *';
+ const periodo=!['Falta Justificada','Folga compensatória','Folga de Feriado/DSR Trabalhado','Trabalho Externo / Viagem','Suspensão Disciplinar','Doação de Sangue','Esquecimento de Marcação'].includes(tipo);$('oc-fim-campo')?.classList.toggle('hidden',!periodo);if(!periodo&&$('oc-fim')&&$('oc-data'))$('oc-fim').value=$('oc-data').value;const lbl=document.querySelector('label[for="oc-data"]');if(lbl)lbl.textContent=periodo?'Data início *':'Data de início da jornada *';
   if($('oc-regra'))$('oc-regra').textContent=lote&&r.afastado?'Afastamento exige período contínuo com data início e fim: trate um colaborador de cada vez.':lote&&tipo==='Esquecimento de Marcação'?'A marcação será inserida em cada um dos dias selecionados.':r.pagador;$('oc-erro').textContent='';
 }
 function validarAuditoriaTratamento(autorizadoPor,motivo){if(!String(autorizadoPor||'').trim())return 'Informe quem autorizou.';if(String(motivo||'').trim().length<5)return 'Motivo obrigatório (mín. 5 caracteres).';return '';}
@@ -2376,14 +2380,14 @@ async function salvarOcorrencia(){
  const auditoria=validarAuditoriaTratamento(autorizadoPor,motivo);if(auditoria){$('oc-erro').textContent=auditoria;return;}
  if(lote&&regraOcorrencia(tipo).afastado){$('oc-erro').textContent='Afastamento INSS e Licença Maternidade exigem período contínuo com data início e fim. Trate um colaborador de cada vez.';return;}
  if(tipo==='Esquecimento de Marcação'){
-  const {itens,legado}=horariosInformados('oc'),anterior=$('oc-anterior')?.checked,soFaltantes=!!lote&&!legado;
+  const {itens,legado}=horariosInformados('oc'),soFaltantes=!!lote&&!legado;
   if(lote){
     if(!lote.length){$('oc-erro').textContent='Selecione ao menos um registro.';return;}
-    const inv=lote.map(a=>({a,erro:registrarVariasBatidas({pin:a.pin,data:a.data,itens,motivo,autorizadoPor,anterior,soFaltantes,simular:true})})).find(x=>x.erro);
+    const inv=lote.map(a=>({a,erro:registrarVariasBatidas({pin:a.pin,data:a.data,itens,motivo,autorizadoPor,soFaltantes,simular:true})})).find(x=>x.erro);
     if(inv){$('oc-erro').textContent=brOf(inv.a.data)+': '+inv.erro;return;}   // nenhum dia é gravado quando algum deles está inválido
-    lote.forEach(a=>registrarVariasBatidas({pin:a.pin,data:a.data,itens,motivo,autorizadoPor,anterior,soFaltantes}));
+    lote.forEach(a=>registrarVariasBatidas({pin:a.pin,data:a.data,itens,motivo,autorizadoPor,soFaltantes}));
   }else{
-    const erro=registrarVariasBatidas({pin,data:ini,itens,motivo,autorizadoPor,anterior});if(erro){$('oc-erro').textContent=erro;return;}
+    const erro=registrarVariasBatidas({pin,data:ini,itens,motivo,autorizadoPor});if(erro){$('oc-erro').textContent=erro;return;}
   }
   fecharModal();TRAT_SELECAO.clear();subBatidas();toast('Batida esquecida registrada.',2000);return;
 }
@@ -3279,5 +3283,6 @@ function abaAssinatura(){
 /* Administração de clientes, cobrança e página comercial: somente na área protegida /admin. */
 </script>
 
+<script>PontoProOperacional.obter('gestor.colaboradores').iniciar(()=>get('funcionarios',[]));</script>
 </body>
 </html>

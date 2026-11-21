@@ -22,14 +22,14 @@ function report(context: any, inicio: string, fim: string, extra: Record<string,
   return JSON.parse(JSON.stringify(context.RELATORIOS_NUCLEO.calcularRelatoriosAnaliticos({ inicio, fim, hoje: '2026-11-20', ...extra })));
 }
 
-test('pontualidade usa 10 minutos de tolerância, 20 minutos reais e recorrência de segunda-feira', () => {
+test('pontualidade usa 10 minutos de tolerância, 10 minutos líquidos e recorrência de segunda-feira', () => {
   const batidas = [...punches('1', '2026-11-16', ['08:20', '12:00', '13:00', '17:00']), ...punches('1', '2026-11-17', ['08:05', '12:00', '13:00', '17:05'])];
   const c = contextFor({ batidas });
   const original = JSON.stringify(batidas);
   const r = report(c, '2026-11-16', '2026-11-17');
   assert.equal(r.pontualidade.entradas, 2); assert.equal(r.pontualidade.pontuais, 1); assert.equal(r.pontualidade.taxa, 50);
-  assert.equal(r.pontualidade.atrasos, 1); assert.equal(r.pontualidade.minutos, 20);
-  assert.deepEqual(r.colaboradores[0].pontualidade.atrasos[0], { data: '2026-11-16', dia: 'Segunda-feira', previsto: '08:00', realizado: '08:20', tolerancia: 10, minutos: 20 });
+  assert.equal(r.pontualidade.atrasos, 1); assert.equal(r.pontualidade.minutos, 10);
+  assert.deepEqual(r.colaboradores[0].pontualidade.atrasos[0], { data: '2026-11-16', dia: 'Segunda-feira', previsto: '08:00', realizado: '08:20', tolerancia: 10, minutos: 10 });
   assert.equal(r.pontualidade.recorrencia[0].dia, 'Segunda-feira');
   assert.equal(r.consolidado[0].atrasos, 1); assert.equal(r.consolidado[0].saldoBanco, 0);
   assert.equal(JSON.stringify(batidas), original);
@@ -87,7 +87,7 @@ test('modelo e PDF da ficha trazem previsto, realizado, tolerância, anotações
   const c = contextFor({ batidas: punches('1', '2026-11-16', ['08:20', '12:00', '13:00', '17:00']) });
   const dados = c.RELATORIOS_NUCLEO.calcularRelatoriosAnaliticos({ inicio: '2026-11-16', fim: '2026-11-16', hoje: '2026-11-20' });
   const modelo = c.RELATORIOS_NUCLEO.modeloFichaPontualidade(dados.colaboradores[0], dados.periodo);
-  assert.deepEqual(Array.from(modelo.body[0]), ['16/11/2026', 'Segunda-feira', '08:00', '08:20', '10 min', '00:20']);
+  assert.deepEqual(Array.from(modelo.body[0]), ['16/11/2026', 'Segunda-feira', '08:00', '08:20', '10 min', '00:10']);
   let saved = '', loads = 0, instance: any;
   class Doc {
     tables: any[] = []; texts: any[] = []; lastAutoTable = { finalY: 50 };
@@ -108,11 +108,22 @@ test('modelo e PDF da ficha trazem previsto, realizado, tolerância, anotações
   assert.ok(instance.texts.flat().includes('Colaborador')); assert.ok(instance.texts.flat().includes('Gestor responsável'));
 });
 
-test('hub mantém Extrato no Banco e PINs em Colaboradores e oferece as seis abas centralizadas', () => {
-  const html = readFileSync('public/vip-ponto.html', 'utf8');
-  for (const id of ['pontualidade', 'intervalos', 'extras', 'consolidado', 'escalas', 'frequencia']) assert.ok(html.includes(`['${id}',`), `aba ausente: ${id}`);
-  assert.match(html, /onclick="pdfExtratoBanco\(\)">Baixar Extrato em PDF/);
-  assert.match(html, /SUBF==='pins'\).*relatorioPins\(\)/);
-  assert.match(html, /\['pins','🔒 Relatório de PINs \(Confidencial\)'\]/);
-  assert.doesNotMatch(html, /rel-tab-(?:banco|pins)/);
+test('16:00 previsto e 16:37 realizado resulta em 27 minutos líquidos sem alterar folha nem banco',()=>{
+ const c=contextFor({empregador:{hEntrada:'16:00',hSaiInt:'20:00',hEntInt:'21:00',hSaida:'23:00'},batidas:punches('1','2026-11-16',['16:37','20:00','21:00','23:00'])});
+ const r=report(c,'2026-11-16','2026-11-16');assert.equal(r.pontualidade.minutos,27);assert.equal(r.setores[0].atrasoMin,27);assert.equal(r.consolidado[0].atrasoMin,27);assert.equal(r.colaboradores[0].folha.linhas[0].atrasoMin,37);
+});
+test('intervalos 1-on-1 apura 60 minutos ausentes e 30 suprimidos sem pausa de 60',()=>{
+ const c=contextFor({batidas:[...punches('1','2026-11-16',['08:00','15:00']),...punches('1','2026-11-17',['08:00','12:00','12:30','17:30'])]});
+ const r=report(c,'2026-11-16','2026-11-17');assert.equal(r.intervalos.suprimido,90);const m=c.RELATORIOS_NUCLEO.modeloFichaIntervalos(r.colaboradores[0],r.periodo);assert.equal(m.resumo[0][1],'01:30');assert.equal(m.body[0][5],'01:00');
+});
+test('modelos de exportação reutilizam os valores filtrados dos quatro relatórios',()=>{
+ const c=contextFor({batidas:punches('1','2026-11-16',['08:37','12:00','12:30','18:00'])});const r=report(c,'2026-11-16','2026-11-16');
+ assert.equal(c.RELATORIOS_NUCLEO.modeloRelatorio(r,'pontualidade').body[0][5],'00:27');
+ assert.equal(c.RELATORIOS_NUCLEO.modeloRelatorio(r,'intervalos').body[0][5],'00:30');
+ assert.equal(c.RELATORIOS_NUCLEO.modeloRelatorio(r,'extras').body[0][1],c.toHHMM(r.consolidado[0].extras50));
+ assert.equal(c.RELATORIOS_NUCLEO.modeloRelatorio(r,'consolidado').body[0][7],'00:27');
+});
+
+test('tolerância de 10 minutos zera atraso até 10 e deixa 1 minuto líquido aos 11',()=>{
+ const r=report(contextFor({batidas:[...punches('1','2026-11-16',['08:10','12:00','13:00','17:00']),...punches('1','2026-11-17',['08:11','12:00','13:00','17:00'])]}),'2026-11-16','2026-11-17');assert.equal(r.pontualidade.pontuais,1);assert.equal(r.pontualidade.minutos,1);assert.equal(r.pontualidade.atrasos,1);
 });

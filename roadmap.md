@@ -1,5 +1,15 @@
 # Roadmap
 
+## Etapa 8 — Consolidada (prévia, sem publicar)
+- [x] Hub exclusivamente com quatro relatórios executivos e PDF geral de cada relatório.
+- [x] Ficha 1-on-1 de intervalos com tempo suprimido, anotações e assinaturas.
+- [x] Atraso líquido após desconto da tolerância nos relatórios e fichas.
+- [x] Busca universal por nome/matrícula/CPF em Folha, Banco, Manual e Relatórios.
+- [x] Virada noturna automática com tag +1 dia e timestamp civil associado à jornada inicial.
+- [x] Testes, PDFs, prévia e integridade offline verificados, sem publicar.
+
+- Validação: 281 testes / 40 arquivos, build OK; seis PDFs baixados e renderizados (cabeçalhos genéricos e página extra corrigidos), busca CPF/matrícula, ambas as entradas noturnas com leitura de volta e recarga offline conferidas com dados fictícios. Dados reais e NSRs históricos não alterados; sincronização autenticada externa indisponível neste Supabase, sem publicação.
+
 - [x] Evolução — Etapa 5: nova identidade Azul Profundo #03446C, Azul Praia #1E86C0, Dourado #FEBE45 e Tinta Noite #0B2130, Plus Jakarta Sans/Inter, cards de 16px e logo/ícones atualizados. Seletor reutilizável com campo de data/hora, seis atalhos, calendário de intervalo, navegação mensal/anual, De/Até e Aplicar; painel filtra indicadores, anel, setores, ranking, tendência e equipe por período, com histórico sob demanda. Reuso dos cálculos diários e índice único por leitura evitam duplicidade sem alterar regras ou batidas. 272 testes e build OK; Playwright com 53 colaboradores e três meses fictícios validou períodos, filtros, busca/PIN, paginação 15/20 e desktop/mobile sem overflow, erros ou chamadas à nuvem no cenário. Sem dados reais, sessão externa autenticada ou publicação.
 
 - [x] Evolução — Etapa 3: Folga Compensada na matriz/semana e importação com motivo mínimo de 5 caracteres e gestor identificado; débito nominal derivado uma vez, auditoria e histórico informativo sem pendência artificial. Descansos legados continuam neutros; vigência, marcações originais e ocorrências existentes preservadas. Outbox de escala/auditoria em IndexedDB por conta com fallback local e envio antes da leitura na reconexão. 260 testes passaram; prévia com dados fictícios confirmou 08:00 de débito (5x2), validação, autoria, Inbox Zero, histórico e IndexedDB; sem dados reais ou publicação. Sincronização autenticada externa não verificada.

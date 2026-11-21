@@ -23,7 +23,7 @@
         if (!semIntervalo && !pausaCurta) continue;
         ocorrencias.push({
           pin: f.pin, nome: f.nome, setor: setorDe(f), data: linha.data,
-          trabalhado, pausa, tipo: semIntervalo ? 'Sem intervalo registrado' : 'Pausa inferior a 1h',
+          trabalhado, pausa, previsto: 60, suprimido: Math.max(0, 60-pausa), tipo: semIntervalo ? 'Sem intervalo registrado' : 'Pausa inferior a 1h',
         });
       }
       return ocorrencias;
@@ -36,7 +36,7 @@
       const entradas = folha.linhas.filter(l => l.previsto > 0 && l.e1);
       const atrasos = entradas.filter(l => l.atrasoMin > 0).map(l => ({
         data: l.data, dia: diasSemana[S.dow(l.data)], previsto: S.horarioEscala(f.pin, l.data) || empregador.hEntrada || '08:00',
-        realizado: l.e1, tolerancia, minutos: l.atrasoMin,
+        realizado: l.e1, tolerancia, minutos: Math.max(0, l.atrasoMin - tolerancia),
       }));
       const recorrenciaMap = new Map();
       atrasos.forEach(a => {
@@ -114,6 +114,7 @@
           ocorrencias: intervalos, total: intervalos.length,
           colaboradores: colaboradores.filter(c => c.intervalos.length).length,
           reincidentes: colaboradores.filter(c => c.intervalos.length > 1).length,
+          suprimido: soma(intervalos, 'suprimido'),
         },
         extras: {
           extras50: soma(consolidado, 'extras50'), extras100: soma(consolidado, 'extras100'),
@@ -134,31 +135,60 @@
       };
     }
 
-    async function pdfFichaPontualidade({ dados, pin, anotacoes = '' }) {
+    async function pdfFichaPontualidade({ dados, pin, anotacoes = '', intervalo = false }) {
       const colaborador = dados?.colaboradores?.find(c => c.f.pin === pin);
       if (!colaborador) throw new Error('Colaborador não encontrado no relatório atual.');
       await S.garantirLib('pdf');
       const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: 'mm', format: 'a4' });
-      const titulo = 'Ficha de Alinhamento 1-on-1 — Pontualidade', modelo = modeloFichaPontualidade(colaborador, dados.periodo);
+      const titulo = 'Ficha 1-on-1 — '+(intervalo?'Intervalos / Art. 71 CLT':'Pontualidade'), modelo = intervalo?modeloFichaIntervalos(colaborador,dados.periodo):modeloFichaPontualidade(colaborador, dados.periodo);
       let y = S.pdfCabecalhoPadrao(doc, titulo, modelo.subtitulo);
       y = S.pdfTabelaPadrao(doc, { y, titulo, sub: modelo.subtitulo, head: ['Colaborador', 'Setor', 'Cargo', 'Matrícula/PIN'], body: modelo.identificacao, widths: [76, 42, 46, 26] }) + 5;
-      y = S.pdfTabelaPadrao(doc, { y, titulo, sub: modelo.subtitulo, head: ['Pontualidade', 'Dias com atraso', 'Minutos acumulados', 'Tolerância'], body: modelo.resumo, widths: [45, 50, 50, 45], fontSize: 9 }) + 6;
+      y = S.pdfTabelaPadrao(doc, { y, titulo, sub: modelo.subtitulo, head: intervalo?['Ocorrências','Tempo suprimido','Intervalo previsto','Referência']:['Pontualidade', 'Dias com atraso', 'Atraso líquido', 'Tolerância'], body: modelo.resumo, widths: [45, 50, 50, 45], fontSize: 9 }) + 6;
       y = S.pdfTabelaPadrao(doc, { y, titulo, sub: modelo.subtitulo, head: modelo.head, body: modelo.body, widths: [25, 40, 30, 30, 30, 35], fontSize: 8 }) + 8;
       if (y > 185) { doc.addPage(); y = S.pdfCabecalhoPadrao(doc, titulo, modelo.subtitulo); }
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(3, 68, 108); doc.text('Anotações do alinhamento', 10, y + 4);
       doc.setDrawColor(226, 232, 240); doc.setFillColor(248, 250, 252); doc.roundedRect(10, y + 8, 190, 35, 2, 2, 'FD');
       doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(11, 33, 48);
-      const notas = doc.splitTextToSize(String(anotacoes || 'Sem anotações complementares.'), 180).slice(0, 9); doc.text(notas, 15, y + 16);
+      const notas = doc.splitTextToSize(String(anotacoes || 'Sem anotações complementares.'), 180);
+      for(let i=0;i<notas.length;i+=9){if(i){doc.addPage();y=S.pdfCabecalhoPadrao(doc,titulo,modelo.subtitulo);}doc.text(notas.slice(i,i+9),15,y+16);}
       const sy = y + 58; doc.setDrawColor(82, 101, 122); doc.line(15, sy, 90, sy); doc.line(120, sy, 195, sy);
       doc.setFontSize(8); doc.text('Colaborador', 52.5, sy + 5, { align: 'center' }); doc.text('Gestor responsável', 157.5, sy + 5, { align: 'center' });
       doc.text('Local/data: ____________________________________', 15, sy + 16);
       S.pdfRodapesPadrao(doc, S.getConta() || 'Gestor');
       const nome = String(colaborador.f.nome || pin).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_');
-      doc.save(`Ficha_1on1_${nome}_${dados.periodo.inicio}_${dados.periodo.fim}.pdf`);
+      doc.save(`Ficha_1on1_${intervalo?'Intervalos_':''}${nome}_${dados.periodo.inicio}_${dados.periodo.fim}.pdf`);
       S.log(`Exportou ficha 1-on-1 de pontualidade: ${colaborador.f.nome} ${S.brOf(dados.periodo.inicio)}–${S.brOf(dados.periodo.fim)}`);
     }
 
-    return { calcularRelatoriosAnaliticos, modeloFichaPontualidade, pdfFichaPontualidade };
+
+    function modeloFichaIntervalos(c,periodo){return {
+      identificacao:[[c.f.nome,setorDe(c.f),c.f.cargo||c.f.funcao||'—',c.f.matricula||c.f.pin]],
+      resumo:[[String(c.intervalos.length),S.toHHMM(soma(c.intervalos,'suprimido')),'01:00','Art. 71 CLT']],
+      head:['Data','Dia','Jornada','Previsto','Realizado','Suprimido'],
+      body:c.intervalos.map(o=>[S.brOf(o.data),diasSemana[S.dow(o.data)],S.toHHMM(o.trabalhado),'01:00',S.toHHMM(o.pausa),S.toHHMM(o.suprimido)]),
+      subtitulo:c.f.nome+' • '+S.brOf(periodo.inicio)+' a '+S.brOf(periodo.fim)
+    };}
+    function modeloRelatorio(dados,tipo){
+      const hh=S.toHHMM, saldo=S.toSaldo, c=dados.consolidado;
+      const modelos={
+        pontualidade:{titulo:'Pontualidade & Atrasos',head:['Colaborador / Setor','Entradas','Pontuais','Taxa','Atrasos','Atraso líquido'],body:dados.pontualidade.ranking.map(c=>[c.f.nome+' / '+setorDe(c.f),c.pontualidade.entradas,c.pontualidade.pontuais,c.pontualidade.taxa+'%',c.pontualidade.atrasos.length,hh(c.pontualidade.minutos)]),resumo:[[dados.pontualidade.taxa+'% pontual',hh(dados.pontualidade.minutos)+' atraso líquido','Tolerância abatida: 10 min']]},
+        intervalos:{titulo:'Intervalos Não Usufruídos / Art. 71 CLT',head:['Data','Colaborador / Setor','Jornada','Previsto','Realizado','Suprimido'],body:dados.intervalos.ocorrencias.map(o=>[S.brOf(o.data),o.nome+' / '+o.setor,hh(o.trabalhado),'01:00',hh(o.pausa),hh(o.suprimido)]),resumo:[[dados.intervalos.total+' ocorrências',dados.intervalos.reincidentes+' reincidentes',hh(dados.intervalos.suprimido)+' suprimido']]},
+        extras:{titulo:'Horas Extras, DSR e Feriados',head:['Colaborador / Setor','Extras 50%','Extras 100%','Total','Movimento banco'],body:c.map(x=>[x.nome+' / '+x.setor,hh(x.extras50),hh(x.extras100),hh(x.extras50+x.extras100),saldo(x.movimentoBanco)]),resumo:[[hh(dados.extras.extras50)+' extras 50%',hh(dados.extras.extras100)+' extras 100%',saldo(dados.extras.movimentoBanco)+' banco']]},
+        consolidado:{titulo:'Consolidado Pré-Folha',head:['Colaborador / Setor','Dias','Faltas','DSRs','Normais','50%','100%','Atraso','Abonos','Mov. BH','Saldo BH'],body:c.map(x=>[x.nome+' / '+x.setor,x.diasTrabalhados,x.faltas,x.dsrs,hh(x.normais),hh(x.extras50),hh(x.extras100),hh(x.atrasoMin),x.abonos,saldo(x.movimentoBanco),saldo(x.saldoBanco)]),resumo:[[soma(c,'diasTrabalhados')+' dias',soma(c,'faltas')+' faltas concluídas',saldo(soma(c,'saldoBanco'))+' saldo banco']]}
+      };const m=modelos[tipo];if(!m)throw new Error('Relatório inválido.');return m;
+    }
+    async function pdfRelatorioAnalitico({dados,tipo}){
+      if(!dados)throw new Error('Aplique os filtros antes de exportar.');const m=modeloRelatorio(dados,tipo);await S.garantirLib('pdf');
+      const hh=S.toHHMM,saldo=S.toSaldo;const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),sub=S.brOf(dados.periodo.inicio)+' a '+S.brOf(dados.periodo.fim);
+      let y=S.pdfCabecalhoPadrao(doc,m.titulo,sub);
+      y=S.pdfTabelaPadrao(doc,{y,titulo:m.titulo,sub,head:tipo==='pontualidade'?['Pontualidade global','Atraso líquido acumulado','Tolerância']:tipo==='intervalos'?['Ocorrências','Reincidentes','Tempo suprimido']:tipo==='extras'?['Extras 50%','DSR/Feriados 100%','Movimento banco']:['Dias trabalhados','Faltas concluídas','Saldo banco'],body:m.resumo,fontSize:9})+6;
+      S.pdfTabelaPadrao(doc,{y,titulo:m.titulo,sub,head:m.head,body:m.body,fontSize:tipo==='consolidado'?6.5:8,cellPadding:1.5});
+      if(tipo==='pontualidade')S.pdfTabelaPadrao(doc,{y:doc.lastAutoTable.finalY+6,titulo:m.titulo,sub,head:['Setor','Pontualidade','Atrasos','Atraso líquido'],body:dados.setores.map(s=>[s.setor,s.taxa+'%',s.atrasos,S.toHHMM(s.atrasoMin)])});
+      if(tipo==='extras'){y=doc.lastAutoTable.finalY+6;S.pdfTabelaPadrao(doc,{y,titulo:m.titulo,sub,head:['Setor','50%','100%','Movimento BH'],body:dados.setores.map(s=>[s.setor,hh(s.extras50),hh(s.extras100),saldo(s.movimentoBanco)])});}
+      if(tipo==='extras')S.pdfTabelaPadrao(doc,{y:doc.lastAutoTable.finalY+6,titulo:m.titulo,sub,head:['Critério gerencial'],body:[['50%/100% são classificações analíticas, não cálculo salarial. O banco mantém o fator configurado pela empresa.']]});
+      S.pdfRodapesPadrao(doc,S.getConta()||'Gestor');doc.save('Relatorio_'+tipo+'_'+dados.periodo.inicio+'_'+dados.periodo.fim+'.pdf');S.log('Exportou relatório analítico: '+tipo+' '+sub);
+    }
+    return { calcularRelatoriosAnaliticos, modeloFichaPontualidade, modeloFichaIntervalos, modeloRelatorio, pdfRelatorioAnalitico, pdfFichaPontualidade, pdfFichaIntervalos:args=>pdfFichaPontualidade({...args,intervalo:true}) };
   }
 
   namespace.definir('reports.analiticos', Object.freeze({ criar }));
