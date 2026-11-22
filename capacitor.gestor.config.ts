@@ -1,12 +1,15 @@
-import type { CapacitorConfig } from "@capacitor/cli";
+import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: "com.pontoprogestao.gestor",
-  appName: "Ponto Pro Gestor",
-  webDir: "capacitor-shell",
+  appId: 'com.vippontopro.gestor',
+  appName: 'Ponto Pro Gestor',
+  webDir: 'dist',
   server: {
-    url: "https://vippontopro.app/",
-    cleartext: false,
+    url: 'https://vippontopro.app/gestor',
+    cleartext: true,
+  },
+  android: {
+    allowMixedContent: true,
   },
 };
 
