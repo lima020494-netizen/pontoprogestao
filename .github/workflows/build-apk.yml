@@ -36,114 +36,22 @@ jobs:
           npm install
           mkdir -p assets
           cp public/pwa-icon-512.png assets/icon.png
-          cp "$CAPACITOR_CONFIG" capacitor.config.ts
+          if [ "$CAPACITOR_CONFIG" != "capacitor.config.ts" ]; then cp "$CAPACITOR_CONFIG" capacitor.config.ts; fi
           npx cap add android
-          npx --yes @capacitor/assets generate --android --iconBackgroundColor "#ffffff"
-          npm run build
-          npx cap copy android
+          npx cap sync android
 
-      - name: Habilitar impressao RawBT somente no Quiosque
-        if: matrix.variant == 'quiosque'
+      - name: Gerar APK
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('android/app/src/main/AndroidManifest.xml')
-          source = path.read_text()
-          if '<queries>' not in source:
-              queries = '''    <queries>
-                  <package android:name="ru.a402d.rawbtprinter" />
-                  <intent>
-                      <action android:name="android.intent.action.VIEW" />
-                      <data android:scheme="rawbt" />
-                  </intent>
-              </queries>
-          </manifest>'''
-              path.write_text(source.replace('</manifest>', queries))
-          PY
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-          MAIN_ACTIVITY="android/app/src/main/java/com/pontoprogestao/app/MainActivity.java"
-          cat <<'EOF' > "$MAIN_ACTIVITY"
-          package com.pontoprogestao.app;
-
-          import android.content.Intent;
-          import android.os.Bundle;
-          import android.webkit.WebResourceRequest;
-          import android.webkit.WebView;
-          import com.getcapacitor.BridgeActivity;
-          import com.getcapacitor.BridgeWebViewClient;
-
-          public class MainActivity extends BridgeActivity {
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  bridge.getWebView().setWebViewClient(new BridgeWebViewClient(bridge) {
-                      @Override
-                      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                          return openPrinterIntent(view, request.getUrl().toString())
-                              || super.shouldOverrideUrlLoading(view, request);
-                      }
-
-                      @Override
-                      public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                          return openPrinterIntent(view, url)
-                              || super.shouldOverrideUrlLoading(view, url);
-                      }
-
-                      private boolean openPrinterIntent(WebView view, String url) {
-                          if (!url.startsWith("intent:") && !url.startsWith("rawbt:")) return false;
-                          try {
-                              Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
-                              view.getContext().startActivity(intent);
-                          } catch (Exception error) {
-                              error.printStackTrace();
-                          }
-                          return true;
-                      }
-                  });
-              }
-          }
-          EOF
-
-      - name: Compilar APK de teste
-        working-directory: android
-        run: ./gradlew assembleDebug
-
-      - name: Nomear pacote
-        env:
-          APK_NAME: ${{ matrix.apk }}
+      - name: Renomear APK
         run: |
-          mkdir -p "$RUNNER_TEMP/apk"
-          cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/apk/$APK_NAME"
+          cp android/app/build/outputs/apk/debug/app-debug.apk ${{ matrix.apk }}
 
-      - uses: actions/upload-artifact@v4
+      - name: Enviar APK
+        uses: actions/upload-artifact@v4
         with:
-          name: apk-${{ matrix.variant }}
-          path: ${{ runner.temp }}/apk/${{ matrix.apk }}
-          if-no-files-found: error
-
-  release:
-    name: Reunir downloads Android
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: apk-*
-          path: release
-          merge-multiple: true
-
-      - name: Preservar endereco oficial legado do Quiosque
-        run: cp release/PontoPro-Quiosque.apk release/Ponto-pro-gestao.apk
-
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: android-${{ github.run_number }}-${{ github.run_attempt }}
-          name: Android ${{ github.run_number }}.${{ github.run_attempt }}
-          generate_release_notes: true
-          make_latest: true
-          files: |
-            release/PontoPro-Quiosque.apk
-            release/PontoPro-Gestor.apk
-            release/Ponto-pro-gestao.apk
+          name: ${{ matrix.apk }}
+          path: ${{ matrix.apk }}
