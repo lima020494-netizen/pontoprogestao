@@ -34,10 +34,12 @@ jobs:
           CAPACITOR_CONFIG: ${{ matrix.config }}
         run: |
           npm install
+          npm run build || true
           mkdir -p assets
-          cp public/pwa-icon-512.png assets/icon.png
+          cp public/pwa-icon-512.png assets/icon.png || true
           if [ "$CAPACITOR_CONFIG" != "capacitor.config.ts" ]; then cp "$CAPACITOR_CONFIG" capacitor.config.ts; fi
-          npx cap add android
+          npx cap add android || true
+          mkdir -p android/app/src/main/assets
           npx cap sync android
 
       - name: Gerar APK
