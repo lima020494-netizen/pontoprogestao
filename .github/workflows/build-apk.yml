@@ -35,14 +35,30 @@ jobs:
         run: |
           npm install
           npm run build || true
-          mkdir -p assets
-          cp public/pwa-icon-512.png assets/icon.png || true
-          cp public/pwa-icon-512.png assets/icon-only.png || true
-          npx @capacitor/assets generate --android || true
           if [ "$CAPACITOR_CONFIG" != "capacitor.config.ts" ]; then cp "$CAPACITOR_CONFIG" capacitor.config.ts; fi
           npx cap add android || true
           mkdir -p android/app/src/main/assets
           npx cap sync android
+
+      - name: Trocar icone manualmente
+        run: |
+          python3 -c "
+          from PIL import Image
+          import os
+          src = 'icon.png'
+          if not os.path.exists(src):
+              src = 'assets/icon.png'
+          if not os.path.exists(src):
+              src = 'public/pwa-icon-512.png'
+          img = Image.open(src).convert('RGB')
+          sizes = {'mipmap-mdpi': 48, 'mipmap-hdpi': 72, 'mipmap-xhdpi': 96, 'mipmap-xxhdpi': 144, 'mipmap-xxxhdpi': 192}
+          for folder, size in sizes.items():
+              path = f'android/app/src/main/res/{folder}'
+              os.makedirs(path, exist_ok=True)
+              img.resize((size, size), Image.LANCZOS).save(f'{path}/ic_launcher.png')
+              img.resize((size, size), Image.LANCZOS).save(f'{path}/ic_launcher_round.png')
+          print('Icone trocado com sucesso')
+          "
 
       - name: Gerar APK
         run: |
