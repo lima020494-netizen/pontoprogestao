@@ -37,6 +37,8 @@ jobs:
           npm run build || true
           mkdir -p assets
           cp public/pwa-icon-512.png assets/icon.png || true
+          cp public/pwa-icon-512.png assets/icon-only.png || true
+          npx @capacitor/assets generate --android || true
           if [ "$CAPACITOR_CONFIG" != "capacitor.config.ts" ]; then cp "$CAPACITOR_CONFIG" capacitor.config.ts; fi
           npx cap add android || true
           mkdir -p android/app/src/main/assets
