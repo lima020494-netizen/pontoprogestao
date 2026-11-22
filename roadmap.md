@@ -1,5 +1,12 @@
 # Roadmap
 
+## Etapa 9 — Ranking de intervalos e aplicativos ✅ (prévia, sem publicar)
+- [x] Ranking de Intervalos Não Usufruídos por tempo suprimido, ocorrências e nome, com conformidade das jornadas acima de 6h, situação/reincidência e ficha 1-on-1; ocorrências e modelo do PDF geral preservados.
+- [x] Central Aplicativos & Acessos com Quiosque, QR dinâmico, sincronização/fila, Painel do Gestor web/PWA, instruções de instalação e downloads Android separados, sem credenciais nos links.
+- [x] Configuração Capacitor com.pontoprogestao.gestor na raiz e automação dual para PontoPro-Quiosque.apk e PontoPro-Gestor.apk; RawBT limitado ao Quiosque e alias oficial Ponto-pro-gestao.apk preservado.
+- [x] 285 testes em 41 arquivos e build OK. Prévia fictícia confirmou a ordem Bruno/Ana/Carla/Daniel, conformidade 0%/50%/100%, ficha real de uma página com datas, tempos, anotações e assinaturas, dois cards, QR, links e PWA; desktop/390px sem overflow ou erros e nenhuma chamada à nuvem no cenário. Cache offline atualizado para ponto-static-20261122-etapa9-aplicativos-v1.
+- Validação: YAML da automação conferido; compilação Android, release, instalação física, sessão externa e hardware não executados neste ambiente. Dados reais, batidas, NSR e regras de cálculo não alterados; sem publicação.
+
 ## Etapa 8 — Consolidada (prévia, sem publicar)
 - [x] Hub exclusivamente com quatro relatórios executivos e PDF geral de cada relatório.
 - [x] Ficha 1-on-1 de intervalos com tempo suprimido, anotações e assinaturas.

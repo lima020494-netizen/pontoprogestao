@@ -8,3 +8,7 @@ const source=html.slice(html.indexOf('function linkQuiosque()'),html.indexOf('as
 test('kiosk link shares only the public route, never the current account or support query',()=>{
   assert.equal(runInNewContext(source+';linkQuiosque()', {URL,location:{origin:'https://vippontopro.app',search:'?suporte=1'},CONTA:'private@example.com'}),'https://vippontopro.app/quiosque');
 });
+
+test('manager link uses the root without account identifiers or credentials',()=>{
+  assert.equal(runInNewContext(source+';linkGestor()', {URL,location:{origin:'https://vippontopro.app',search:'?suporte=1'},CONTA:'private@example.com'}),'https://vippontopro.app/');
+});

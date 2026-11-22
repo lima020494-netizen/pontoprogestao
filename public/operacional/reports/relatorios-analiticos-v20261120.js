@@ -44,6 +44,9 @@
         item.quantidade++; item.minutos += a.minutos; recorrenciaMap.set(a.dia, item);
       });
       const intervalos = ocorrenciasIntervalo(f, folha.linhas);
+      const jornadasAcima6h = folha.linhas.filter(l => S.minutosTrabalhados(S.batidasDia(f.pin, l.data), f) > 360).length;
+      const diasRegulares = Math.max(0, jornadasAcima6h - intervalos.length);
+      const conformidadeIntervalo = { jornadas: jornadasAcima6h, regulares: diasRegulares, taxa: jornadasAcima6h ? pct(diasRegulares, jornadasAcima6h) : 100 };
       const abonos = folha.linhas.filter(l => {
         const oc = S.ocorrenciaDia(f.pin, l.data);
         return S.regraOcorrencia(oc?.tipo).abonado || /FÉRIAS|AFASTAMENTO|ATESTADO|LICENÇA|ABONAD|JUSTIFICADA/.test(l.ocorrencia || '');
@@ -64,7 +67,7 @@
         movimentoBanco: (folha.banco.creditos || 0) - (folha.banco.debitos || 0),
       };
       return {
-        f, folha, intervalos, consolidado,
+        f, folha, intervalos, consolidado, conformidadeIntervalo,
         pontualidade: {
           entradas: entradas.length, pontuais: entradas.filter(l => !l.atrasoMin).length,
           taxa: pct(entradas.filter(l => !l.atrasoMin).length, entradas.length),
@@ -115,6 +118,7 @@
           colaboradores: colaboradores.filter(c => c.intervalos.length).length,
           reincidentes: colaboradores.filter(c => c.intervalos.length > 1).length,
           suprimido: soma(intervalos, 'suprimido'),
+          ranking: [...colaboradores].sort((a, b) => soma(b.intervalos, 'suprimido') - soma(a.intervalos, 'suprimido') || b.intervalos.length - a.intervalos.length || String(a.f.nome).localeCompare(String(b.f.nome), 'pt-BR')),
         },
         extras: {
           extras50: soma(consolidado, 'extras50'), extras100: soma(consolidado, 'extras100'),

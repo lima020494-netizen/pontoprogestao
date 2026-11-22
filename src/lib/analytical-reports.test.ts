@@ -127,3 +127,20 @@ test('modelos de exportação reutilizam os valores filtrados dos quatro relató
 test('tolerância de 10 minutos zera atraso até 10 e deixa 1 minuto líquido aos 11',()=>{
  const r=report(contextFor({batidas:[...punches('1','2026-11-16',['08:10','12:00','13:00','17:00']),...punches('1','2026-11-17',['08:11','12:00','13:00','17:00'])]}),'2026-11-16','2026-11-17');assert.equal(r.pontualidade.pontuais,1);assert.equal(r.pontualidade.minutos,1);assert.equal(r.pontualidade.atrasos,1);
 });
+
+test('ranking de intervalos ordena por tempo suprimido, ocorrências e nome e calcula conformidade',()=>{
+ const fs=[employee('3',{nome:'Carla'}),employee('2',{nome:'Bruno'}),employee('1',{nome:'Ana'}),employee('4',{nome:'Daniel'})];
+ const batidas=[
+  ...punches('1','2026-11-16',['08:00','15:00']),
+  ...punches('2','2026-11-16',['08:00','12:00','12:30','17:30']),...punches('2','2026-11-17',['08:00','12:00','12:30','17:30']),
+  ...punches('3','2026-11-16',['08:00','15:00']),...punches('3','2026-11-17',['08:00','12:00','13:00','17:00']),
+  ...punches('4','2026-11-16',['08:00','12:00','13:00','17:00']),...punches('4','2026-11-17',['08:00','12:00','13:00','17:00']),...punches('4','2026-11-18',['08:00','14:00']),
+ ];
+ const c=contextFor({fs,batidas}),r=report(c,'2026-11-16','2026-11-18');
+ assert.deepEqual(r.intervalos.ranking.map((x:any)=>x.f.pin),['2','1','3','4']);
+ assert.deepEqual(r.intervalos.ranking.map((x:any)=>x.conformidadeIntervalo),[
+  {jornadas:2,regulares:0,taxa:0},{jornadas:1,regulares:0,taxa:0},{jornadas:2,regulares:1,taxa:50},{jornadas:2,regulares:2,taxa:100},
+ ]);
+ assert.equal(r.intervalos.ocorrencias.length,4);
+ assert.equal(c.RELATORIOS_NUCLEO.modeloRelatorio(r,'intervalos').body.length,4);
+});
