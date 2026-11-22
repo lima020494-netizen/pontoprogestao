@@ -42,6 +42,7 @@ jobs:
 
       - name: Trocar icone manualmente
         run: |
+          pip install pillow
           python3 -c "
           from PIL import Image
           import os
