@@ -57,3 +57,18 @@ jobs:
         with:
           name: ${{ matrix.apk }}
           path: ${{ matrix.apk }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: apks
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Última versão
+          files: apks/**/*.apk
