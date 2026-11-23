@@ -16,9 +16,11 @@ jobs:
           - variant: quiosque
             config: capacitor.config.ts
             apk: PontoPro-Quiosque.apk
+            icon: public/icon-quiosque.png
           - variant: gestor
             config: capacitor.gestor.config.ts
             apk: PontoPro-Gestor.apk
+            icon: public/icon-gestor.png
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,32 +36,43 @@ jobs:
           CAPACITOR_CONFIG: ${{ matrix.config }}
         run: |
           npm install
-          npm run build || true
+          npm run build
           if [ "$CAPACITOR_CONFIG" != "capacitor.config.ts" ]; then cp "$CAPACITOR_CONFIG" capacitor.config.ts; fi
-          npx cap add android || true
+          if [ ! -d android ]; then npx cap add android; fi
           mkdir -p android/app/src/main/assets
           npx cap sync android
 
-      - name: Trocar icone manualmente
+      - name: Habilitar impressao RawBT somente no Quiosque
+        if: matrix.variant == 'quiosque'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('android/app/src/main/AndroidManifest.xml')
+          source = path.read_text()
+          if 'ru.a402d.rawbtprinter' not in source:
+              source = source.replace('<application', '  <queries>\n    <package android:name="ru.a402d.rawbtprinter" />\n  </queries>\n\n  <application', 1)
+              path.write_text(source)
+          PY
+
+      - name: Aplicar icone da variante nos mipmaps Android
+        env:
+          ICON_FILE: ${{ matrix.icon }}
         run: |
           pip install pillow
-          python3 -c "
+          python3 - <<'PY'
           from PIL import Image
           import os
-          src = 'icon.png'
-          if not os.path.exists(src):
-              src = 'assets/icon.png'
-          if not os.path.exists(src):
-              src = 'public/pwa-icon-512.png'
-          img = Image.open(src).convert('RGB')
+          img = Image.open(os.environ['ICON_FILE']).convert('RGB')
           sizes = {'mipmap-mdpi': 48, 'mipmap-hdpi': 72, 'mipmap-xhdpi': 96, 'mipmap-xxhdpi': 144, 'mipmap-xxxhdpi': 192}
           for folder, size in sizes.items():
               path = f'android/app/src/main/res/{folder}'
               os.makedirs(path, exist_ok=True)
-              img.resize((size, size), Image.LANCZOS).save(f'{path}/ic_launcher.png')
-              img.resize((size, size), Image.LANCZOS).save(f'{path}/ic_launcher_round.png')
-          print('Icone trocado com sucesso')
-          "
+              resized = img.resize((size, size), Image.Resampling.LANCZOS)
+              resized.save(f'{path}/ic_launcher.png')
+              resized.save(f'{path}/ic_launcher_round.png')
+              resized.save(f'{path}/ic_launcher_foreground.png')
+          print(f'Icone {os.environ["ICON_FILE"]} aplicado aos cinco mipmaps')
+          PY
 
       - name: Gerar APK
         run: |
@@ -86,8 +99,17 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: apks
+      - name: Preparar downloads oficiais
+        run: |
+          mkdir -p release
+          cp apks/PontoPro-Quiosque.apk/PontoPro-Quiosque.apk release/PontoPro-Quiosque.apk
+          cp apks/PontoPro-Gestor.apk/PontoPro-Gestor.apk release/PontoPro-Gestor.apk
+          cp release/PontoPro-Quiosque.apk release/Ponto-pro-gestao.apk
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: Última versão
-          files: apks/**/*.apk
+          files: |
+            release/PontoPro-Quiosque.apk
+            release/PontoPro-Gestor.apk
+            release/Ponto-pro-gestao.apk

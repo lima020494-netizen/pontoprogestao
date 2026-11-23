@@ -23,3 +23,16 @@ test('automação gera os dois APKs, limita RawBT ao Quiosque e preserva seu dow
   assert.match(workflow, /cp release\/PontoPro-Quiosque\.apk release\/Ponto-pro-gestao\.apk/);
   assert.match(workflow, /release\/PontoPro-Quiosque\.apk\s+release\/PontoPro-Gestor\.apk\s+release\/Ponto-pro-gestao\.apk/);
 });
+
+test('cada variante Android usa seu próprio ícone nos cinco mipmaps', () => {
+  assert.match(workflow, /variant: quiosque[\s\S]+icon: public\/icon-quiosque\.png/);
+  assert.match(workflow, /variant: gestor[\s\S]+icon: public\/icon-gestor\.png/);
+  assert.match(workflow, /ICON_FILE: \$\{\{ matrix\.icon \}\}/);
+  for (const folder of ['mipmap-mdpi', 'mipmap-hdpi', 'mipmap-xhdpi', 'mipmap-xxhdpi', 'mipmap-xxxhdpi']) assert.ok(workflow.includes(`'${folder}'`));
+  for (const name of ['quiosque', 'gestor']) {
+    const png = readFileSync(`public/icon-${name}.png`);
+    assert.equal(png.toString('ascii', 1, 4), 'PNG');
+    assert.equal(png.readUInt32BE(16), 512);
+    assert.equal(png.readUInt32BE(20), 512);
+  }
+});

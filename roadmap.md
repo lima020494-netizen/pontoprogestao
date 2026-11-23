@@ -1,5 +1,11 @@
 # Roadmap
 
+## Etapa 10 — Painel executivo e identidades Android ✅ (prévia, sem publicar)
+- [x] Painel reformulado conforme os prints: total de jornadas, Hoje/7/30 dias e Personalizado, cinco cartões com variação real sobre o período anterior equivalente, percentuais e sparklines, donut de presença, rankings por colaborador e setor/unidade, três curvas de evolução e detalhamento com filtros, busca e paginação 15/20.
+- [x] Ícones próprios de 512 px para Quiosque (terminal azul) e Gestor (painel com dourado), exibidos na central e aplicados pela automação aos cinco mipmaps de cada APK. Configuração do Gestor alinhada a com.pontoprogestao.gestor, HTTPS na raiz; RawBT e alias legado permanecem exclusivos do Quiosque.
+- [x] Modelo visual derivado das mesmas jornadas diárias, sem nova apuração fiscal, gravação, NSR ou polling. Histórico anterior carregado sob demanda para as comparações; cache offline atualizado para ponto-static-20261123-etapa10-painel-v1.
+- Validação: 290 testes em 42 arquivos e build OK. Prévia fictícia confirmou 252/60/12 jornadas em 30/7/1 dias, filtros, busca por PIN, seletor personalizado, rankings, gráficos, dois ícones e 390 px sem overflow ou erros. YAML interpretado corretamente. Compilação Android, release, aparelhos, sessão externa autenticada e dados reais não verificados; sem publicação.
+
 ## Etapa 9 — Ranking de intervalos e aplicativos ✅ (prévia, sem publicar)
 - [x] Ranking de Intervalos Não Usufruídos por tempo suprimido, ocorrências e nome, com conformidade das jornadas acima de 6h, situação/reincidência e ficha 1-on-1; ocorrências e modelo do PDF geral preservados.
 - [x] Central Aplicativos & Acessos com Quiosque, QR dinâmico, sincronização/fila, Painel do Gestor web/PWA, instruções de instalação e downloads Android separados, sem credenciais nos links.
