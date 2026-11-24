@@ -45,15 +45,16 @@ test('intervalos sinaliza 7h sem pausa e pausa de 30 minutos, mas não 60 minuto
   const r = report(contextFor({ batidas }), '2026-11-16', '2026-11-19');
   assert.equal(r.intervalos.total, 2); assert.equal(r.intervalos.colaboradores, 1); assert.equal(r.intervalos.reincidentes, 1);
   assert.deepEqual(r.intervalos.ocorrencias.map((o: any) => [o.data, o.tipo, o.trabalhado, o.pausa]), [
-    ['2026-11-17', 'Pausa inferior a 1h', 540, 30], ['2026-11-16', 'Sem intervalo registrado', 420, 0],
+    ['2026-11-17', 'Pausa inferior a 1h', 570, 30], ['2026-11-16', 'Não tirou intervalo (Sem intervalo registrado)', 420, 0],
   ]);
   assert.equal(r.setores[0].intervalos, 2); assert.equal(r.setores[0].reincidentes, 1);
 });
 
-test('intervalo pré-assinalado não é convertido em ocorrência de pausa não usufruída', () => {
+test('intervalo pré-assinalado não oculta jornada acima de 6h sem batidas de pausa', () => {
   const f = employee('1', { intervalo: { preAssinalado: true, inicio: '12:00', fim: '13:00' } });
   const r = report(contextFor({ fs: [f], batidas: punches('1', '2026-11-16', ['08:00', '16:00']) }), '2026-11-16', '2026-11-16');
-  assert.equal(r.intervalos.total, 0);
+  assert.equal(r.intervalos.total, 1);
+  assert.equal(r.intervalos.ocorrencias[0].suprimido, 60);
 });
 
 test('extras separa 60 minutos em 50%, 4h em DSR 100% e mantém fator 2 somente no banco', () => {
@@ -114,7 +115,7 @@ test('16:00 previsto e 16:37 realizado resulta em 27 minutos líquidos sem alter
 });
 test('intervalos 1-on-1 apura 60 minutos ausentes e 30 suprimidos sem pausa de 60',()=>{
  const c=contextFor({batidas:[...punches('1','2026-11-16',['08:00','15:00']),...punches('1','2026-11-17',['08:00','12:00','12:30','17:30'])]});
- const r=report(c,'2026-11-16','2026-11-17');assert.equal(r.intervalos.suprimido,90);const m=c.RELATORIOS_NUCLEO.modeloFichaIntervalos(r.colaboradores[0],r.periodo);assert.equal(m.resumo[0][1],'01:30');assert.equal(m.body[0][5],'01:00');
+ const r=report(c,'2026-11-16','2026-11-17');assert.equal(r.intervalos.suprimido,90);const m=c.RELATORIOS_NUCLEO.modeloFichaIntervalos(r.colaboradores[0],r.periodo);assert.equal(m.resumo[0][1],'01:30');assert.equal(m.body[0][6],'01:00');
 });
 test('modelos de exportação reutilizam os valores filtrados dos quatro relatórios',()=>{
  const c=contextFor({batidas:punches('1','2026-11-16',['08:37','12:00','12:30','18:00'])});const r=report(c,'2026-11-16','2026-11-16');
@@ -156,9 +157,26 @@ test('intervalos registra jornada >6h sem intervalo e com intervalo incompleto, 
   const r = report(contextFor({ batidas }), '2026-11-16', '2026-11-18');
   const tipos = r.intervalos.ocorrencias.map((o: any) => [o.data, o.tipo, o.previsto, o.pausa, o.suprimido]).sort();
   assert.deepEqual(tipos, [
-    ['2026-11-16', 'Sem intervalo registrado', 60, 0, 60],
+    ['2026-11-16', 'Não tirou intervalo (Sem intervalo registrado)', 60, 0, 60],
     ['2026-11-17', 'Intervalo incompleto não usufruído', 60, 0, 60],
   ]);
   const col = r.colaboradores[0];
   assert.ok(col.conformidadeIntervalo.taxa < 100);
+});
+
+test('08:30–16:50 com duas batidas gera 60 min suprimidos, reduz conformidade e aparece na ficha 1-on-1', () => {
+  const f = employee('1', { intervalo: { preAssinalado: true, inicio: '12:00', fim: '13:00' } });
+  const c = contextFor({ fs: [f], batidas: punches('1', '2026-11-16', ['08:30', '16:50']) });
+  const r = report(c, '2026-11-16', '2026-11-16');
+  const o = r.intervalos.ocorrencias[0];
+  assert.equal(r.intervalos.total, 1);
+  assert.deepEqual([o.tipo, o.trabalhado, o.previsto, o.pausa, o.suprimido], [
+    'Não tirou intervalo (Sem intervalo registrado)', 500, 60, 0, 60,
+  ]);
+  assert.deepEqual(r.colaboradores[0].conformidadeIntervalo, { jornadas: 1, regulares: 0, taxa: 0 });
+  const m = c.RELATORIOS_NUCLEO.modeloFichaIntervalos(r.colaboradores[0], r.periodo);
+  assert.equal(m.head[2], 'Situação');
+  assert.deepEqual(Array.from(m.body[0]), [
+    '16/11/2026', 'Segunda-feira', 'Não tirou intervalo (Sem intervalo registrado)', '08:20', '01:00', '00:00', '01:00',
+  ]);
 });

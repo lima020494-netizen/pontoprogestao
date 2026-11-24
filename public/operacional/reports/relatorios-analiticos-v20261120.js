@@ -8,13 +8,18 @@
     const pct = (parte, total) => total ? Math.round(parte / total * 100) : 0;
     const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
+    function spanJornada(f, data) {
+      const bs = S.batidasDia(f.pin, data);
+      const entrada = bs.find(b => b.tipo === 'Entrada');
+      const fim = bs.find(b => b.tipo === 'Saída');
+      return { bs, span: entrada && fim ? S.difMin(entrada.hora, fim.hora) : 0 };
+    }
+
     function ocorrenciasIntervalo(f, linhas) {
-      if (f.intervalo?.preAssinalado) return [];
       const ocorrencias = [];
       for (const linha of linhas) {
-        const bs = S.batidasDia(f.pin, linha.data);
-        const trabalhado = S.minutosTrabalhados(bs, f);
-        if (trabalhado <= 360) continue;
+        const { bs, span } = spanJornada(f, linha.data);
+        if (span <= 360) continue;
         const saida = bs.find(b => b.tipo === 'Saída Intervalo');
         const retorno = bs.find(b => b.tipo === 'Entrada Intervalo');
         const pausa = saida && retorno ? S.difMin(saida.hora, retorno.hora) : 0;
@@ -24,7 +29,7 @@
         if (!semIntervalo && !incompleto && !pausaCurta) continue;
         ocorrencias.push({
           pin: f.pin, nome: f.nome, setor: setorDe(f), data: linha.data,
-          trabalhado, pausa, previsto: 60, suprimido: Math.max(0, 60-pausa), tipo: semIntervalo ? 'Sem intervalo registrado' : incompleto ? 'Intervalo incompleto não usufruído' : 'Pausa inferior a 1h',
+          trabalhado: span, pausa, previsto: 60, suprimido: Math.max(0, 60-pausa), tipo: semIntervalo ? 'Não tirou intervalo (Sem intervalo registrado)' : incompleto ? 'Intervalo incompleto não usufruído' : 'Pausa inferior a 1h',
         });
       }
       return ocorrencias;
@@ -45,7 +50,7 @@
         item.quantidade++; item.minutos += a.minutos; recorrenciaMap.set(a.dia, item);
       });
       const intervalos = ocorrenciasIntervalo(f, folha.linhas);
-      const jornadasAcima6h = folha.linhas.filter(l => S.minutosTrabalhados(S.batidasDia(f.pin, l.data), f) > 360).length;
+      const jornadasAcima6h = folha.linhas.filter(l => spanJornada(f, l.data).span > 360).length;
       const diasRegulares = Math.max(0, jornadasAcima6h - intervalos.length);
       const conformidadeIntervalo = { jornadas: jornadasAcima6h, regulares: diasRegulares, taxa: jornadasAcima6h ? pct(diasRegulares, jornadasAcima6h) : 100 };
       const abonos = folha.linhas.filter(l => {
@@ -149,7 +154,7 @@
       let y = S.pdfCabecalhoPadrao(doc, titulo, modelo.subtitulo);
       y = S.pdfTabelaPadrao(doc, { y, titulo, sub: modelo.subtitulo, head: ['Colaborador', 'Setor', 'Cargo', 'Matrícula/PIN'], body: modelo.identificacao, widths: [76, 42, 46, 26] }) + 5;
       y = S.pdfTabelaPadrao(doc, { y, titulo, sub: modelo.subtitulo, head: intervalo?['Ocorrências','Tempo suprimido','Intervalo previsto','Referência']:['Pontualidade', 'Dias com atraso', 'Atraso líquido', 'Tolerância'], body: modelo.resumo, widths: [45, 50, 50, 45], fontSize: 9 }) + 6;
-      y = S.pdfTabelaPadrao(doc, { y, titulo, sub: modelo.subtitulo, head: modelo.head, body: modelo.body, widths: [25, 40, 30, 30, 30, 35], fontSize: 8 }) + 8;
+      y = S.pdfTabelaPadrao(doc, { y, titulo, sub: modelo.subtitulo, head: modelo.head, body: modelo.body, widths: intervalo ? [20, 25, 49, 21, 22, 25, 28] : [25, 40, 30, 30, 30, 35], fontSize: 8 }) + 8;
       if (y > 185) { doc.addPage(); y = S.pdfCabecalhoPadrao(doc, titulo, modelo.subtitulo); }
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(3, 68, 108); doc.text('Anotações do alinhamento', 10, y + 4);
       doc.setDrawColor(226, 232, 240); doc.setFillColor(248, 250, 252); doc.roundedRect(10, y + 8, 190, 35, 2, 2, 'FD');
@@ -169,8 +174,8 @@
     function modeloFichaIntervalos(c,periodo){return {
       identificacao:[[c.f.nome,setorDe(c.f),c.f.cargo||c.f.funcao||'—',c.f.matricula||c.f.pin]],
       resumo:[[String(c.intervalos.length),S.toHHMM(soma(c.intervalos,'suprimido')),'01:00','Art. 71 CLT']],
-      head:['Data','Dia','Jornada','Previsto','Realizado','Suprimido'],
-      body:c.intervalos.map(o=>[S.brOf(o.data),diasSemana[S.dow(o.data)],S.toHHMM(o.trabalhado),'01:00',S.toHHMM(o.pausa),S.toHHMM(o.suprimido)]),
+      head:['Data','Dia','Situação','Jornada','Previsto','Realizado','Suprimido'],
+      body:c.intervalos.map(o=>[S.brOf(o.data),diasSemana[S.dow(o.data)],o.tipo,S.toHHMM(o.trabalhado),'01:00',S.toHHMM(o.pausa),S.toHHMM(o.suprimido)]),
       subtitulo:c.f.nome+' • '+S.brOf(periodo.inicio)+' a '+S.brOf(periodo.fim)
     };}
     function modeloRelatorio(dados,tipo){

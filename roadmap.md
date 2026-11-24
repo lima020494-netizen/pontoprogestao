@@ -1,5 +1,12 @@
 # Roadmap
 
+## Ajustes de 24/11 — navegação, Suporte e intervalos ✅ (prévia, sem publicar)
+- [x] Navegação inferior removida por completo, padding extra revertido e 234 listeners restaurados.
+- [x] Suporte do Gestor e do bloqueio transformado em aba vertical fixa na borda direita, a 120 px da base, em Azul Profundo/Dourado, texto branco, hover Azul Praia e chamada original preservada.
+- [x] Intervalos apurados pelo span entrada–saída acima de 360 min, inclusive com pré-assinalado; ausência, batida incompleta e pausa curta geram seus tipos e supressão correspondentes. Conformidade usa o mesmo span e a ficha 1-on-1 mostra a situação em tela/PDF.
+- [x] Cache offline atualizado para ponto-static-20261124-ajustes-intervalos-suporte-v1, sem alterar batidas, NSR, banco ou sincronização.
+- Validação: 292 testes em 42 arquivos e build OK. Playwright com dados fictícios confirmou 08:30–16:50 = 08:20 de span, 60 min suprimidos, 0% de conformidade, ficha em tela e PDF real de uma página, Suporte no Gestor/bloqueio e modal de contato; 390 px sem overflow ou erros e sem requisições de escrita. Sessão externa autenticada não disponível; nada publicado.
+
 ## Etapa 10 — Painel executivo e identidades Android ✅ (prévia, sem publicar)
 - [x] Painel reformulado conforme os prints: total de jornadas, Hoje/7/30 dias e Personalizado, cinco cartões com variação real sobre o período anterior equivalente, percentuais e sparklines, donut de presença, rankings por colaborador e setor/unidade, três curvas de evolução e detalhamento com filtros, busca e paginação 15/20.
 - [x] Ícones próprios de 512 px para Quiosque (terminal azul) e Gestor (painel com dourado), exibidos na central e aplicados pela automação aos cinco mipmaps de cada APK. Configuração do Gestor alinhada a com.pontoprogestao.gestor, HTTPS na raiz; RawBT e alias legado permanecem exclusivos do Quiosque.
@@ -171,4 +178,4 @@
 - [x] Apuração derivada da Folha e do fechamento contábil compartilhados; histórico sob demanda, sem polling, gravações ou alteração de batidas/NSR. Módulo incluído no cache offline versionado.
 - [x] 283 testes em 40 arquivos e build OK. Prévia com quatro colaboradores fictícios percorreu as seis abas, filtro por setor, ficha real em PDF e 390px sem erros ou transbordamento; PDF de uma página conferido por leitura. Sem autenticação externa, dados reais ou publicação.
 
-- [x] Bloco 1 mobile: bottom navigation (<640px) + correção de intervalo incompleto no relatório
+- [x] Bloco 1 mobile: correção de intervalo incompleto no relatório; navegação inferior revertida nos ajustes de 24/11.
