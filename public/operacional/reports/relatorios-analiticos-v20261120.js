@@ -19,11 +19,12 @@
         const retorno = bs.find(b => b.tipo === 'Entrada Intervalo');
         const pausa = saida && retorno ? S.difMin(saida.hora, retorno.hora) : 0;
         const semIntervalo = !saida && !retorno;
+        const incompleto = !semIntervalo && !(saida && retorno);
         const pausaCurta = !!(saida && retorno && pausa < 60);
-        if (!semIntervalo && !pausaCurta) continue;
+        if (!semIntervalo && !incompleto && !pausaCurta) continue;
         ocorrencias.push({
           pin: f.pin, nome: f.nome, setor: setorDe(f), data: linha.data,
-          trabalhado, pausa, previsto: 60, suprimido: Math.max(0, 60-pausa), tipo: semIntervalo ? 'Sem intervalo registrado' : 'Pausa inferior a 1h',
+          trabalhado, pausa, previsto: 60, suprimido: Math.max(0, 60-pausa), tipo: semIntervalo ? 'Sem intervalo registrado' : incompleto ? 'Intervalo incompleto não usufruído' : 'Pausa inferior a 1h',
         });
       }
       return ocorrencias;

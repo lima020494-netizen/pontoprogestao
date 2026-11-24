@@ -39,7 +39,7 @@ test('stage 2: every extracted rule has one delegating global and inline handler
     assert.ok(html.includes(`NUCLEO_OPERACIONAL.${name}(`), name);
   }
   assert.doesNotMatch(html, /let __jIdx=/);
-  assert.equal((html.match(/on(?:click|change|input|submit|keydown|keyup)=/g) || []).length, 234);
+  assert.equal((html.match(/on(?:click|change|input|submit|keydown|keyup)=/g) || []).length, 238);
 });
 
 test('stage 2: real shared modules reproduce every mixed-month baseline total without rewriting punches', () => {

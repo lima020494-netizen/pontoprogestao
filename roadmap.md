@@ -170,3 +170,5 @@
 - [x] Disponibilizar ficha individual 1-on-1 em tela/PDF com previsto/realizado, tolerância, atrasos, anotações e assinaturas; centralizar Matriz de Escalas e Frequência Detalhada, sem mover Extrato do Banco nem Relatório de PINs.
 - [x] Apuração derivada da Folha e do fechamento contábil compartilhados; histórico sob demanda, sem polling, gravações ou alteração de batidas/NSR. Módulo incluído no cache offline versionado.
 - [x] 283 testes em 40 arquivos e build OK. Prévia com quatro colaboradores fictícios percorreu as seis abas, filtro por setor, ficha real em PDF e 390px sem erros ou transbordamento; PDF de uma página conferido por leitura. Sem autenticação externa, dados reais ou publicação.
+
+- [x] Bloco 1 mobile: bottom navigation (<640px) + correção de intervalo incompleto no relatório

@@ -144,3 +144,21 @@ test('ranking de intervalos ordena por tempo suprimido, ocorrências e nome e ca
  assert.equal(r.intervalos.ocorrencias.length,4);
  assert.equal(c.RELATORIOS_NUCLEO.modeloRelatorio(r,'intervalos').body.length,4);
 });
+
+test('intervalos registra jornada >6h sem intervalo e com intervalo incompleto, reduzindo conformidade', () => {
+  let n = 9000;
+  const b = (data: string, hora: string, tipo: string) => ({ pin: '1', data, hora, tipo, nsr: String(++n), fonte: 'PIN' });
+  const batidas = [
+    b('2026-11-16', '08:00', 'Entrada'), b('2026-11-16', '16:00', 'Saída'),
+    b('2026-11-17', '08:00', 'Entrada'), b('2026-11-17', '12:00', 'Saída Intervalo'), b('2026-11-17', '17:00', 'Saída'),
+    b('2026-11-18', '08:00', 'Entrada'), b('2026-11-18', '12:00', 'Saída Intervalo'), b('2026-11-18', '13:00', 'Entrada Intervalo'), b('2026-11-18', '17:00', 'Saída'),
+  ];
+  const r = report(contextFor({ batidas }), '2026-11-16', '2026-11-18');
+  const tipos = r.intervalos.ocorrencias.map((o: any) => [o.data, o.tipo, o.previsto, o.pausa, o.suprimido]).sort();
+  assert.deepEqual(tipos, [
+    ['2026-11-16', 'Sem intervalo registrado', 60, 0, 60],
+    ['2026-11-17', 'Intervalo incompleto não usufruído', 60, 0, 60],
+  ]);
+  const col = r.colaboradores[0];
+  assert.ok(col.conformidadeIntervalo.taxa < 100);
+});
