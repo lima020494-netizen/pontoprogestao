@@ -1,5 +1,10 @@
 # Roadmap
 
+## Revisão cruzada da regra de intervalos (prévia, sem publicar)
+- [x] Relatórios, ranking/conformidade, PDF geral e ficha 1-on-1 usam o span real entrada–saída e os mesmos tipos/supressões corrigidos.
+- [x] Folha individual/lote/portal/link/ZIP, XML e AFD/AEJ compartilham os documentos fiscais existentes; sincronização Supabase e rotas de servidor não possuem outra apuração de intervalo. Cadastro e registro de batidas não bloqueiam o pré-assinalado.
+- [ ] Decisão do usuário pendente: Painel do Dia/período executivo ainda omite alertas com pré-assinalado e após conclusão; Tratamento sinaliza duas batidas pela jornada prevista (>6h), sem usar o span real nem detectar pausa curta com quatro batidas. Como estavam fora do escopo anterior, nenhum comportamento foi alterado antes da confirmação.
+
 ## Ajustes de 24/11 — navegação, Suporte e intervalos ✅ (prévia, sem publicar)
 - [x] Navegação inferior removida por completo, padding extra revertido e 234 listeners restaurados.
 - [x] Suporte do Gestor e do bloqueio transformado em aba vertical fixa na borda direita, a 120 px da base, em Azul Profundo/Dourado, texto branco, hover Azul Praia e chamada original preservada.
