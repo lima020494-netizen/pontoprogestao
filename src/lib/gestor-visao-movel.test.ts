@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { test } from "node:test";
+import assert from "node:assert/strict";
 import vm from "node:vm";
 import { readFileSync } from "node:fs";
 
@@ -26,19 +27,18 @@ const S = {
   buscaNaEscala: () => null,
 };
 
-describe("Visão geral do gestor", () => {
-  it("conta somente ativos e separa presentes, folga e escalados de hoje", () => {
+test("conta somente ativos e separa presentes, folga e escalados de hoje", () => {
     const r = carregar().criar(S).resumo("2026-11-25");
-    expect(r.total).toBe(2);
-    expect(r.presentes).toBe(1);
-    expect(r.escaladosHoje).toBe(1);
-    expect(r.equipe.find((x: any) => x.f.pin === "2").st.k).toBe("folga");
-    expect(r.equipe.find((x: any) => x.f.pin === "1").st.t).toBe("Em jornada");
+    assert.equal(r.total, 2);
+    assert.equal(r.presentes, 1);
+    assert.equal(r.escaladosHoje, 1);
+    assert.equal(r.equipe.find((x: any) => x.f.pin === "2").st.k, "folga");
+    assert.equal(r.equipe.find((x: any) => x.f.pin === "1").st.t, "Em jornada");
   });
-  it("monta a semana de segunda a domingo com folgas no gráfico", () => {
+test("monta a semana de segunda a domingo com folgas no gráfico", () => {
     const r = carregar().criar(S).resumo("2026-11-25");
-    expect(r.dias[0]).toBe("2026-11-23");
-    expect(r.semana[6]).toMatchObject({ data: "2026-11-29", escalados: 0, folga: 2 });
-    expect(r.semana[2]).toMatchObject({ escalados: 1, folga: 1 });
+    assert.equal(r.dias[0], "2026-11-23");
+    assert.deepEqual({...r.semana[6]}, {...r.semana[6], ...{ data: "2026-11-29", escalados: 0, folga: 2 }});
+    assert.deepEqual({...r.semana[2]}, {...r.semana[2], ...{ escalados: 1, folga: 1 }});
   });
-});
+
