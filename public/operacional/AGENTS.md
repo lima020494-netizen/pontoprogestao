@@ -6,4 +6,4 @@
 - Pending schedule/audit snapshots use an account-scoped IndexedDB outbox with local fallback, flushed before reads to preserve offline edits on failure.
 - Analytical PDF models reuse filtered report data and shared document generators; this prevents screen/export divergence.
 - Manual input resolves civil dates in canonical slot order against existing punches before using the original audited queue; this preserves overnight association without rewriting fiscal punches.
-- Employee autocomplete mounts through one shared observer while retaining legacy field IDs; this keeps existing sheet/bank/report handlers compatible.
+- Employee autocomplete mounts through one shared observer while retaining legacy field IDs; this keeps existing sheet/bank/report handlers compatible.- The manager overview/avatar menu module (gestor.visaoMovel) is read-only and navigates via delegated data-mv clicks; it never writes punches, bank or audit and keeps the inline handler count stable.

@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
 <title>Ponto Pro Gestão — Registro Eletrônico de Ponto (Portaria MTE 671/2021)</title>
 <link rel="icon" href="/favicon-v20261118.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v20261118.png" />
@@ -57,6 +57,7 @@ function garantirLib(grupo){
 <script src="/operacional/gestor/matriz-escala-v20261112.js"></script>
 <script src="/operacional/gestor/seletor-periodo-v20261118.js"></script>
 <script src="/operacional/gestor/colaboradores-v20261121.js"></script>
+<script src="/operacional/gestor/visao-movel-v20261125.js"></script>
 <script src="/ponto-offline-register.js" defer></script>
 <style>
 /* ===================== DESIGN SYSTEM ===================== */
@@ -931,6 +932,75 @@ h1,h2,h3,h4,.gestor-company,.manager-welcome h2,.daily-head h3,.control-card h4,
 @media (max-width:639px){
   html,body{overflow-x:hidden;max-width:100%}
 }
+
+/* Visão geral móvel, avatar e barra inferior (Atalaia) */
+.mv-overview{display:grid;gap:16px;margin:0 0 20px}
+.mv-hero{position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:24px;border-radius:16px;background:linear-gradient(135deg,var(--navy),#0B2130);color:#FFFFFF}
+.mv-hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border:2px dashed rgba(254,190,69,.35);border-radius:50%}
+#gestor-hub .mv-hero h2{margin:0 0 6px;font-size:24px;color:#FFFFFF}#gestor-hub .mv-hero p{margin:0;color:#E6F0F7;max-width:520px}
+.mv-hero-act{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+#gestor-hub .mv-gold{background:var(--gold);color:#0B2130;border:0;font-weight:800;border-radius:12px}
+#gestor-hub .mv-ghost{background:rgba(255,255,255,.1);color:#FFFFFF;border:1px solid rgba(255,255,255,.35);border-radius:12px}
+.mv-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.mv-kpi{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:4px;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--card);min-width:0}
+.mv-kpi::after{content:"";position:absolute;right:-26px;top:-26px;width:84px;height:84px;border-radius:50%;background:rgba(30,134,192,.07)}
+.mv-kpi-ic{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#EAF4FB;font-size:18px;margin-bottom:6px}
+.mv-kpi small{color:var(--muted);font-weight:600}.mv-kpi strong{font-size:30px;line-height:1.1;color:var(--txt)}.mv-kpi strong span{font-size:15px;font-weight:600;color:var(--muted)}
+.mv-kpi em{font-style:normal;font-size:12px;font-weight:700;color:var(--muted)}.mv-kpi em.ok{color:#15803D}
+.mv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.mv-card{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:18px;min-width:0}
+.mv-card>header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.mv-card h3{margin:0;font-size:16px;color:var(--txt)}.mv-card header small{color:var(--muted)}
+.mv-chart{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:170px;align-items:end}
+.mv-col{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%}.mv-col b{font-size:13px;color:var(--txt)}.mv-col span{font-size:11px;color:var(--muted);font-weight:600}
+.mv-bar{flex:1;width:100%;max-width:30px;display:flex;flex-direction:column;justify-content:flex-end;border-radius:8px;overflow:hidden;background:#F1F5F9}
+.mv-bar i{display:block}.mv-bar i.p,.mv-legend i.p{background:var(--beach)}.mv-bar i.f,.mv-legend i.f{background:var(--gold)}
+.mv-col.hoje span{color:var(--navy);font-weight:800}.mv-col.hoje .mv-bar{outline:2px solid var(--navy);outline-offset:1px}
+.mv-legend{display:flex;gap:16px;margin:12px 0 0;font-size:12px;color:var(--muted)}.mv-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.mv-people{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.mv-person{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:#F4F7FB}
+.mv-person strong{display:block;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mv-person small{color:var(--muted)}.mv-person>div{min-width:0}
+.mv-av{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;color:#FFFFFF;font-weight:800;font-size:14px;flex:none;background:var(--navy)}.mv-av.lg{width:48px;height:48px}
+.mv-badge{padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;white-space:nowrap}
+.mv-badge.presente{background:#DCFCE7;color:#166534}.mv-badge.encerrou{background:#E0F2FE;color:#03446C}.mv-badge.folga{background:#FEF3C7;color:#854D0E}.mv-badge.aguardando{background:#E2E8F0;color:#334155}.mv-badge.afastado{background:#FEE2E2;color:#991B1B}
+.mv-more{width:100%;margin-top:10px}.mv-empty{color:var(--muted);padding:8px 0}
+.mv-caps{display:grid;gap:10px}.mv-cap-row{display:grid;grid-template-columns:78px minmax(0,1fr);align-items:center;gap:8px}.mv-cap-name{font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.mv-cap-row>div{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.mv-cap{display:grid;place-items:center;height:28px;border-radius:999px;background:#E6F0F7;color:var(--navy);font-size:11px;font-weight:800}
+.mv-cap.folga{background:var(--gold);color:#0B2130}.mv-cap.hoje{outline:2px solid var(--navy);outline-offset:1px}
+.mv-avatar-btn{position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:2px solid var(--gold);background:var(--navy);color:#FFFFFF;font-weight:800;cursor:pointer}
+.mv-avatar-btn i{position:absolute;top:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#DC2626;border:2px solid #FFFFFF}
+.gestor-head-actions{position:relative}
+.mv-avatar-menu{position:absolute;right:0;top:calc(100% + 10px);z-index:60;width:min(360px,calc(100vw - 24px));max-height:calc(100vh - 140px);overflow:auto;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:0 18px 48px rgba(11,33,48,.22);padding:14px}
+.mv-menu-prof{display:flex;gap:12px;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--line)}.mv-menu-prof strong{display:block;color:var(--txt)}.mv-menu-prof small{display:block;color:var(--muted);font-size:12px}
+.mv-menu-sec h4{margin:12px 0 8px;color:var(--txt);font-size:14px}
+.mv-noti{display:flex;gap:10px;width:100%;text-align:left;padding:10px;border:0;border-radius:12px;background:#F4F7FB;margin-bottom:6px;cursor:pointer;color:var(--txt)}.mv-noti[disabled]{cursor:default}.mv-noti strong{display:block;font-size:13px}.mv-noti small{color:var(--muted);font-size:12px}
+.mv-menu-act{display:grid;gap:6px;margin-top:10px}.mv-menu-act .btn{justify-content:flex-start}
+.mv-bottom-nav{display:none}
+#tela-gestor .inner>.gestor-head{padding-top:max(16px,env(safe-area-inset-top))}
+@media(max-width:1100px){.mv-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.mv-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mv-kpi{padding:14px}.mv-kpi strong{font-size:26px}.mv-grid{grid-template-columns:1fr}.mv-hero{padding:20px}#gestor-hub .mv-hero h2{font-size:21px}}
+@media(max-width:639px){
+ html,body{overflow-x:hidden}
+ #tela-gestor,#tela-gestor .inner{overflow-x:hidden;max-width:100vw}
+ #tela-gestor .inner>.gestor-head{position:sticky;top:0;padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 10px max(12px,env(safe-area-inset-left))}
+ #tela-gestor .mv-hide-mobile{display:none!important}
+ #tela-gestor .manager-support-fab{display:none!important}
+ #gestor-hub,#gestor-body{padding-bottom:calc(88px + env(safe-area-inset-bottom))!important}
+ .mv-bottom-nav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:9000;padding:6px max(6px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));background:var(--card);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(11,33,48,.08)}
+ .mv-bottom-nav button{display:flex;flex-direction:column;align-items:center;gap:3px;min-height:52px;padding:6px 2px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;min-width:0}
+ .mv-bottom-nav button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+ .mv-bottom-nav svg{width:24px;height:24px}
+ .mv-bottom-nav button[aria-current="page"]{color:var(--navy);background:#EAF4FB}
+ .mv-bottom-nav button[data-mv="__suporte"]{color:var(--navy)}
+ #tela-gestor.drawer-open .mv-bottom-nav{display:none}
+ .mv-avatar-menu{position:fixed;right:max(12px,env(safe-area-inset-right));top:calc(70px + env(safe-area-inset-top));max-height:calc(100vh - 170px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
+ .mv-chart{height:140px;gap:5px}
+}
+#tela-gestor #gestor-hub .mv-gold{background:var(--gold)!important;color:#0B2130!important;border:0!important}
+#tela-gestor #gestor-hub .mv-ghost{background:rgba(255,255,255,.1)!important;color:#FFFFFF!important;border:1px solid rgba(255,255,255,.35)!important}
+#tela-gestor .mv-bar i.f,#tela-gestor .mv-legend i.f,#tela-gestor .mv-cap.folga{background:var(--gold)!important;color:#0B2130}
+#tela-gestor .mv-bar i.p,#tela-gestor .mv-legend i.p{background:var(--beach)!important}
+#tela-gestor .mv-avatar-menu .btn{width:auto!important;height:auto!important;min-height:44px;padding:10px 12px!important;font-size:14px!important;justify-content:flex-start}
 </style>
 </head>
 <body>
@@ -1036,8 +1106,10 @@ h1,h2,h3,h4,.gestor-company,.manager-welcome h2,.daily-head h3,.control-card h4,
       </div>
       <span id="gestor-licenca" class="license-badge" data-state="ativo">Ativo</span>
       <div class="row right gestor-head-actions">
-        <button class="btn sm ghost" onclick="fecharGestor()" title="Bloquear painel" aria-label="Bloquear painel do gestor"><span class="action-icon" aria-hidden="true">🔒</span> Bloquear</button>
-        <button class="btn sm ghost" onclick="logoff()" title="Sair da conta" aria-label="Sair da conta"><span class="action-icon" aria-hidden="true">⏻</span> Sair da conta</button>
+        <button id="mv-avatar" class="mv-avatar-btn" type="button" data-mv="__avatar" aria-haspopup="true" aria-expanded="false" aria-controls="mv-avatar-menu" aria-label="Perfil e notificações"><span id="mv-avatar-ini">G</span><i id="mv-avatar-dot" class="hidden" aria-hidden="true"></i></button>
+        <div id="mv-avatar-menu" class="mv-avatar-menu hidden" role="dialog" aria-label="Perfil e notificações"></div>
+        <button class="btn sm ghost mv-hide-mobile" onclick="fecharGestor()" title="Bloquear painel" aria-label="Bloquear painel do gestor"><span class="action-icon" aria-hidden="true">🔒</span> Bloquear</button>
+        <button class="btn sm ghost mv-hide-mobile" onclick="logoff()" title="Sair da conta" aria-label="Sair da conta"><span class="action-icon" aria-hidden="true">⏻</span> Sair da conta</button>
       </div>
     </div>
     <div class="tabs" id="gestor-tabs"></div>
@@ -1045,6 +1117,7 @@ h1,h2,h3,h4,.gestor-company,.manager-welcome h2,.daily-head h3,.control-card h4,
     <main id="gestor-hub"></main>
     <div class="card hidden" id="gestor-body" style="border-radius:0"></div>
   </div>
+  <nav id="gestor-bottom-nav" class="mv-bottom-nav" aria-label="Navegação principal do gestor"><button type="button" data-menu="dash" data-mv="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-7 9 7v10H3z M9 20v-7h6v7"/></svg><span>Início</span></button><button type="button" data-menu="bat" data-mv="bat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v5l3 2 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18"/></svg><span>Tratamento</span></button><button type="button" data-menu="esc" data-mv="esc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18v16H3z M7 3v4 M17 3v4 M3 10h18"/></svg><span>Escalas</span></button><button type="button" data-menu="rel" data-mv="rel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10 M10 20V4 M16 20v-7 M22 20H2"/></svg><span>Relatórios</span></button><button type="button" data-menu="__suporte" data-mv="__suporte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v-1a8 8 0 0 1 16 0v1M4 12H2v7h4v-7zM20 12h2v7h-4v-7zM20 19c0 3-4 3-8 3"/></svg><span>Suporte</span></button></nav>
   <button class="btn manager-support-fab" onclick="abrirSuporteGestor()" aria-label="Suporte ao Gestor" title="Suporte ao Gestor"><span class="manager-support-label">Suporte</span><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 13v-1a8 8 0 0 1 16 0v1M4 12H2v7h4v-7zM20 12h2v7h-4v-7zM20 19c0 3-4 3-8 3"/></svg></button>
 </div>
 
@@ -1788,7 +1861,7 @@ function renderMenuGestor(){
   $('gestor-drawer').innerHTML=`<div class="drawer-brand"><div><img src="${esc(logoApp())}" alt="Ponto Pro Gestão"/><strong>Ponto Pro<br>Gestão</strong></div><button class="btn ghost" onclick="fecharMenuGestor()" aria-label="Fechar menu do gestor" title="Fechar menu">✕</button></div><div class="drawer-profile"><span class="drawer-avatar" aria-hidden="true">${esc(iniciais)}</span><div><strong>${esc(nome)}</strong><small>${esc(podeEditarDev()?'Gestor Master':g.funcao||'Responsável pela empresa')}</small>${g.email?`<small class="drawer-email">${esc(g.email)}</small>`:''}<span class="drawer-plan">${l?.estado==='cortesia'?'Licença Cortesia Especial · ':''}Plano ${esc(plano)} · ${maxFuncAtual()} colaboradores</span></div></div>${(()=>{const n=Object.fromEntries(MENU_GESTOR.map(([k,,t])=>[k,t]));const b=k=>`<button type="button" class="btn" data-menu="${k}" onclick="navegarGestor('${k}')"><span aria-hidden="true">${iconeGestor(k)}</span>${n[k]}</button>`;const grupos=[['Visão Geral',['dash']],['Operação Diária',['bat','esc','ban']],['Fechamento & Análises',['folha','rel']],['Cadastros & Sistema',['func','kiosk','emp']]];return grupos.map(([t,ks],gi)=>`<div class="drawer-group"><div class="drawer-section-label" id="dg-${gi}">${t}</div><nav class="drawer-nav" aria-labelledby="dg-${gi}">${ks.map(b).join('')}${gi===3?(podeEditarDev()?'<button type="button" class="btn" data-menu="dev" onclick="navegarGestor(\'dev\')"><span aria-hidden="true">🛠️</span>Desenvolvedor</button>':'')+'<button type="button" class="btn" data-menu="logs" onclick="navegarGestor(\'logs\')"><span aria-hidden="true">📜</span>Histórico / Auditoria</button>':''}</nav></div>`).join('')})()}<div class="drawer-footer"><button class="btn" onclick="navegarGestor('assin')">💳 Licença e Assinatura</button><button class="btn" onclick="fecharMenuGestor();abrirSobre()" title="Desenhado em conformidade com as diretrizes da Portaria MTE 671/2021 — não representa homologação oficial">ⓘ Sobre o Sistema / Portaria 671</button><button class="btn" onclick="fecharMenuGestor();abrirManual()">📖 Manual do Usuário</button></div>`;
   atualizarMenuGestor(MENU_ATUAL);
 }
-function atualizarMenuGestor(k){MENU_ATUAL=k;$('gestor-drawer').querySelectorAll('[data-menu]').forEach(el=>{if(el.dataset.menu===k)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});}
+function atualizarMenuGestor(k){MENU_ATUAL=k;document.querySelectorAll('#gestor-drawer [data-menu],#gestor-bottom-nav [data-menu]').forEach(el=>{if(el.dataset.menu===k)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});}
 function alternarMenuGestor(){if($('tela-gestor').classList.contains('drawer-open'))return fecharMenuGestor();$('tela-gestor').classList.add('drawer-open');$('gestor-drawer').inert=false;$('gestor-menu-toggle').setAttribute('aria-expanded','true');$('gestor-menu-toggle').setAttribute('aria-label','Fechar menu do gestor');$('gestor-drawer').querySelector('button')?.focus();}
 function fecharMenuGestor(foco=true){$('tela-gestor').classList.remove('drawer-open');$('gestor-drawer').inert=true;$('gestor-menu-toggle').setAttribute('aria-expanded','false');$('gestor-menu-toggle').setAttribute('aria-label','Abrir menu do gestor');if(foco)$('gestor-menu-toggle').focus();}
 document.addEventListener('keydown',e=>{if(!$('tela-gestor').classList.contains('drawer-open'))return;if(e.key==='Escape'){e.preventDefault();fecharMenuGestor();}if(e.key==='Tab'&&matchMedia('(max-width:1100px)').matches){const itens=[...$('gestor-drawer').querySelectorAll('button')],primeiro=itens[0],ultimo=itens[itens.length-1];if(e.shiftKey&&document.activeElement===primeiro){e.preventDefault();ultimo?.focus();}else if(!e.shiftKey&&document.activeElement===ultimo){e.preventDefault();primeiro?.focus();}}});
@@ -1950,10 +2023,20 @@ function pararRelogioGestor(){if(relogioGestor)clearInterval(relogioGestor);relo
 function mostrarCentralGestor(){
   pararRelogioGestor();fecharMenuGestor(false);ABA='dash';atualizarMenuGestor('dash');
   $('gestor-body').classList.remove('hidden');$('gestor-hub').classList.remove('hidden');
-  destruirSeletorPeriodoPainel();destruirSeletorPeriodoRelatorios();$('gestor-hub').innerHTML='<div class="exec-shell">'+painelExecutivoHTML()+painelDiaHTML()+'</div>';montarSeletorPeriodoPainel();
+  destruirSeletorPeriodoPainel();destruirSeletorPeriodoRelatorios();$('gestor-hub').innerHTML='<div class="exec-shell">'+painelExecutivoHTML()+visaoMovelHTML()+painelDiaHTML()+'</div>';montarSeletorPeriodoPainel();
   $('gestor-body').innerHTML='';
-  atualizarPainelExecutivo();aplicarPeriodoPainel(PAINEL_INTERVALO);relogioGestor=setInterval(atualizarPainelExecutivo,30000);$('tela-gestor').scrollTop=0;
+  atualizarPainelExecutivo();atualizarAvatarGestor();aplicarPeriodoPainel(PAINEL_INTERVALO);relogioGestor=setInterval(atualizarPainelExecutivo,30000);$('tela-gestor').scrollTop=0;
 }
+/* Visão geral, menu de avatar e barra inferior do gestor — somente leitura e navegação. */
+const VISAO_MOVEL=PontoProOperacional.obter('gestor.visaoMovel').criar({get,esc,isoOf,brOf,addDias,dow,previstoDia:(f,d)=>previstoDia(f,d),ocorrenciaDia:(p,d)=>ocorrenciaDia(p,d),batidasDia:(p,d)=>batidasDia(p,d),buscaNaEscala:(p,d)=>buscaNaEscala(p,d)});
+function alertasHojeGestor(){try{const hoje=hojeISO();return indicadoresDashboard(get('funcionarios',[]),hoje,getHoraOficial()).ocorrencias;}catch(e){return 0;}}
+function visaoMovelHTML(){try{const agora=getHoraOficial();return VISAO_MOVEL.html({hoje:hojeISO(),hora:agora.getHours(),nome:nomeGestorPainel().split(/\s+/)[0],alertas:alertasHojeGestor()});}catch(e){console.warn('Visão geral indisponível',e);return '';}}
+function contextoAvatarGestor(){const g=GERENCIADOR||{},l=LIC?.licenca;return {nome:nomeGestorPainel(),email:g.email||'',funcao:g.funcao||'Responsável pela empresa',plano:`Plano ${l?.plano||1} · ${maxFuncAtual()} colaboradores`,pendentes:CONTA?pendentes().length:0,alertas:alertasHojeGestor()};}
+function atualizarAvatarGestor(){const el=$('mv-avatar-ini');if(!el)return;const c=contextoAvatarGestor();el.textContent=PontoProOperacional.obter('gestor.visaoMovel').iniciais(c.nome);const avisos=VISAO_MOVEL.notificacoes(c).filter(n=>n[1]!=='Tudo em dia').length;$('mv-avatar-dot').classList.toggle('hidden',!avisos);}
+function fecharAvatarGestor(){$('mv-avatar-menu')?.classList.add('hidden');$('mv-avatar')?.setAttribute('aria-expanded','false');}
+function alternarAvatarGestor(){const m=$('mv-avatar-menu');if(!m.classList.contains('hidden'))return fecharAvatarGestor();m.innerHTML=VISAO_MOVEL.menuAvatar(contextoAvatarGestor());m.classList.remove('hidden');$('mv-avatar').setAttribute('aria-expanded','true');m.querySelector('button:not([disabled])')?.focus();}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-mv]');const menu=$('mv-avatar-menu');if(menu&&!menu.classList.contains('hidden')&&!e.target.closest('#mv-avatar-menu,#mv-avatar'))fecharAvatarGestor();if(!b||!b.closest('#tela-gestor'))return;const k=b.dataset.mv;if(k==='__avatar')return alternarAvatarGestor();fecharAvatarGestor();if(k==='__suporte')return abrirSuporteGestor();if(k==='__bloquear')return fecharGestor();if(k==='__sair')return logoff();navegarGestor(k);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('mv-avatar-menu')?.classList.contains('hidden')){fecharAvatarGestor();$('mv-avatar')?.focus();}});
 function irAba(k){
   if(k==='dash')return mostrarCentralGestor();
   if(k==='dev'&&!podeEditarDev())return;

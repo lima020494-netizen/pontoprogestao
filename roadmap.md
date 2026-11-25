@@ -184,3 +184,6 @@
 - [x] 283 testes em 40 arquivos e build OK. Prévia com quatro colaboradores fictícios percorreu as seis abas, filtro por setor, ficha real em PDF e 390px sem erros ou transbordamento; PDF de uma página conferido por leitura. Sem autenticação externa, dados reais ou publicação.
 
 - [x] Bloco 1 mobile: correção de intervalo incompleto no relatório; navegação inferior revertida nos ajustes de 24/11.
+
+## Ajustes de 25/11
+- [x] Visão geral (hero, KPIs 2x2, semana, Equipe Hoje, escala em cápsulas), menu de avatar e barra inferior móvel com Suporte

@@ -22,7 +22,7 @@ const moduleFiles = [
   'data/nucleo-v20261110-etapa3.js',
   'reports/documentos-v20261110-etapa4.js', 'reports/folha-v20261110-etapa4.js',
   'reports/fiscal-v20261110-etapa4.js', 'reports/exportacoes-v20261110-etapa4.js',
-  'gestor/colaboradores-v20261121.js', 'reports/relatorios-analiticos-v20261120.js', 'reports/nucleo-v20261110-etapa4.js',
+  'gestor/colaboradores-v20261121.js', 'gestor/visao-movel-v20261125.js', 'reports/relatorios-analiticos-v20261120.js', 'reports/nucleo-v20261110-etapa4.js',
 ];
 const modules = moduleFiles.map((path) => source(`public/operacional/${path}`));
 
