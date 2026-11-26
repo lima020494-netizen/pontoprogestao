@@ -42,3 +42,19 @@ test("monta a semana de segunda a domingo com folgas no gráfico", () => {
     assert.deepEqual({...r.semana[2]}, {...r.semana[2], ...{ escalados: 1, folga: 1 }});
   });
 
+test("escala equilibrada exige folga para todos e nenhum dia abaixo do mínimo", () => {
+  const api = carregar().criar(S);
+  const dias = ["a", "b", "c"];
+  const l = (nome: string, folgas: boolean[]) => ({ f: { nome }, celulas: folgas.map((folga) => ({ folga })) });
+  const ok = api.diagnosticoSemana([l("Ana", [true, false, false]), l("Bia", [false, true, false])], dias, 1);
+  assert.equal(ok.ok, true);
+  assert.match(ok.texto, /todo mundo com 1 folga e nenhum dia abaixo do mínimo/);
+  const ruim = api.diagnosticoSemana([l("Ana", [false, false, false]), l("Bia", [true, false, false])], dias, 2);
+  assert.equal(ruim.ok, false);
+  assert.deepEqual([...ruim.semFolga], ["Ana"]);
+  assert.equal(ruim.abaixo.length, 1);
+});
+test("Equipe Hoje marca Intervalo quando a última batida é saída para intervalo", () => {
+  const api = carregar().criar({ ...S, batidasDia: (p: string) => (p === "1" ? [{ tipo: "Entrada", hora: "08:00" }, { tipo: "Saída Intervalo", hora: "12:00" }] : []) });
+  assert.equal(api.statusAoVivo(fs[0], "2026-11-25").t, "Intervalo");
+});
