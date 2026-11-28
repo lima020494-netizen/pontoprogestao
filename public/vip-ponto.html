@@ -1035,6 +1035,37 @@ button.mv-kpi{font:inherit;text-align:left;cursor:pointer;transition:transform .
 #tela-gestor .mv-bar i.f,#tela-gestor .mv-legend i.f,#tela-gestor .mv-cap.folga{background:#FEBE45!important;color:#0B2130}
 #tela-gestor .mv-bar i.p,#tela-gestor .mv-legend i.p{background:#1E86C0!important}
 #tela-gestor .mv-avatar-menu .btn{width:auto!important;height:auto!important;min-height:44px;padding:10px 12px!important;font-size:14px!important;justify-content:flex-start}
+
+/* Polimento Atalaia 28/11 — somente visual */
+:root{--at-soft:#E8F1F8;--at-soft-line:#D3E3EF;--at-gold-soft:#FFF4DA;--at-ease:cubic-bezier(.22,.8,.3,1)}
+.modal:not(.hidden){animation:at-fade .2s ease-out}
+@keyframes at-fade{from{background:rgba(8,18,36,0)}to{}}
+@keyframes at-pop{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+@media(min-width:641px){.modal:not(.hidden):not(#tela-gestor)>.inner{animation:at-pop .24s var(--at-ease)}.modal{padding-top:max(12px,env(safe-area-inset-top))}}
+.modal .inner{max-height:calc(100dvh - 24px - env(safe-area-inset-top));overflow:auto;overscroll-behavior:contain}
+#tela-gestor.modal>.inner{max-height:none}
+.modal.small .inner{border-radius:20px;box-shadow:0 24px 60px rgba(3,68,108,.22)}
+.modal .inner .btn{transition:background-color .18s,box-shadow .18s,transform .12s}
+.modal .inner .btn:active{transform:scale(.98)}
+@media(max-width:640px){.modal .inner{max-height:calc(92dvh - env(safe-area-inset-top));padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}.modal.small .inner{border-radius:20px 20px 0 0}}
+#gestor-body .esw-unificada{border-collapse:separate;border-spacing:4px}
+#gestor-body .esw-unificada td{background:var(--at-soft);border:1px solid var(--at-soft-line)!important;border-radius:12px;transition:background-color .18s,box-shadow .18s}
+#gestor-body .esw-unificada tbody td:not(.folga):not(.matrix-load):hover{background:#DCEAF5;box-shadow:0 2px 8px rgba(3,68,108,.12)}
+#gestor-body .esw-unificada td.folga{background:var(--at-gold-soft)!important;border-color:#FEBE45!important;color:#0B2130}
+#gestor-body .esw-unificada thead th{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#4A6478;padding-bottom:6px}
+#gestor-body .esw-unificada tr.matrix-sector th{border-radius:10px;font-size:12px;letter-spacing:.02em}
+#gestor-body .esw-unificada tfoot td,#gestor-body .esw-unificada td.matrix-load{border:0!important}
+#gestor-body .esw-unificada tfoot td{font-size:12px}
+#tela-gestor [aria-pressed]{transition:background-color .18s,color .18s,border-color .18s}
+#gestor-body .mv-search{border-radius:999px}
+#gestor-body .mv-badge{border-radius:999px;font-weight:700}
+#gestor-body .mv-card,#gestor-body .team-card{border-radius:16px;border:1px solid var(--at-soft-line);box-shadow:0 1px 2px rgba(11,33,48,.04),0 6px 18px rgba(3,68,108,.06)}
+#gestor-body .mv-kpi{transition:transform .15s var(--at-ease),box-shadow .15s}
+#gestor-body .mv-kpi:active{transform:scale(.98)}
+#gestor-bottom-nav{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+#gestor-bottom-nav [data-menu]{transition:color .18s,background-color .18s}
+@media(max-width:639px){#gestor-body{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}}
+@media(prefers-reduced-motion:reduce){.modal:not(.hidden),.modal:not(.hidden)>.inner{animation:none!important}#gestor-body *{transition:none!important}}
 </style>
 </head>
 <body>
