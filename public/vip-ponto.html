@@ -1213,7 +1213,10 @@ function toast(msg,ms=5000){const t=document.createElement('div');t.className='t
 function baixar(nome,conteudo,tipo){return RELATORIOS_NUCLEO.baixar(nome,conteudo,tipo);}
 
 /* ---------- storage isolado por conta: aliases da Etapa 3 ---------- */
-let CONTA=null;                                     // e-mail da conta logada
+let CONTA=null;                                     // e-mail da conta (empresa) em uso
+let EMAIL_SESSAO=null;                              // e-mail de quem entrou (dono ou gestor vinculado)
+// Gestor autorizado por e-mail (sem PIN): entra na empresa vinculada; RLS confere o vínculo no servidor.
+async function contaDaSessao(email){EMAIL_SESSAO=email;try{const {data}=await sb.from('gestor_vinculos').select('email_dono').eq('email_gestor',email).maybeSingle();if(data&&data.email_dono)return String(data.email_dono).toLowerCase();}catch(e){}return email;}
 const K = (k) => DATA_NUCLEO.K(k);
 let SHARE_DATA=null;
 let CARREGANDO=false; // evita eco de gravação durante a carga da nuvem
@@ -1303,7 +1306,7 @@ async function criarConta(){
   const {data,error}=await sb.auth.signUp({email,password:senha,options:{data:{nome},emailRedirectTo:location.origin+location.pathname}});
   if(error) return m.innerHTML=`<div class="alert err">${/registered/i.test(error.message)?'E-mail já cadastrado.':error.message}</div>`;
   if(!cs.some(c=>c.email===email)){cs.push({nome,email});salvaContas(cs);}
-  if(data.session){CONTA=email;iniciarApp();return;}
+  if(data.session){CONTA=await contaDaSessao(email);iniciarApp();return;}
   m.innerHTML='<div class="alert ok">Conta criada! Confirme pelo link enviado ao seu e-mail e depois faça o login.</div>';
   setTimeout(()=>{mostrarView('login');$('l-email').value=email;$('saudacao').textContent=`Olá, ${nome.split(' ')[0]}!`;},2500);
 }
@@ -1326,7 +1329,7 @@ async function fazerLogin(){
     } // sem resposta do servidor: não bloqueia indevidamente
   }
   if(!jaNoAparelho){cs.push({nome:data.user.user_metadata?.nome||email,email});salvaContas(cs);}
-  m.innerHTML=''; CONTA=email; iniciarApp();
+  m.innerHTML=''; CONTA=await contaDaSessao(email); iniciarApp();
 }
 async function gerarReset(){
   const email=$('e-email').value.trim().toLowerCase();
@@ -1864,7 +1867,7 @@ function abrirGestor(){
 }
 function fecharGestor(){trocaGestor++;fecharMenuGestor(false);destruirSeletorPeriodoPainel();destruirSeletorPeriodoRelatorios();$('tela-gestor').classList.add('hidden');pararRelogioGestor();GERENCIADOR=null;fecharModal();fecharPinModal();if(MODO_GESTOR)mostrarTelaGestor();}
 /* Etapa 4: gestor autenticado por e-mail/senha entra direto; PIN fica restrito ao Quiosque/portal. */
-function gestorDaSessao(){const e=get('empregador',{})||{},gs=get('gerenciadores',[]).filter(g=>!g.is_hidden),c=String(CONTA||'').toLowerCase(),g=gs.find(g=>String(g.email||'').toLowerCase()===c);return g?{...g,email:c,via:'sessao'}:{nome:e.responsavel||c||'Gestor',funcao:'Gestor (conta autenticada)',email:c,via:'sessao'};}
+function gestorDaSessao(){const e=get('empregador',{})||{},gs=get('gerenciadores',[]).filter(g=>!g.is_hidden),c=String(EMAIL_SESSAO||CONTA||'').toLowerCase(),g=gs.find(g=>String(g.email||'').toLowerCase()===c);return g?{...g,email:c,via:'sessao'}:{nome:e.responsavel||c||'Gestor',funcao:'Gestor (conta autenticada)',email:c,via:'sessao'};}
 function entrarGestorDireto(){if(!MODO_GESTOR||!CONTA||!get('empregador',null))return mostrarTelaGestor();GERENCIADOR=gestorDaSessao();$('gestor-bloqueio').classList.add('hidden');abrirGestor();}
 function bloquearGestor(){if(MODO_GESTOR&&CONTA&&get('empregador',null))return entrarGestorDireto();mostrarTelaGestor();}
 function mostrarTelaGestor(){
@@ -3137,7 +3140,7 @@ PontoProOperacional.obter('boot.contexto').ligar({
     $('e-msg').innerHTML='<div class="alert ok">Digite a nova senha.</div>';return;
   }
   const {data}=await sb.auth.getUser();
-  if(data&&data.user){CONTA=data.user.email.toLowerCase();iniciarApp();}
+  if(data&&data.user){CONTA=await contaDaSessao(data.user.email.toLowerCase());iniciarApp();}
   else{mostrarView('login');relogio();}
 })();
 </script>

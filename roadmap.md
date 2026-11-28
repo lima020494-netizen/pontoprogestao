@@ -189,4 +189,4 @@
 - [x] Visão geral (hero, KPIs 2x2, semana, Equipe Hoje, escala em cápsulas), menu de avatar e barra inferior móvel com Suporte
 
 ## Pacote 28/11
-- [ ] Acesso Gestor sem PIN: até 4 gestores por e-mail com credenciais próprias; PIN só no Quiosque/colaborador
+- [x] Acesso Gestor sem PIN: até 4 gestores por e-mail com credenciais próprias; PIN só no Quiosque/colaborador

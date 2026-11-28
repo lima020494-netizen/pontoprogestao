@@ -35,7 +35,14 @@ async function auth(request: Request) {
   const email = data.user?.email?.toLowerCase();
   if (error || !data.user || !email) return null;
   const { data: role, error: roleError } = await supabaseAdmin.from("user_roles" as never).select("role").eq("user_id", data.user.id).eq("role", "admin").maybeSingle();
-  return { db: supabaseAdmin, user: data.user, email, isDev: !roleError && !!role && email === DEV_EMAIL };
+  // Gestor autorizado (até 4 por empresa, sem PIN): usa a licença da empresa vinculada, só com e-mail confirmado.
+  let conta = email;
+  if (data.user.email_confirmed_at) {
+    const { data: v } = await supabaseAdmin.from("gestor_vinculos" as never).select("email_dono").eq("email_gestor", email).maybeSingle();
+    const dono = (v as { email_dono?: string } | null)?.email_dono;
+    if (dono) conta = dono.toLowerCase();
+  }
+  return { db: supabaseAdmin, user: data.user, email, conta, gestorVinculado: conta !== email, isDev: !roleError && !!role && email === DEV_EMAIL };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,7 +78,8 @@ export const Route = createFileRoute("/api/public/licenca")({
       GET: async ({ request }) => {
         const a = await auth(request);
         if (!a) return json({ error: "Sessão inválida." }, 401);
-        let { data: lic } = await a.db.from("licencas" as never).select("*").eq("email_dono", a.email).maybeSingle();
+        let { data: lic } = await a.db.from("licencas" as never).select("*").eq("email_dono", a.conta).maybeSingle();
+        if (!lic && a.gestorVinculado) return json({ error: "Licença da empresa não encontrada." }, 404);
         if (!lic) {
           const ins = await a.db.from("licencas" as never).insert({ email_dono: a.email, user_id: a.user.id, status: "trial", plano: 1,
             data_vencimento: new Date(Date.now() + 7 * DAY).toISOString() } as never).select("*").single();
@@ -79,7 +87,7 @@ export const Route = createFileRoute("/api/public/licenca")({
           lic = ins.data;
         }
         const cfg = await getConfig(a.db);
-        return json({ licenca: view(lic as unknown as Lic), config: { pix: cfg["pix"] || "", whatsapp: cfg["whatsapp"] || "", precos: cfg["precos"] || {}, precosAnuais: cfg["precosAnuais"] || {}, planos: await getPlanos(a.db) }, isDev: a.isDev, termosVersao: TERMOS_VERSAO });
+        return json({ licenca: view(lic as unknown as Lic), config: { pix: cfg["pix"] || "", whatsapp: cfg["whatsapp"] || "", precos: cfg["precos"] || {}, precosAnuais: cfg["precosAnuais"] || {}, planos: await getPlanos(a.db) }, isDev: a.isDev, termosVersao: TERMOS_VERSAO, conta: a.conta, gestorVinculado: a.gestorVinculado });
       },
       POST: async ({ request }) => {
         const a = await auth(request);
@@ -89,7 +97,7 @@ export const Route = createFileRoute("/api/public/licenca")({
           const aceite = { aceito_em: new Date().toISOString(), versao: TERMOS_VERSAO, email: a.email, user_id: a.user.id,
             gestor: String(body["gestor"] || "").slice(0, 120), ip: request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "",
             user_agent: (request.headers.get("user-agent") || "").slice(0, 300) };
-          const { error } = await a.db.from("licencas" as never).update({ aceite_termos: aceite } as never).eq("email_dono", a.email);
+          const { error } = await a.db.from("licencas" as never).update({ aceite_termos: aceite } as never).eq("email_dono", a.conta);
           return error ? json({ error: "Falha ao registrar o aceite." }, 500) : json({ ok: true, aceite });
         }
         if (!a.isDev) return json({ error: "Acesso restrito ao desenvolvedor." }, 403);
