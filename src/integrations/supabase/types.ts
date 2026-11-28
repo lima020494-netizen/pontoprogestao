@@ -463,6 +463,30 @@ export type Database = {
           },
         ]
       }
+      gestor_vinculos: {
+        Row: {
+          created_at: string
+          email_dono: string
+          email_gestor: string
+          funcao: string | null
+          nome: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_dono: string
+          email_gestor: string
+          funcao?: string | null
+          nome?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_dono?: string
+          email_gestor?: string
+          funcao?: string | null
+          nome?: string | null
+        }
+        Relationships: []
+      }
       licencas: {
         Row: {
           aceite_termos: Json | null
@@ -651,6 +675,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      conta_gestor: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
